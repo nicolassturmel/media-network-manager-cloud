@@ -49,16 +49,29 @@ function run() {
                 username: "cisco",
                 password: "cisco",
                 pageSeparator: "More: <space>,  Quit: q or CTRL+Z, One line: <return> ",
-                timeout: 1500
+                timeout: 1000
             };
             connection.on('ready', function (prompt) {
                 connection.exec("show int coun", function (err, response) {
                     // let array = response.split(/\D+/)
                     var array = response.split("\n");
+                    var Bit = [];
                     for (var _i = 0, array_1 = array; _i < array_1.length; _i++) {
                         var str = array_1[_i];
-                        console.log("rep -> " + JSON.stringify(str.split(/\D+/).slice(1, -1)));
+                        var T = str.split(/\D+/).slice(1, -1);
+                        if (T.length == 0) { }
+                        else {
+                            if (T.length == 1) {
+                                Bit[Bit.length - 1] += T[0] + "";
+                                console.log(T[0]);
+                            }
+                            else {
+                                console.log(Bit);
+                                Bit = T;
+                            }
+                        }
                     }
+                    //console.log("rep -> " + JSON.stringify(Bit)
                 });
             });
             connection.on('timeout', function () {
