@@ -1,11 +1,17 @@
 'use strict'
 
+const SwitchPollTime = 2
+
+
+
 const Telnet = require('telnet-client')
 
 
 var LastValue: object = {};
 var CurrentBandwidth: object = {};
 var ActionCount = 0;
+var ClearTime = 0;
+var CountTime = 0;
 
 var express = require("express");
 var app = express();
@@ -41,10 +47,19 @@ function get_count() {
 
     connection.on('ready', function (prompt) {
         connection.exec("show int coun", function (err, response) {
+            let now = new Date
             // let array = response.split(/\D+/)
             //console.log(response)
-            if(response == undefined) return;
-            let array = response.split("\n")
+            let array
+            try {
+                array = response.split("\n")
+            } catch (error) {
+                console.log("Response error")
+                connection.end();
+                return
+            }
+            CountTime = now.getTime() - ClearTime
+            
             let Bit: any = [0]
             let CurrentPortNumber = 0;
 
@@ -65,6 +80,7 @@ function get_count() {
                             if (State == ParseState.Out) {
 
                                 //console.log(JSON.stringify(LastValue))
+                                connection.end()
                                 return;
                             }
                             State = ParseState.Out
@@ -99,7 +115,7 @@ function get_count() {
 
     connection.connect(params)
 
-    setTimeout(function() {clear_count()}, 1000);
+    setTimeout(function() {clear_count()}, SwitchPollTime*1000);
 }
 
 function clear_count() {
@@ -114,11 +130,21 @@ function clear_count() {
         username: "cisco",
         password: "cisco",
         pageSeparator: /More: <space>,  Qu.*/,
-        timeout: 1000
+        timeout: 500
     }
 
     connection.on('ready', function (prompt) {
-        connection.exec("clear counters", (err, respond) => {console.log(respond)})
+        connection.exec("clear counters", (err, respond) => {
+            console.log("c : " + respond)
+            if(respond != undefined) {
+                let now = new Date
+                ClearTime = now.getTime()
+                setTimeout(function() {get_count()}, SwitchPollTime*1000);
+            }
+            else
+                setTimeout(function() {clear_count()}, SwitchPollTime*1000);
+            connection.end()
+        })
     })
 
     connection.on('timeout', function () {
@@ -131,16 +157,15 @@ function clear_count() {
     })
 
     connection.connect(params)
-    setTimeout(function() {get_count()}, 10000);
 }
 
 function display() {
     Object.keys(LastValue).forEach(function(key) {
         var val = LastValue[key];
-        console.log("Port " + key + " - In : " + Math.round(val.In*8/10/1024/1024*100)/100 + "Mb/s - Out : " +  Math.round(val.Out*8/10/1024/1024*100)/100 + "Mb/s")
+        //console.log("Port " + key + " - In : " + Math.round(val.In*8/10/1024/1024*100)/100 + "Mb/s - Out : " +  Math.round(val.Out*8/10/1024/1024*100)/100 + "Mb/s")
         if(!CurrentBandwidth[key])
            CurrentBandwidth[key] = {}
-        CurrentBandwidth[key] = { In : Math.round(val.In*8/10/1024/1024*100)/100, Out : Math.round(val.Out*8/10/1024/1024*100)/100}
+        CurrentBandwidth[key] = { In : Math.round(val.In*8/CountTime/1024/1024*100*1000)/100, Out : Math.round(val.Out*8/CountTime/1024/1024*100*1000)/100}
     
     });
 
