@@ -4,8 +4,18 @@ const Telnet = require('telnet-client')
 
 
 var LastValue: object = {};
-var CurrentBandwidth;
+var CurrentBandwidth: object = {};
 var ActionCount = 0;
+
+var express = require("express");
+var app = express();
+app.listen(3000, () => {
+ console.log("Server running on port 3000");
+});
+
+app.get("/bw", (req, res, next) => {
+    res.json(CurrentBandwidth);
+   });
 
 function get_count() {
     let connection = new Telnet()
@@ -33,6 +43,7 @@ function get_count() {
         connection.exec("show int coun", function (err, response) {
             // let array = response.split(/\D+/)
             //console.log(response)
+            if(response == undefined) return;
             let array = response.split("\n")
             let Bit: any = [0]
             let CurrentPortNumber = 0;
@@ -127,7 +138,11 @@ function display() {
     Object.keys(LastValue).forEach(function(key) {
         var val = LastValue[key];
         console.log("Port " + key + " - In : " + Math.round(val.In*8/10/1024/1024*100)/100 + "Mb/s - Out : " +  Math.round(val.Out*8/10/1024/1024*100)/100 + "Mb/s")
-      });
+        if(!CurrentBandwidth[key])
+           CurrentBandwidth[key] = {}
+        CurrentBandwidth[key] = { In : Math.round(val.In*8/10/1024/1024*100)/100, Out : Math.round(val.Out*8/10/1024/1024*100)/100}
+    
+    });
 
 
     setTimeout(() => {display() },1000)

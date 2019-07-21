@@ -10,6 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "@types/node": "^12.6.8",
+    "express": "^4.17.1",
     "telnet-client": "^1.0.4"
   }
 }
