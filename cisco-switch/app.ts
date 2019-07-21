@@ -18,7 +18,7 @@ function run() {
         username: "cisco",
         password: "cisco",
         pageSeparator: /More: <space>,  Qu.*/,
-        timeout: 3000
+        timeout: 1000
     }
 
 
@@ -29,9 +29,11 @@ function run() {
     let State: ParseState = ParseState.In
 
     connection.on('ready', function (prompt) {
+        //connection.exec("clear counters", (err, respond) => {console.log(respond)})
+        
         connection.exec("show int coun", function (err, response) {
             // let array = response.split(/\D+/)
-            // console.log(response)
+             console.log(response)
             let array = response.split("\n")
             let Bit: any = [0]
             let CurrentPortNumber = 0;
@@ -73,6 +75,7 @@ function run() {
 
             }
         })
+        connection.exec("clear counters", (err, respond) => {console.log(respond)})
     })
 
     connection.on('timeout', function () {

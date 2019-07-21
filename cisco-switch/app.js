@@ -13,7 +13,7 @@ function run() {
         username: "cisco",
         password: "cisco",
         pageSeparator: /More: <space>,  Qu.*/,
-        timeout: 3000
+        timeout: 1000
     };
     var ParseState;
     (function (ParseState) {
@@ -22,9 +22,10 @@ function run() {
     })(ParseState || (ParseState = {}));
     var State = ParseState.In;
     connection.on('ready', function (prompt) {
+        //connection.exec("clear counters", (err, respond) => {console.log(respond)})
         connection.exec("show int coun", function (err, response) {
             // let array = response.split(/\D+/)
-            // console.log(response)
+            console.log(response);
             var array = response.split("\n");
             var Bit = [0];
             var CurrentPortNumber = 0;
@@ -62,6 +63,7 @@ function run() {
                 }
             }
         });
+        connection.exec("clear counters", function (err, respond) { console.log(respond); });
     });
     connection.on('timeout', function () {
         console.log('socket timeout!');
