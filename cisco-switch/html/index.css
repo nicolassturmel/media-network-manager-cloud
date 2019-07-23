@@ -1,0 +1,18 @@
+.switch_port {
+    float: left;
+    min-width: 50;
+    margin: 2;
+    padding: 8;
+    background-color: #9E9E9E;
+    border: black;
+}
+
+.switch_port_name {text-align: center;padding-bottom: 8;color: #eeefea;}
+
+.switch_port_in {color:  white;}
+
+.switch_port_out {
+    color: white;
+}
+
+

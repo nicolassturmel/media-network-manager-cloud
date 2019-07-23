@@ -12,15 +12,18 @@ var CurrentBandwidth: object = {};
 var ActionCount = 0;
 var ClearTime = 0;
 var CountTime = 0;
+var NewData
 
 var express = require("express");
 var app = express();
+app.use('/', express.static(__dirname + '/html'));
 app.listen(3000, () => {
  console.log("Server running on port 3000");
 });
 
 app.get("/bw", (req, res, next) => {
-    res.json(CurrentBandwidth);
+    function waitNewData() { if(NewData == true) res.json(CurrentBandwidth); else setTimeout(waitNewData, 200) }
+    waitNewData()
    });
 
 function get_count() {
@@ -81,6 +84,7 @@ function get_count() {
 
                                 //console.log(JSON.stringify(LastValue))
                                 connection.end()
+                                display()
                                 return;
                             }
                             State = ParseState.Out
@@ -109,6 +113,9 @@ function get_count() {
         connection.end()
     })
 
+    connection.on('error', function () {
+    })
+
     connection.on('close', function () {
         console.log('connection closed')
     })
@@ -120,7 +127,6 @@ function get_count() {
 
 function clear_count() {
     let connection = new Telnet()
-
     let params = {
         host: '192.168.1.201',
         port: 23,
@@ -134,6 +140,7 @@ function clear_count() {
     }
 
     connection.on('ready', function (prompt) {
+        NewData = false
         connection.exec("clear counters", (err, respond) => {
             console.log("c : " + respond)
             if(respond != undefined) {
@@ -150,6 +157,9 @@ function clear_count() {
     connection.on('timeout', function () {
         console.log('socket timeout!')
         connection.end()
+    })
+    connection.on('error', function () {
+        setTimeout(function() {clear_count()}, SwitchPollTime*1000);
     })
 
     connection.on('close', function () {
@@ -168,9 +178,7 @@ function display() {
         CurrentBandwidth[key] = { In : Math.round(val.In*8/CountTime/1024/1024*100*1000)/100, Out : Math.round(val.Out*8/CountTime/1024/1024*100*1000)/100}
     
     });
-
-
-    setTimeout(() => {display() },1000)
+    NewData = true
 }
 
 console.log("start")
