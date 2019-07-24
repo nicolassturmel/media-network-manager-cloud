@@ -40,9 +40,10 @@ function getValue()
             }
 
             port = document.getElementById(key)
+            port.getElementsByClassName("switch_port_name")[0].innerHTML = key + "<br>" + resp[key].Speed 
             port.getElementsByClassName("switch_port_in")[0].innerHTML = Math.round(resp[key].In)
             port.getElementsByClassName("switch_port_out")[0].innerHTML = Math.round(resp[key].Out)
         })
-        setTimeout(getValue, 1000)
+        setTimeout(getValue, 2000)
     })
 }

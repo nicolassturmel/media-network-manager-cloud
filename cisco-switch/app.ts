@@ -1,18 +1,31 @@
 'use strict'
 
-const SwitchPollTime = 2
+const SwitchPollTime = 3
 
 
 
 const Telnet = require('telnet-client')
 
 
-var LastValue: object = {};
+var SwitchData: object = {};
+var OldValue: object = {}
 var CurrentBandwidth: object = {};
 var ActionCount = 0;
 var ClearTime = 0;
 var CountTime = 0;
 var NewData
+
+let params = {
+    host: '192.168.1.201',
+    port: 23,
+    shellPrompt: /\D+#/,
+    loginPrompt: "User Name:",
+    passwordPrompt: "Password:",
+    username: "cisco",
+    password: "cisco",
+    pageSeparator: /More: <space>,  Qu.*/,
+    timeout: 0
+}
 
 var express = require("express");
 var app = express();
@@ -26,43 +39,55 @@ app.get("/bw", (req, res, next) => {
     waitNewData()
    });
 
-function get_count() {
-    let connection = new Telnet()
+let connection = new Telnet()
 
-    let params = {
-        host: '192.168.1.201',
-        port: 23,
-        shellPrompt: /\D+#/,
-        loginPrompt: "User Name:",
-        passwordPrompt: "Password:",
-        username: "cisco",
-        password: "cisco",
-        pageSeparator: /More: <space>,  Qu.*/,
-        timeout: 1000
-    }
-
-
-    enum ParseState {
+enum ParseState {
         In = "In",
         Out = "Out",
     }
+
+function connect() {
+connection.on('ready', function (prompt) {
+    StartSwitchDatamine();
+})
+
+connection.on('timeout', function () {
+    console.log('socket timeout!')
+    setTimeout(connect, 2000);
+})
+
+connection.on('error', function () {
+    setTimeout(connect, 2000);
+})
+
+connection.on('close', function () {
+    console.log('connection closed')
+    setTimeout(connect, 2000);
+})
+
+connection.connect(params)
+
+}
+
+function get_count() {
+    
     let State: ParseState = ParseState.In
 
-    connection.on('ready', function (prompt) {
+    
         connection.exec("show int coun", function (err, response) {
             let now = new Date
-            // let array = response.split(/\D+/)
             //console.log(response)
             let array
             try {
                 array = response.split("\n")
             } catch (error) {
-                console.log("Response error")
-                connection.end();
+                console.log("Response error : can not split in array")
+                console.log(response)
+                setTimeout(function() {get_count()}, SwitchPollTime*1000);
                 return
             }
             CountTime = now.getTime() - ClearTime
-            
+            ClearTime = now.getTime()
             let Bit: any = [0]
             let CurrentPortNumber = 0;
 
@@ -81,19 +106,26 @@ function get_count() {
                         if (Bit[0] < CurrentPortNumber) {
                             CurrentPortNumber = 1
                             if (State == ParseState.Out) {
-
-                                //console.log(JSON.stringify(LastValue))
-                                connection.end()
-                                display()
+                                setTimeout(getNextFct("get_count"), SwitchPollTime*1000);
+                                computeBandWidth()
                                 return;
                             }
                             State = ParseState.Out
                         }
                         if (Bit[0] == CurrentPortNumber) {
                             if (Bit[0]) {
-                                if(LastValue["g" + CurrentPortNumber] == undefined)
-                                    LastValue["g" + CurrentPortNumber] = {}
-                                LastValue["g" + CurrentPortNumber][State] = Bit[Bit.length - 1]
+                                if(SwitchData["gi" + CurrentPortNumber] == undefined) {
+                                    SwitchData["gi" + CurrentPortNumber] = {}
+                                    OldValue["gi" + CurrentPortNumber] = {}
+                                }
+                                if(SwitchData["gi" + CurrentPortNumber][State] == undefined) {
+                                    SwitchData["gi" + CurrentPortNumber][State] = Bit[Bit.length - 1]
+                                    OldValue["gi" + CurrentPortNumber][State] = Bit[Bit.length - 1]
+                                }
+                                else {
+                                    SwitchData["gi" + CurrentPortNumber][State] = Bit[Bit.length - 1] - OldValue["gi" + CurrentPortNumber][State]
+                                    OldValue["gi" + CurrentPortNumber][State] = Bit[Bit.length - 1]
+                                }
                             }
                             CurrentPortNumber++
                         }
@@ -106,82 +138,72 @@ function get_count() {
             }
             })
         
-    })
-
-    connection.on('timeout', function () {
-        console.log('socket timeout!')
-        connection.end()
-    })
-
-    connection.on('error', function () {
-    })
-
-    connection.on('close', function () {
-        console.log('connection closed')
-    })
-
-    connection.connect(params)
-
-    setTimeout(function() {clear_count()}, SwitchPollTime*1000);
-}
-
-function clear_count() {
-    let connection = new Telnet()
-    let params = {
-        host: '192.168.1.201',
-        port: 23,
-        shellPrompt: /\D+#/,
-        loginPrompt: "User Name:",
-        passwordPrompt: "Password:",
-        username: "cisco",
-        password: "cisco",
-        pageSeparator: /More: <space>,  Qu.*/,
-        timeout: 500
     }
 
-    connection.on('ready', function (prompt) {
+function clear_count() {
+    
         NewData = false
         connection.exec("clear counters", (err, respond) => {
             console.log("c : " + respond)
-            if(respond != undefined) {
+            if(respond != undefined) 
+            {
                 let now = new Date
                 ClearTime = now.getTime()
-                setTimeout(function() {get_count()}, SwitchPollTime*1000);
+                setTimeout(getNextFct("clear_count"), SwitchPollTime*1000);
             }
             else
                 setTimeout(function() {clear_count()}, SwitchPollTime*1000);
-            connection.end()
         })
-    })
-
-    connection.on('timeout', function () {
-        console.log('socket timeout!')
-        connection.end()
-    })
-    connection.on('error', function () {
-        setTimeout(function() {clear_count()}, SwitchPollTime*1000);
-    })
-
-    connection.on('close', function () {
-        console.log('connection closed')
-    })
-
-    connection.connect(params)
 }
 
-function display() {
-    Object.keys(LastValue).forEach(function(key) {
-        var val = LastValue[key];
+function computeBandWidth() {
+    //console.log(CountTime)
+    Object.keys(SwitchData).forEach(function(key) {
+        var val = SwitchData[key];
         //console.log("Port " + key + " - In : " + Math.round(val.In*8/10/1024/1024*100)/100 + "Mb/s - Out : " +  Math.round(val.Out*8/10/1024/1024*100)/100 + "Mb/s")
+        let speed = "n.c."
+        if(val.Speed)
+            speed = val.Speed
         if(!CurrentBandwidth[key])
            CurrentBandwidth[key] = {}
-        CurrentBandwidth[key] = { In : Math.round(val.In*8/CountTime/1024/1024*100*1000)/100, Out : Math.round(val.Out*8/CountTime/1024/1024*100*1000)/100}
+        CurrentBandwidth[key] = { Speed: speed, In : Math.round(val.In*8/CountTime/1024/1024*10*1000)/10, Out : Math.round(val.Out*8/CountTime/1024/1024*10*1000)/10}
     
     });
     NewData = true
 }
 
+function getPortStatus() {        
+            connection.exec("show int status", function (err, response) {
+                let array = response.split("\n");
+                for(let line of array) {
+                    let port = line.split(/\s+/)
+                    if(port[0].startsWith("gi")) {
+                        SwitchData[port[0]].Speed = parseInt(port[3])
+                    }
+                }
+                console.log(JSON.stringify(SwitchData))
+                setTimeout(getNextFct("getPortStatus"), SwitchPollTime*1000);
+            
+            })
+}
+
+function getNextFct(current)
+{
+    switch(current) {
+        case "clear_count" :
+            return get_count
+        case "get_count" :
+            return getPortStatus
+        case "getPortStatus" :
+            return get_count
+    }
+}
+
+function StartSwitchDatamine() {
+    connection.exec("terminal datad", (err, respond) => {})
+    setTimeout(clear_count, 1000);
+}
+
 console.log("start")
 
-clear_count()
-display()
+connect()
