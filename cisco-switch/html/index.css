@@ -7,12 +7,27 @@
     border: black;
 }
 
+.switch_port.off {
+    background-color: rgb(199, 23, 23);
+}
+
 .switch_port_name {text-align: center;padding-bottom: 8;color: #eeefea;}
 
-.switch_port_in {color:  white;}
+.switch_port_in {color:  white;text-align: center;}
 
 .switch_port_out {
     color: white;
+    margin-top: 4;
+    text-align: center;
 }
 
+.speed_good {
+    background-color: #1b541d;
+    width: 100%;
+}
+
+.speed_bad {
+    background-color: rgb(255, 0, 0);
+    width: 100%;
+}
 

@@ -18,7 +18,8 @@ function getValue()
 {
     console.log("Get Value")
     getJSON("/bw", (status, resp) => {
-        Object.keys(resp).forEach(function(key) {
+        console.log(resp)
+        Object.keys(resp.Ports).forEach(function(key) {
             if(document.getElementById("waittext")) {
                 document.getElementById("waittext").outerHTML = "";
             }
@@ -40,9 +41,46 @@ function getValue()
             }
 
             port = document.getElementById(key)
-            port.getElementsByClassName("switch_port_name")[0].innerHTML = key + "<br>" + resp[key].Speed 
-            port.getElementsByClassName("switch_port_in")[0].innerHTML = Math.round(resp[key].In)
-            port.getElementsByClassName("switch_port_out")[0].innerHTML = Math.round(resp[key].Out)
+            port.getElementsByClassName("switch_port_name")[0].innerHTML = key + "<br>" + resp.Ports[key].Speed 
+            if(resp.Ports[key].Speed > 0) {
+                let in_speed = Math.round(resp.Ports[key].In)
+                let out_speed = Math.round(resp.Ports[key].Out)
+                if(in_speed / resp.Ports[key].Speed < 0.6) {
+                    port.getElementsByClassName("switch_port_in")[0].classList.add("speed_good")
+                    port.getElementsByClassName("switch_port_in")[0].classList.remove("speed_bad")
+                } else {
+                    port.getElementsByClassName("switch_port_in")[0].classList.remove("speed_good")
+                    port.getElementsByClassName("switch_port_in")[0].classList.add("speed_bad")
+                }
+                if(out_speed / resp.Ports[key].Speed < 0.6) { 
+                    port.getElementsByClassName("switch_port_out")[0].classList.add("speed_good")
+                    port.getElementsByClassName("switch_port_out")[0].classList.remove("speed_bad")
+                } else {
+                    port.getElementsByClassName("switch_port_out")[0].classList.remove("speed_good")
+                    port.getElementsByClassName("switch_port_out")[0].classList.add("speed_bad")
+                }
+                if(in_speed == 0 && resp.Ports[key].In > 0)
+                    in_speed += "+"
+                if(out_speed == 0 && resp.Ports[key].Out > 0)
+                    out_speed += "+"
+                if(in_speed != 0)
+                    in_speed += " M"
+                if(out_speed != 0)
+                    out_speed += " M"
+                port.getElementsByClassName("switch_port_in")[0].innerHTML = in_speed
+                port.getElementsByClassName("switch_port_out")[0].innerHTML = out_speed
+            }
+            else {
+                port.getElementsByClassName("switch_port_in")[0].innerHTML = "X"
+                port.getElementsByClassName("switch_port_out")[0].innerHTML = "X"
+            }
+            if(resp.Ports[key].AdminState != undefined && resp.Ports[key].AdminState != "Up")
+            {
+                document.getElementById(key).classList.add("off")
+            }
+            else {
+                document.getElementById(key).classList.remove("off")
+            }
         })
         setTimeout(getValue, 2000)
     })

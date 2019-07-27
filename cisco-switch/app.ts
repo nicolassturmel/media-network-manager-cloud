@@ -1,6 +1,6 @@
 'use strict'
 
-const SwitchPollTime = 3
+const SwitchPollTime = 1
 
 
 
@@ -9,7 +9,7 @@ const Telnet = require('telnet-client')
 
 var SwitchData: object = {};
 var OldValue: object = {}
-var CurrentBandwidth: object = {};
+var Switch = { Ports: {}, Multicast: "off"};
 var ActionCount = 0;
 var ClearTime = 0;
 var CountTime = 0;
@@ -35,37 +35,36 @@ app.listen(3000, () => {
 });
 
 app.get("/bw", (req, res, next) => {
-    function waitNewData() { if(NewData == true) res.json(CurrentBandwidth); else setTimeout(waitNewData, 200) }
+    function waitNewData() { if(NewData == true) res.json(Switch) ; else setTimeout(waitNewData, 200) }
     waitNewData()
    });
 
-let connection = new Telnet()
+let switchTelnet = new Telnet()
 
 enum ParseState {
         In = "In",
         Out = "Out",
     }
 
-function connect() {
-connection.on('ready', function (prompt) {
+function startTelenetToSwitch() {
+switchTelnet.on('ready', function (prompt) {
     StartSwitchDatamine();
 })
 
-connection.on('timeout', function () {
+switchTelnet.on('timeout', function () {
     console.log('socket timeout!')
-    setTimeout(connect, 2000);
 })
 
-connection.on('error', function () {
-    setTimeout(connect, 2000);
+switchTelnet.on('error', function () {
+    setTimeout(startTelenetToSwitch, 2000);
 })
 
-connection.on('close', function () {
+switchTelnet.on('close', function () {
     console.log('connection closed')
-    setTimeout(connect, 2000);
+    setTimeout(startTelenetToSwitch, 20000);
 })
 
-connection.connect(params)
+switchTelnet.connect(params)
 
 }
 
@@ -74,7 +73,7 @@ function get_count() {
     let State: ParseState = ParseState.In
 
     
-        connection.exec("show int coun", function (err, response) {
+        switchTelnet.exec("show int coun", function (err, response) {
             let now = new Date
             //console.log(response)
             let array
@@ -143,7 +142,7 @@ function get_count() {
 function clear_count() {
     
         NewData = false
-        connection.exec("clear counters", (err, respond) => {
+        switchTelnet.exec("clear counters", (err, respond) => {
             console.log("c : " + respond)
             if(respond != undefined) 
             {
@@ -162,29 +161,86 @@ function computeBandWidth() {
         var val = SwitchData[key];
         //console.log("Port " + key + " - In : " + Math.round(val.In*8/10/1024/1024*100)/100 + "Mb/s - Out : " +  Math.round(val.Out*8/10/1024/1024*100)/100 + "Mb/s")
         let speed = "n.c."
+        let AdminState = "n.c."
         if(val.Speed)
             speed = val.Speed
-        if(!CurrentBandwidth[key])
-           CurrentBandwidth[key] = {}
-        CurrentBandwidth[key] = { Speed: speed, In : Math.round(val.In*8/CountTime/1024/1024*10*1000)/10, Out : Math.round(val.Out*8/CountTime/1024/1024*10*1000)/10}
+        if(val.AdminState)
+            AdminState = val.AdminState
+        if(!Switch.Ports[key])
+           Switch.Ports[key] = {}
+        Switch.Ports[key] = { IGMP : {ForwardAll: val.ForwardAll, Groups: []}, AdminState: AdminState, Speed: speed, In : Math.round(val.In*8/CountTime/1024/1024*10*1000)/10, Out : Math.round(val.Out*8/CountTime/1024/1024*10*1000)/10}
     
     });
     NewData = true
+    console.log(Switch)
 }
 
 function getPortStatus() {        
-            connection.exec("show int status", function (err, response) {
-                let array = response.split("\n");
-                for(let line of array) {
-                    let port = line.split(/\s+/)
-                    if(port[0].startsWith("gi")) {
-                        SwitchData[port[0]].Speed = parseInt(port[3])
-                    }
-                }
-                console.log(JSON.stringify(SwitchData))
-                setTimeout(getNextFct("getPortStatus"), SwitchPollTime*1000);
-            
-            })
+    switchTelnet.exec("show int status", function (err, response) {
+        let array 
+        try {
+            array = response.split("\n")
+        } catch (error) {
+            console.log("Response error : can not split in array")
+            console.log(response)
+            setTimeout(function() {getPortStatus()}, SwitchPollTime*1000);
+            return
+        }
+        for(let line of array) {
+            let port = line.split(/\s+/)
+            if(port[0].startsWith("gi")) {
+                SwitchData[port[0]].Speed = parseInt(port[3])
+            }
+        }
+        setTimeout(getNextFct("getPortStatus"), SwitchPollTime*1000);
+    
+    })
+}
+
+function getPortConfig() {        
+    switchTelnet.exec("show int config", function (err, response) {
+        let array 
+        try {
+            array = response.split("\n")
+        } catch (error) {
+            console.log("Response error : can not split in array")
+            console.log(response)
+            setTimeout(function() {getPortConfig()}, SwitchPollTime*1000);
+            return
+        }
+        for(let line of array) {
+            let port = line.split(/\s+/)
+            if(port[0].startsWith("gi")) {
+                SwitchData[port[0]].AdminState = (port[6])
+            }
+        }
+        setTimeout(getNextFct("getPortConfig"), SwitchPollTime*1000);
+    
+    })
+}
+
+function getBridgeIgmpStatus() {        
+    switchTelnet.exec("show bridge multicast filtering 1", function (err, response) {
+        let array 
+        try {
+            array = response.split("\n")
+        } catch (error) {
+            console.log("Response error : can not split in array")
+            console.log(response)
+            setTimeout(function() {getPortConfig()}, SwitchPollTime*1000);
+            return
+        }
+        for(let line of array) {
+            if(line.startsWith("Filtering: Enabled"))
+                Switch.Multicast = "on";
+            if(line.startsWith("gi")) {
+                let port = line.split(/\s+/)
+                SwitchData[port[0]].ForwardAll = (port[1] == "Forward")? "Yes" : "No"
+            }
+        }
+        setTimeout(getNextFct("getBridgeIgmpStatus"), SwitchPollTime*1000);
+    
+    })
 }
 
 function getNextFct(current)
@@ -195,15 +251,19 @@ function getNextFct(current)
         case "get_count" :
             return getPortStatus
         case "getPortStatus" :
+            return getPortConfig
+        case "getPortConfig" :
+            return getBridgeIgmpStatus
+        case "getBridgeIgmpStatus" :
             return get_count
     }
 }
 
 function StartSwitchDatamine() {
-    connection.exec("terminal datad", (err, respond) => {})
+    switchTelnet.exec("terminal datad", (err, respond) => {})
     setTimeout(clear_count, 1000);
 }
 
 console.log("start")
 
-connect()
+startTelenetToSwitch()
