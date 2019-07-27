@@ -10,7 +10,7 @@ mdns.on('query', (query) => {
     //console.log(query)
 })
 
-let Host : object = {};
+let Hosts : object = {};
 let Services : object = {}
 
 
@@ -23,14 +23,20 @@ function handleResponse(response) {
     }
 
     function handleItem(k) {
+        let refresh = false;
         if(k.type == "SRV")
         {
             //console.log(k)
-            if(Host[k.data.target]) {
-                let subs = [];
-                if(Services[k.name])
+            if(Hosts[k.data.target]) {
+                
+                let subs = (Hosts[k.data.target].Services[k.name])? Hosts[k.data.target].Services[k.name].subs : [];
+                if(Services[k.name]) {
+                    refresh = (subs == Services[k.name])? refresh : true;
                     subs = Services[k.name]
-                Host[k.data.target].Services[k.name] = {
+                }
+                if(!Hosts[k.data.target].Services[k.name])
+                    refresh = true;
+                Hosts[k.data.target].Services[k.name] = {
                     port: k.data.port,
                     subs : subs
                 }
@@ -50,20 +56,26 @@ function handleResponse(response) {
         else if(k.type == "A")
         {
             //console.log(k)
-            if(!Host[k.name]) {
-                Host[k.name] = {
+            if(!Hosts[k.name]) {
+                Hosts[k.name] = {
                     IP: k.data,
                     Services: {}
                 }
+                refresh = true
             }   
         }
-        console.log(Host)
+        if(refresh) console.log(Hosts)
     }
 }
 
 mdns.query({
     questions:[{
-      name: 'valhalla.local',
-      type: 'A'
+      name: '_http._tcp.local',
+      type: 'SRV'
     }]
   })
+
+
+  function buildServiceHttpLink(obj) {
+
+  }

@@ -17,12 +17,17 @@ function handleResponse(response) {
         handleItem(k);
     }
     function handleItem(k) {
+        var refresh = false;
         if (k.type == "SRV") {
             //console.log(k)
             if (Host[k.data.target]) {
-                var subs = [];
-                if (Services[k.name])
+                var subs = (Host[k.data.target].Services[k.name]) ? Host[k.data.target].Services[k.name].subs : [];
+                if (Services[k.name]) {
+                    refresh = (subs == Services[k.name]) ? refresh : true;
                     subs = Services[k.name];
+                }
+                if (!Host[k.data.target].Services[k.name])
+                    refresh = true;
                 Host[k.data.target].Services[k.name] = {
                     port: k.data.port,
                     subs: subs
@@ -47,14 +52,16 @@ function handleResponse(response) {
                     IP: k.data,
                     Services: {}
                 };
+                refresh = true;
             }
         }
-        console.log(Host);
+        if (refresh)
+            console.log(Host);
     }
 }
 mdns.query({
     questions: [{
-            name: 'valhalla.local',
-            type: 'A'
+            name: '_http._tcp.local',
+            type: 'SRV'
         }]
 });
