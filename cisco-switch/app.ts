@@ -243,6 +243,30 @@ function getBridgeIgmpStatus() {
     })
 }
 
+function getBridgeAdressTable() {        
+    switchTelnet.exec("show bridge multicast address-table", function (err, response) {
+        let array 
+        try {
+            array = response.split("\n")
+        } catch (error) {
+            console.log("Response error : can not split in array")
+            console.log(response)
+            setTimeout(function() {getPortConfig()}, SwitchPollTime*1000);
+            return
+        }
+        for(let line of array) {
+            if(line.startsWith("Filtering: Enabled"))
+                Switch.Multicast = "on";
+            if(line.startsWith("gi")) {
+                let port = line.split(/\s+/)
+                SwitchData[port[0]].ForwardAll = (port[1] == "Forward")? "Yes" : "No"
+            }
+        }
+        setTimeout(getNextFct("getBridgeIgmpStatus"), SwitchPollTime*1000);
+    
+    })
+}
+
 function getNextFct(current)
 {
     switch(current) {

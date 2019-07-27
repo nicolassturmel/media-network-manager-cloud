@@ -1,0 +1,15 @@
+{
+  "name": "mission-control",
+  "version": "1.0.0",
+  "description": "gathers all data and fires additionnal micro services",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@types/node": "^12.6.8",
+    "multicast-dns": "^7.2.0"
+  }
+}
