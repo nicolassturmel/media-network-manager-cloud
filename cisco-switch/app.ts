@@ -5,7 +5,17 @@ const SwitchPollTime = 1
 
 
 const Telnet = require('telnet-client')
+const commandLineArgs = require('command-line-args')
 
+const optionDefinitions = [
+    { name: 'ip', alias: 'i', type: String, defaultValue: '192.168.1.201' },
+    { name: 'user', alias: 'u', type: String, defaultValue: 'cisco' },
+    { name: 'password', alias: 'p', type: String, defaultValue: 'cisco' }
+  ]
+
+const options = commandLineArgs(optionDefinitions)
+
+console.log(options)
 
 var SwitchData: object = {};
 var OldValue: object = {}
@@ -16,13 +26,13 @@ var CountTime = 0;
 var NewData
 
 let params = {
-    host: '192.168.1.201',
+    host: options.ip,
     port: 23,
     shellPrompt: /\D+#/,
     loginPrompt: "User Name:",
     passwordPrompt: "Password:",
-    username: "cisco",
-    password: "cisco",
+    username: options.user,
+    password: options.password,
     pageSeparator: /More: <space>,  Qu.*/,
     timeout: 0
 }
