@@ -162,13 +162,16 @@ function computeBandWidth() {
         //console.log("Port " + key + " - In : " + Math.round(val.In*8/10/1024/1024*100)/100 + "Mb/s - Out : " +  Math.round(val.Out*8/10/1024/1024*100)/100 + "Mb/s")
         let speed = "n.c."
         let AdminState = "n.c."
+        let ConnectedMacs = []
+        if(val.ConnectedMacs)
+            ConnectedMacs = val.ConnectedMacs
         if(val.Speed)
             speed = val.Speed
         if(val.AdminState)
             AdminState = val.AdminState
         if(!Switch.Ports[key])
            Switch.Ports[key] = {}
-        Switch.Ports[key] = { IGMP : {ForwardAll: val.ForwardAll, Groups: []}, AdminState: AdminState, Speed: speed, In : Math.round(val.In*8/CountTime/1024/1024*10*1000)/10, Out : Math.round(val.Out*8/CountTime/1024/1024*10*1000)/10}
+        Switch.Ports[key] = { ConnectedMacs : ConnectedMacs, IGMP : {ForwardAll: val.ForwardAll, Groups: []}, AdminState: AdminState, Speed: speed, In : Math.round(val.In*8/CountTime/1024/1024*10*1000)/10, Out : Math.round(val.Out*8/CountTime/1024/1024*10*1000)/10}
     
     });
     NewData = true
@@ -243,8 +246,8 @@ function getBridgeIgmpStatus() {
     })
 }
 
-function getBridgeAdressTable() {        
-    switchTelnet.exec("show bridge multicast address-table", function (err, response) {
+function getMacAddressTable() {        
+    switchTelnet.exec("show mac address-table ", function (err, response) {
         let array 
         try {
             array = response.split("\n")
@@ -254,15 +257,25 @@ function getBridgeAdressTable() {
             setTimeout(function() {getPortConfig()}, SwitchPollTime*1000);
             return
         }
+        Object.keys(SwitchData).forEach(function(key) {
+            SwitchData[key].ConnectedMacs = []
+        })
         for(let line of array) {
-            if(line.startsWith("Filtering: Enabled"))
-                Switch.Multicast = "on";
-            if(line.startsWith("gi")) {
-                let port = line.split(/\s+/)
-                SwitchData[port[0]].ForwardAll = (port[1] == "Forward")? "Yes" : "No"
+            
+            let add = line.split(/\s+/)
+            //console.log(add)
+            if(add[1] == 1) {
+                if(add[3] == 0) {
+
+                }
+                else {
+                    if(SwitchData[add[3]]) {
+                        SwitchData[add[3]].ConnectedMacs.push(add[2])
+                    }
+                }
             }
         }
-        setTimeout(getNextFct("getBridgeIgmpStatus"), SwitchPollTime*1000);
+        setTimeout(getNextFct("getMacAddressTable"), SwitchPollTime*1000);
     
     })
 }
@@ -279,6 +292,8 @@ function getNextFct(current)
         case "getPortConfig" :
             return getBridgeIgmpStatus
         case "getBridgeIgmpStatus" :
+            return getMacAddressTable
+        case "getMacAddressTable" :
             return get_count
     }
 }
