@@ -1,4 +1,7 @@
 var mdns = require('multicast-dns')()
+var arp = require('node-arp');
+ 
+
 
 
 mdns.on('response', (response) => {
@@ -12,7 +15,7 @@ mdns.on('query', (query) => {
 
 let Hosts : object = {};
 let Services : object = {}
-
+let getMacClear = true;
 
 function handleResponse(response) {
     for(let k of response.answers){
@@ -56,13 +59,41 @@ function handleResponse(response) {
         else if(k.type == "A")
         {
             //console.log(k)
+            let getmac = false
             if(!Hosts[k.name]) {
                 Hosts[k.name] = {
                     IP: k.data,
-                    Services: {}
+                    Services: {},
+                    OtherIPs: [],
+                    Macs: []
                 }
-                refresh = true
+                getmac = true
+            } 
+            else if(Hosts[k.name].IP != k.data) {
+                if(!Hosts[k.name].OtherIPs.some(p => p == k.data)) {
+                    Hosts[k.name].OtherIPs.push(Hosts[k.name].IP)
+                    Hosts[k.name].IP = k.data
+                    getmac = true
+                }
             }   
+
+            if(getmac) {
+                waitClearGetMac()
+                function waitClearGetMac() {
+                    if(!getMacClear) {
+                        setTimeout(waitClearGetMac, 100);
+                    }
+                    else {
+                        getMacClear = false;
+                        arp.getMAC(k.data, function(err, mac) {
+                            if (!err) {
+                                Hosts[k.name].Macs.push(mac);
+                            }
+                            getMacClear = true
+                        });
+                    }
+                }
+            }
         }
         if(refresh) console.log(Hosts)
     }

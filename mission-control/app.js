@@ -1,12 +1,14 @@
 var mdns = require('multicast-dns')();
+var arp = require('node-arp');
 mdns.on('response', function (response) {
     handleResponse(response);
 });
 mdns.on('query', function (query) {
     //console.log(query)
 });
-var Host = {};
+var Hosts = {};
 var Services = {};
+var getMacClear = true;
 function handleResponse(response) {
     for (var _i = 0, _a = response.answers; _i < _a.length; _i++) {
         var k = _a[_i];
@@ -20,15 +22,15 @@ function handleResponse(response) {
         var refresh = false;
         if (k.type == "SRV") {
             //console.log(k)
-            if (Host[k.data.target]) {
-                var subs = (Host[k.data.target].Services[k.name]) ? Host[k.data.target].Services[k.name].subs : [];
+            if (Hosts[k.data.target]) {
+                var subs = (Hosts[k.data.target].Services[k.name]) ? Hosts[k.data.target].Services[k.name].subs : [];
                 if (Services[k.name]) {
                     refresh = (subs == Services[k.name]) ? refresh : true;
                     subs = Services[k.name];
                 }
-                if (!Host[k.data.target].Services[k.name])
+                if (!Hosts[k.data.target].Services[k.name])
                     refresh = true;
-                Host[k.data.target].Services[k.name] = {
+                Hosts[k.data.target].Services[k.name] = {
                     port: k.data.port,
                     subs: subs
                 };
@@ -47,16 +49,43 @@ function handleResponse(response) {
         }
         else if (k.type == "A") {
             //console.log(k)
-            if (!Host[k.name]) {
-                Host[k.name] = {
+            var getmac = false;
+            if (!Hosts[k.name]) {
+                Hosts[k.name] = {
                     IP: k.data,
-                    Services: {}
+                    Services: {},
+                    OtherIPs: [],
+                    Macs: []
                 };
-                refresh = true;
+                getmac = true;
+            }
+            else if (Hosts[k.name].IP != k.data) {
+                if (!Hosts[k.name].OtherIPs.some(function (p) { return p == k.data; })) {
+                    Hosts[k.name].OtherIPs.push(Hosts[k.name].IP);
+                    Hosts[k.name].IP = k.data;
+                    getmac = true;
+                }
+            }
+            if (getmac) {
+                waitClearGetMac();
+                function waitClearGetMac() {
+                    if (!getMacClear) {
+                        setTimeout(waitClearGetMac, 100);
+                    }
+                    else {
+                        getMacClear = false;
+                        arp.getMAC(k.data, function (err, mac) {
+                            if (!err) {
+                                Hosts[k.name].Macs.push(mac);
+                            }
+                            getMacClear = true;
+                        });
+                    }
+                }
             }
         }
         if (refresh)
-            console.log(Host);
+            console.log(Hosts);
     }
 }
 mdns.query({
@@ -65,3 +94,5 @@ mdns.query({
             type: 'SRV'
         }]
 });
+function buildServiceHttpLink(obj) {
+}
