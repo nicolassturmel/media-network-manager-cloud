@@ -2,6 +2,7 @@ var mdns = require('multicast-dns')()
 var arp = require('node-arp');
  
 
+var os = require('os');
 
 
 mdns.on('response', (response) => {
@@ -10,7 +11,24 @@ mdns.on('response', (response) => {
 
 
 mdns.on('query', (query) => {
-    //console.log(query)
+    if(query.questions.some(k => k.name == "_missioncontrol._socketio.local")) {
+
+        let name = os.hostname()
+        let prename = name.split('.')[0];
+        mdns.respond({
+            answers: [{
+              name: 'missioncontrol_'+prename+'._missioncontrol._socketio.local',
+              type: 'SRV',
+              data: {
+                port:9999,
+                weigth: 0,
+                priority: 10,
+                target: name
+              }
+            }]
+          })
+    }
+
 })
 
 let Hosts : object = {};
@@ -95,7 +113,7 @@ function handleResponse(response) {
                 }
             }
         }
-        if(refresh) console.log(Hosts)
+        //if(refresh) console.log(Hosts)
     }
 }
 

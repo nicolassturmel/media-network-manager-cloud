@@ -1,4 +1,4 @@
-'use strict'
+
 
 const SwitchPollTime = 1
 
@@ -6,7 +6,9 @@ const SwitchPollTime = 1
 
 const Telnet = require('telnet-client')
 const commandLineArgs = require('command-line-args')
+const mdns = require('multicast-dns')()
 
+// Command line arguments
 const optionDefinitions = [
     { name: 'ip', alias: 'i', type: String, defaultValue: '192.168.1.201' },
     { name: 'user', alias: 'u', type: String, defaultValue: 'cisco' },
@@ -14,8 +16,57 @@ const optionDefinitions = [
   ]
 
 const options = commandLineArgs(optionDefinitions)
-
 console.log(options)
+var mc_target;
+var mc_ip
+var mc_port
+var lookfor_target = false
+// Looking for mission control
+
+mdns.on('response', function(response) {
+    if(response.answers.length == 1) {
+        if(response.answers[0].name.startsWith('missioncontrol')) {
+            console.log(response.answers[0])
+            mc_port = response.answers[0].data.port
+            mc_target = response.answers[0].data.target
+            lookfor_target = true;
+            mdns.query({
+                questions:[{
+                    name: mc_target,
+                    type: 'A'
+                }]
+            })
+        }
+        if(lookfor_target) {
+            for(let k of response.answers){
+                handleItem(k)
+            }
+            for(let k of response.additionals){
+                handleItem(k)
+            }
+        
+            function handleItem(k) {
+                let refresh = false;
+                if(k.type == "A")
+                    if(k.name == mc_target) {
+                        lookfor_target = false
+                        mc_ip = k.data
+                        console.log(mc_target)
+                        console.log(mc_ip)
+                    }
+            }
+        }
+    }
+  })
+   
+mdns.query({
+    questions:[{
+        name: '_missioncontrol._socketio.local',
+        type: 'SRV'
+    }]
+})
+
+// Connecting to switch
 
 var SwitchData: object = {};
 var OldValue: object = {}
