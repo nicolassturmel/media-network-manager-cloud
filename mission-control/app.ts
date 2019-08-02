@@ -1,9 +1,20 @@
 var mdns = require('multicast-dns')()
 var arp = require('node-arp');
- 
-
 var os = require('os');
+var sock = require('ws');
 
+
+var pc_name = os.hostname()
+var prename = pc_name.split('.')[0];
+
+const wss = new sock.Server({ port: 16060 })
+wss.on('connection', function connection(ws) {
+    console.log("new client connected")
+    ws.on('message', function incoming(message) {
+      console.log('received: %s', message);
+    });
+   
+  });
 
 mdns.on('response', (response) => {
     handleResponse(response)
@@ -13,23 +24,34 @@ mdns.on('response', (response) => {
 mdns.on('query', (query) => {
     if(query.questions.some(k => k.name == "_missioncontrol._socketio.local")) {
 
-        let name = os.hostname()
-        let prename = name.split('.')[0];
         mdns.respond({
             answers: [{
               name: 'missioncontrol_'+prename+'._missioncontrol._socketio.local',
               type: 'SRV',
               data: {
-                port:9999,
+                port:16060,
                 weigth: 0,
                 priority: 10,
-                target: name
+                target: prename+'.local'
               }
             }]
           })
     }
 
 })
+
+mdns.respond({
+    answers: [{
+      name: 'missioncontrol_'+prename+'._missioncontrol._socketio.local',
+      type: 'SRV',
+      data: {
+        port:16060,
+        weigth: 0,
+        priority: 10,
+        target: prename+'.local'
+      }
+    }]
+  })
 
 let Hosts : object = {};
 let Services : object = {}

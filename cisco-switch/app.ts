@@ -7,6 +7,9 @@ const SwitchPollTime = 1
 const Telnet = require('telnet-client')
 const commandLineArgs = require('command-line-args')
 const mdns = require('multicast-dns')()
+const ws = require('ws');
+
+var wsc = null
 
 // Command line arguments
 const optionDefinitions = [
@@ -53,6 +56,26 @@ mdns.on('response', function(response) {
                         mc_ip = k.data
                         console.log(mc_target)
                         console.log(mc_ip)
+
+                        console.log('ws://' + mc_ip + ':' + mc_port)
+                        wsc = new ws('ws://' + mc_ip + ':' + mc_port);
+ 
+                        wsc.on('open', function open() {
+                            wsc.send(JSON.stringify(Switch));
+                        });
+                        
+                        wsc.on('message', function incoming(data) {
+                            console.log(data);
+                        });
+
+                        wsc.on('close', function close() {
+                            console.log('close disconnected');
+                            //setTimeout(() => { handleItem(k)}, 2000);
+                          });
+
+                          wsc.on('error', function close() {
+                            console.log('error disconnected');
+                          });
                     }
             }
         }
@@ -70,7 +93,7 @@ mdns.query({
 
 var SwitchData: object = {};
 var OldValue: object = {}
-var Switch = { Ports: {}, Multicast: "off"};
+var Switch = { Ports: {}, Multicast: "off", Mac: ""};    
 var ActionCount = 0;
 var ClearTime = 0;
 var CountTime = 0;
@@ -107,7 +130,6 @@ enum ParseState {
         Out = "Out",
     }
 
-function startTelenetToSwitch() {
 switchTelnet.on('ready', function (prompt) {
     StartSwitchDatamine();
 })
@@ -125,7 +147,9 @@ switchTelnet.on('close', function () {
     setTimeout(startTelenetToSwitch, 20000);
 })
 
-switchTelnet.connect(params)
+function startTelenetToSwitch() {
+
+    switchTelnet.connect(params)
 
 }
 
@@ -327,7 +351,7 @@ function getMacAddressTable() {
             //console.log(add)
             if(add[1] == 1) {
                 if(add[3] == 0) {
-
+                    Switch.Mac = add[2]
                 }
                 else {
                     if(SwitchData[add[3]]) {
