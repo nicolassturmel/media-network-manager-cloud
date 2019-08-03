@@ -8,6 +8,7 @@ const Telnet = require('telnet-client')
 const commandLineArgs = require('command-line-args')
 const mdns = require('multicast-dns')()
 const ws = require('ws');
+var uniqid = require('uniqid');
 
 var wsc = null
 
@@ -93,7 +94,15 @@ mdns.query({
 
 var SwitchData: object = {};
 var OldValue: object = {}
-var Switch = { Ports: {}, Multicast: "off", Mac: ""};    
+var Switch = { 
+    Type: "switch", 
+    ip: options.ip,
+    Schema: 1, 
+    Ports: [], 
+    Multicast: "off", 
+    Mac: "", 
+    id: uniqid()
+};    
 var ActionCount = 0;
 var ClearTime = 0;
 var CountTime = 0;
@@ -114,9 +123,9 @@ let params = {
 var express = require("express");
 var app = express();
 app.use('/', express.static(__dirname + '/html'));
-app.listen(3000, () => {
- console.log("Server running on port 3000");
-});
+//app.listen(3000, () => {
+// console.log("Server running on port 3000");
+//});
 
 app.get("/bw", (req, res, next) => {
     function waitNewData() { if(NewData == true) res.json(Switch) ; else setTimeout(waitNewData, 200) }
@@ -242,6 +251,7 @@ function clear_count() {
 
 function computeBandWidth() {
     //console.log(CountTime)
+    Switch.Ports = []
     Object.keys(SwitchData).forEach(function(key) {
         var val = SwitchData[key];
         //console.log("Port " + key + " - In : " + Math.round(val.In*8/10/1024/1024*100)/100 + "Mb/s - Out : " +  Math.round(val.Out*8/10/1024/1024*100)/100 + "Mb/s")
@@ -254,9 +264,7 @@ function computeBandWidth() {
             speed = val.Speed
         if(val.AdminState)
             AdminState = val.AdminState
-        if(!Switch.Ports[key])
-           Switch.Ports[key] = {}
-        Switch.Ports[key] = { ConnectedMacs : ConnectedMacs, IGMP : {ForwardAll: val.ForwardAll, Groups: []}, AdminState: AdminState, Speed: speed, In : Math.round(val.In*8/CountTime/1024/1024*10*1000)/10, Out : Math.round(val.Out*8/CountTime/1024/1024*10*1000)/10}
+        Switch.Ports.push({ Name: key, ConnectedMacs : ConnectedMacs, IGMP : {ForwardAll: val.ForwardAll, Groups: []}, AdminState: AdminState, Speed: speed, In : Math.round(val.In*8/CountTime/1024/1024*10*1000)/10, Out : Math.round(val.Out*8/CountTime/1024/1024*10*1000)/10})
     
     });
     NewData = true

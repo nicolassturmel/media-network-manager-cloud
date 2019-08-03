@@ -1,17 +1,21 @@
+
 var mdns = require('multicast-dns')()
 var arp = require('node-arp');
 var os = require('os');
 var sock = require('ws');
-
+var exp = require('express')
 
 var pc_name = os.hostname()
 var prename = pc_name.split('.')[0];
+var Data = []
 
 const wss = new sock.Server({ port: 16060 })
 wss.on('connection', function connection(ws) {
     console.log("new client connected")
     ws.on('message', function incoming(message) {
-      console.log('received: %s', message);
+        Data.push(JSON.parse(message))
+      console.log('received: %s', Data);
+      processSwitchData()
     });
    
   });
@@ -150,3 +154,32 @@ mdns.query({
   function buildServiceHttpLink(obj) {
 
   }
+
+
+
+function processSwitchData() {
+    var linkd = []
+    let conns = [];
+
+    // Detecting interconnect
+    for(let i in Data) {
+        console.log(Data[i])
+        if(!linkd[i]) linkd[i] = {}
+        linkd[i].dataRef = i;
+        linkd[i].ports = [];
+        conns[i] = []
+        for(let j : number =0 ; j < Data.length ; j++) {
+            console.log("Lookimg for " + Data[j].Mac)
+            for(let l in Data[i].Ports) {
+                if(Data[i].Ports[l].ConnectedMacs.some(k => k == Data[j].Mac)) {
+                    if(!linkd[i].ports[l] ) linkd[i].ports[l] = []
+                    if(!linkd[i].ports[l].some(k => k == j)) linkd[i].ports[l].push(j);
+                }
+            }
+        }
+    }
+    console.log(linkd)
+
+    console.log(linkd.filter(k => k.ports.some(l => l.length > 1)))
+    // Building connection graph
+}
