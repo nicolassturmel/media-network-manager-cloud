@@ -7,14 +7,14 @@ var exp = require('express')
 
 var pc_name = os.hostname()
 var prename = pc_name.split('.')[0];
-var Data = []
+var Nodes : any = [{ Type: "null", id : "0"}]
 
 const wss = new sock.Server({ port: 16060 })
 wss.on('connection', function connection(ws) {
     console.log("new client connected")
     ws.on('message', function incoming(message) {
-        Data.push(JSON.parse(message))
-      console.log('received: %s', Data);
+        Nodes.push(JSON.parse(message))
+      console.log('received: %s', Nodes);
       processSwitchData()
     });
    
@@ -162,24 +162,48 @@ function processSwitchData() {
     let conns = [];
 
     // Detecting interconnect
-    for(let i in Data) {
-        console.log(Data[i])
-        if(!linkd[i]) linkd[i] = {}
-        linkd[i].dataRef = i;
-        linkd[i].ports = [];
-        conns[i] = []
-        for(let j : number =0 ; j < Data.length ; j++) {
-            console.log("Lookimg for " + Data[j].Mac)
-            for(let l in Data[i].Ports) {
-                if(Data[i].Ports[l].ConnectedMacs.some(k => k == Data[j].Mac)) {
-                    if(!linkd[i].ports[l] ) linkd[i].ports[l] = []
-                    if(!linkd[i].ports[l].some(k => k == j)) linkd[i].ports[l].push(j);
+    for(let i in Nodes) {
+        if(Nodes[i].Type == "switch") {
+            console.log(Nodes[i])
+            if(!linkd[i]) linkd[i] = {}
+            linkd[i].dataRef = i;
+            linkd[i].ports = [];
+            conns[i] = []
+            for(let j : number =0 ; j < Nodes.length ; j++) {
+                console.log("Lookimg for " + Nodes[j].Mac)
+                for(let l in Nodes[i].Ports) {
+                    if(Nodes[i].Ports[l].ConnectedMacs.some(k => k == Nodes[j].Mac)) {
+                        if(!linkd[i].ports[l] ) linkd[i].ports[l] = []
+                        if(!linkd[i].ports[l].some(k => k == j)) linkd[i].ports[l].push(j);
+                    }
                 }
             }
         }
     }
     console.log(linkd)
 
-    console.log(linkd.filter(k => k.ports.some(l => l.length > 1)))
+    console.log(JSON.stringify(linkd.filter(k => k.ports.some(l => l.length == 1))))
+
+    while(linkd.some(k => k.ports.some(l => l.length > 1))) {
+        let cleared = linkd.filter(k => k.ports.some(l => l.length == 1))
+        for(let i in linkd) {
+            if(!(cleared.some(k => k.dataRef == linkd[i].dataRef ))) {
+                for(let p in linkd[i].ports) {
+                    if(linkd[i].ports[p] != undefined && linkd[i].ports[p].length > 1) {
+                        let keep = null;
+                        for(let j of linkd[i].ports[p]) {
+                            if(cleared.filter(q => q.dataRef == j).length == 1) keep = j;
+                        }
+                        if(keep != null) {
+                            linkd[i].ports[p] = [keep]
+                        }
+                    }
+                }
+            }
+        }
+    }
+   
     // Building connection graph
+
+    console.log(JSON.stringify(linkd.filter(k => k.ports.some(l => l.length == 1))))
 }
