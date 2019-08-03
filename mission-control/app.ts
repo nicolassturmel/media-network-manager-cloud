@@ -4,6 +4,8 @@ var arp = require('node-arp');
 var os = require('os');
 var sock = require('ws');
 var exp = require('express')
+var uniqid = require('uniqid');
+var id_local = 0;
 
 var pc_name = os.hostname()
 var prename = pc_name.split('.')[0];
@@ -15,7 +17,7 @@ wss.on('connection', function connection(ws) {
     ws.on('message', function incoming(message) {
         Nodes.push(JSON.parse(message))
       console.log('received: %s', Nodes);
-      processSwitchData()
+      calculateInterConnect()
     });
    
   });
@@ -71,9 +73,11 @@ function handleResponse(response) {
 
     function handleItem(k) {
         let refresh = false;
+        let HostToRefresh = null
         if(k.type == "SRV")
         {
             //console.log(k)
+            HostToRefresh = k.data.target;
             if(Hosts[k.data.target]) {
                 
                 let subs = (Hosts[k.data.target].Services[k.name])? Hosts[k.data.target].Services[k.name].subs : [];
@@ -104,12 +108,18 @@ function handleResponse(response) {
         {
             //console.log(k)
             let getmac = false
+            HostToRefresh = k.name
             if(!Hosts[k.name]) {
                 Hosts[k.name] = {
                     IP: k.data,
+                    Type: "MdnsNode",
                     Services: {},
                     OtherIPs: [],
-                    Macs: []
+                    Macs: [],
+                    Schema: 1,
+                    Neighbour: "",
+                    Mac: "", 
+                    id: uniqid() + id_local++
                 }
                 getmac = true
             } 
@@ -132,6 +142,7 @@ function handleResponse(response) {
                         arp.getMAC(k.data, function(err, mac) {
                             if (!err) {
                                 Hosts[k.name].Macs.push(mac);
+                                Hosts[k.name].Mac = mac
                             }
                             getMacClear = true
                         });
@@ -139,8 +150,28 @@ function handleResponse(response) {
                 }
             }
         }
-        //if(refresh) console.log(Hosts)
+        if(refresh) {
+            if(HostToRefresh != null) {
+                let i = Nodes.findIndex(k => k.IP == Hosts[HostToRefresh].IP);
+                if(i == -1) {
+                    Nodes.push(
+                        {Name: HostToRefresh,
+                        IP: Hosts[HostToRefresh].IP,
+                        Type: "Empty"}
+                    )
+                    i = Nodes.findIndex(k => k.Name == HostToRefresh);
+                }
+                mergeNodes(i,Hosts[HostToRefresh])
+                console.log(Nodes)
+            }
+        }
     }
+}
+
+function mergeNodes(index,newValue)
+{
+    if(Nodes[index] == newValue) return
+    
 }
 
 mdns.query({
@@ -148,16 +179,16 @@ mdns.query({
       name: '_http._tcp.local',
       type: 'SRV'
     }]
-  })
+});
 
 
-  function buildServiceHttpLink(obj) {
+function buildServiceHttpLink(obj) {
 
-  }
+}
 
 
 
-function processSwitchData() {
+function calculateInterConnect() {
     var linkd = []
     let conns = [];
 

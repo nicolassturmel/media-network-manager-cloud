@@ -96,10 +96,11 @@ var SwitchData: object = {};
 var OldValue: object = {}
 var Switch = { 
     Type: "switch", 
-    ip: options.ip,
+    IP: options.ip,
     Schema: 1, 
     Ports: [], 
     Multicast: "off", 
+    Neighbour: "",
     Mac: "", 
     id: uniqid()
 };    
@@ -264,7 +265,18 @@ function computeBandWidth() {
             speed = val.Speed
         if(val.AdminState)
             AdminState = val.AdminState
-        Switch.Ports.push({ Name: key, ConnectedMacs : ConnectedMacs, IGMP : {ForwardAll: val.ForwardAll, Groups: []}, AdminState: AdminState, Speed: speed, In : Math.round(val.In*8/CountTime/1024/1024*10*1000)/10, Out : Math.round(val.Out*8/CountTime/1024/1024*10*1000)/10})
+        Switch.Ports.push({ 
+            Name: key, 
+            ConnectedMacs : ConnectedMacs, 
+            IGMP : {
+                ForwardAll: val.ForwardAll, 
+                Groups: []
+            }, 
+            AdminState: AdminState, 
+            Speed: speed, 
+            In : Math.round(val.In*8/CountTime/1024/1024*10*1000)/10, 
+            Out : Math.round(val.Out*8/CountTime/1024/1024*10*1000)/10
+        })
     
     });
     NewData = true
