@@ -15,8 +15,19 @@ const wss = new sock.Server({ port: 16060 })
 wss.on('connection', function connection(ws) {
     console.log("new client connected")
     ws.on('message', function incoming(message) {
-        Nodes.push(JSON.parse(message))
-      console.log('received: %s', Nodes);
+        let node = JSON.parse(message)
+        let i = Nodes.findIndex(k => k.IP == node.IP);
+        if(i == -1) {
+            Nodes.push(
+                {
+                IP: node.IP,
+                Type: "Empty"}
+            )
+            i = Nodes.findIndex(k => k.IP == node.IP);
+        }
+        mergeNodes(i,node)
+        //Nodes.push(JSON.parse(message))
+      console.log('received: %s - where ? %s', node, i);
       calculateInterConnect()
     });
    
@@ -171,7 +182,27 @@ function handleResponse(response) {
 function mergeNodes(index,newValue)
 {
     if(Nodes[index] == newValue) return
-    
+    if(newValue.Type == "switch") {
+        console.log("merging switch")
+        if(newValue.Schema == 1) {
+            Nodes[index].Mac = newValue.Mac
+            Nodes[index].Ports = newValue.Ports
+            Nodes[index].Multicast = newValue.Multicast
+            Nodes[index].id = newValue.id 
+            Nodes[index].Type = newValue.Type 
+        }
+    }
+    if(newValue.Type == "MdnsNode") {
+        if(newValue.Schema == 1) {
+            if(Nodes[index].Type && Nodes[index].Type != "switch") Nodes[index].Type = newValue.Type
+            Nodes[index].Services = newValue.Services
+            Nodes[index].OtherIPs = newValue.OtherIPs
+            Nodes[index].Macs = newValue.Macs 
+            Nodes[index].Neighbour = newValue.Neighbour
+            Nodes[index].Mac = newValue.Mac
+            Nodes[index].id = newValue.id
+        }
+    }
 }
 
 mdns.query({
