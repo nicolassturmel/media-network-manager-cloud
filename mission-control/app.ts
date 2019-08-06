@@ -293,7 +293,7 @@ user_wss.on('connection', (ws) => {
 
 //start our server
 
-app.use('/', express.static(__dirname + '/html'));
+user_app.use('/', exp.static(__dirname + '/html'));
 
 user_app.listen(8888, () => {
     console.log(`Server started on port 8888 :)`);
