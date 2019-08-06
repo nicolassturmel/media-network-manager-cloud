@@ -19,7 +19,7 @@ function getValue()
     console.log("Get Value")
     getJSON("/bw", (status, resp) => {
         console.log(resp)
-        Object.keys(resp.Ports).forEach(function(key) {
+        for(let key in resp.Ports) {
             if(document.getElementById("waittext")) {
                 document.getElementById("waittext").outerHTML = "";
             }
@@ -36,12 +36,12 @@ function getValue()
                 port_div.appendChild(port_name)
                 port_div.appendChild(port_in_bw)
                 port_div.appendChild(port_out_bw)
-                port_name.innerHTML = key
+                port_name.innerHTML = resp.Ports[key].Name
                 document.getElementById("inner").appendChild(port_div)
             }
 
             port = document.getElementById(key)
-            port.getElementsByClassName("switch_port_name")[0].innerHTML = key + "<br>" + resp.Ports[key].Speed 
+            port.getElementsByClassName("switch_port_name")[0].innerHTML = resp.Ports[key].Name + "<br>" + resp.Ports[key].Speed 
             if(resp.Ports[key].Speed > 0) {
                 let in_speed = Math.round(resp.Ports[key].In)
                 let out_speed = Math.round(resp.Ports[key].Out)
@@ -81,7 +81,7 @@ function getValue()
             else {
                 document.getElementById(key).classList.remove("off")
             }
-        })
+        }
         setTimeout(getValue, 2000)
     })
 }

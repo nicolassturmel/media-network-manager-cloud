@@ -3,13 +3,20 @@ var mdns = require('multicast-dns')()
 var arp = require('node-arp');
 var os = require('os');
 var sock = require('ws');
+var http = require('http')
 var exp = require('express')
 var uniqid = require('uniqid');
 var id_local = 0;
 
+
+// Side connected to other services
+
 var pc_name = os.hostname()
 var prename = pc_name.split('.')[0];
 var Nodes : any = [{ Type: "null", id : "0"}]
+let Hosts : object = {};
+let Services : object = {}
+let getMacClear = true;
 
 const wss = new sock.Server({ port: 16060 })
 wss.on('connection', function connection(ws) {
@@ -36,7 +43,6 @@ wss.on('connection', function connection(ws) {
 mdns.on('response', (response) => {
     handleResponse(response)
 })
-
 
 mdns.on('query', (query) => {
     if(query.questions.some(k => k.name == "_missioncontrol._socketio.local")) {
@@ -69,10 +75,6 @@ mdns.respond({
       }
     }]
   })
-
-let Hosts : object = {};
-let Services : object = {}
-let getMacClear = true;
 
 function handleResponse(response) {
     for(let k of response.answers){
@@ -212,12 +214,9 @@ mdns.query({
     }]
 });
 
-
 function buildServiceHttpLink(obj) {
 
 }
-
-
 
 function calculateInterConnect() {
     var linkd = []
@@ -269,3 +268,14 @@ function calculateInterConnect() {
 
     console.log(JSON.stringify(linkd.filter(k => k.ports.some(l => l.length == 1))))
 }
+
+
+// User and GUI side
+
+const user_app = express();
+
+//initialize a simple http server
+const user_server = http.createServer(user_app);
+
+//initialize the WebSocket server instance
+const user_wss = new WebSocket.Server({ server });
