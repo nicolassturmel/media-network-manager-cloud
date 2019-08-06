@@ -272,10 +272,33 @@ function calculateInterConnect() {
 
 // User and GUI side
 
-const user_app = express();
-
-//initialize a simple http server
-const user_server = http.createServer(user_app);
+const user_app = exp();
 
 //initialize the WebSocket server instance
-const user_wss = new WebSocket.Server({ server });
+const user_wss = new sock.Server({ server: user_app });
+
+user_wss.on('connection', (ws) => {
+
+    //connection is up, let's add a simple simple event
+    ws.on('message', (message: string) => {
+
+        //log the received message and send it back to the client
+        console.log('received: %s', message);
+        ws.send(`Hello, you sent -> ${message}`);
+    });
+
+    //send immediatly a feedback to the incoming connection    
+    ws.send('Hi there, I am a WebSocket server');
+});
+
+//start our server
+
+app.use('/', express.static(__dirname + '/html'));
+
+user_app.listen(8888, () => {
+    console.log(`Server started on port 8888 :)`);
+});
+
+user_app.get("/rest", (req, res, next) => {
+    res.json({"ola chica" : "aie aie aie"})
+})
