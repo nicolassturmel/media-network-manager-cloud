@@ -10,6 +10,7 @@ var id_local = 0;
 
 
 // Side connected to other services
+//---------------------------------
 
 var pc_name = os.hostname()
 var prename = pc_name.split('.')[0];
@@ -32,7 +33,7 @@ wss.on('connection', function connection(ws) {
             )
             i = Nodes.findIndex(k => k.IP == node.IP);
         }
-        mergeNodes(i,node)
+        mergeNodes(i,node,"")
         //Nodes.push(JSON.parse(message))
       console.log('received: %s - where ? %s', node, i);
       calculateInterConnect()
@@ -174,20 +175,21 @@ function handleResponse(response) {
                     )
                     i = Nodes.findIndex(k => k.Name == HostToRefresh);
                 }
-                mergeNodes(i,Hosts[HostToRefresh])
+                mergeNodes(i,Hosts[HostToRefresh],HostToRefresh)
                 console.log(Nodes)
             }
         }
     }
 }
 
-function mergeNodes(index,newValue)
+function mergeNodes(index,newValue,Name: String)
 {
     if(Nodes[index] == newValue) return
     if(newValue.Type == "switch") {
         console.log("merging switch")
         if(newValue.Schema == 1) {
             Nodes[index].Mac = newValue.Mac
+            if(Nodes[index].Ports && Nodes[index].Ports.length != newValue.Ports.length) Nodes[index].Ports = []
             Nodes[index].Ports = newValue.Ports
             Nodes[index].Multicast = newValue.Multicast
             Nodes[index].id = newValue.id 
@@ -203,6 +205,7 @@ function mergeNodes(index,newValue)
             Nodes[index].Neighbour = newValue.Neighbour
             Nodes[index].Mac = newValue.Mac
             Nodes[index].id = newValue.id
+            Nodes[index].Name = Name 
         }
     }
 }
@@ -224,18 +227,20 @@ function calculateInterConnect() {
 
     // Detecting interconnect
     for(let i in Nodes) {
-        if(Nodes[i].Type == "switch") {
+        if(Nodes[i].Type == "switch" && Nodes[i].Ports.length > 0) {
             console.log(Nodes[i])
             if(!linkd[i]) linkd[i] = {}
             linkd[i].dataRef = i;
             linkd[i].ports = [];
             conns[i] = []
             for(let j : number =0 ; j < Nodes.length ; j++) {
-                console.log("Lookimg for " + Nodes[j].Mac)
-                for(let l in Nodes[i].Ports) {
-                    if(Nodes[i].Ports[l].ConnectedMacs.some(k => k == Nodes[j].Mac)) {
-                        if(!linkd[i].ports[l] ) linkd[i].ports[l] = []
-                        if(!linkd[i].ports[l].some(k => k == j)) linkd[i].ports[l].push(j);
+                if(Nodes[j].Type == "switch" && Nodes[j].Ports.length > 0) {
+                    console.log("Lookimg for " + Nodes[j].Mac)
+                    for(let l in Nodes[i].Ports) {
+                        if(Nodes[i].Ports[l].ConnectedMacs.some(k => k == Nodes[j].Mac)) {
+                            if(!linkd[i].ports[l] ) linkd[i].ports[l] = []
+                            if(!linkd[i].ports[l].some(k => k == j)) linkd[i].ports[l].push(j);
+                        }
                     }
                 }
             }
@@ -271,25 +276,25 @@ function calculateInterConnect() {
 
 
 // User and GUI side
+//------------------
 
 const user_app = exp();
 
 //initialize the WebSocket server instance
-const user_wss = new sock.Server({ server: user_app });
+const user_wss = new sock.Server({ port: 8889 });
 
 user_wss.on('connection', (ws) => {
 
     //connection is up, let's add a simple simple event
     ws.on('message', (message: string) => {
-
-        //log the received message and send it back to the client
-        console.log('received: %s', message);
-        ws.send(`Hello, you sent -> ${message}`);
+        ws.send(JSON.stringify(Nodes));
     });
 
     //send immediatly a feedback to the incoming connection    
-    ws.send('Hi there, I am a WebSocket server');
+    ws.send(JSON.stringify(Nodes))
 });
+
+
 
 //start our server
 

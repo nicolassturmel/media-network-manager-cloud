@@ -1,0 +1,114 @@
+
+body {
+    font-family: Verdana, sans-serif;
+    font-size: 15;
+    line-height: 1.5;
+    background-color: #060606;
+  }
+
+/* width */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  /* Track */
+  ::-webkit-scrollbar-track {
+    background: black;
+  }
+  
+  /* Handle */
+  ::-webkit-scrollbar-thumb {
+    background: #008888; 
+  }
+  
+  /* Handle on hover */
+  ::-webkit-scrollbar-thumb:hover {
+    background: cyan; 
+  }
+
+a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+li {
+    list-style-type: none;
+}
+
+
+#nodes_container {
+    display: flex;
+    color: white;
+    overflow-x: scroll;
+    scrollbar-width: 0px;
+    background-color: black;
+    margin: 0;
+    padding: 0;
+}
+
+ .switch {
+    text-align: center;
+} 
+
+.mdnsnode {
+    text-align: center;
+}
+
+#nodes_container li {
+    min-width: 200px;
+    height: 250px;
+    order: 2;
+    margin: 5;
+    border: 3px solid cyan;
+    border-radius: 10%;
+    overflow-y: hidden;
+    order: 2;
+} 
+
+#nodes_container li .head{
+    order: 1;
+}
+
+.fas {
+    margin-right: 3px;
+}
+
+.switch_port {
+    float: left;
+    margin: 5px;
+    border: none;
+    box-sizing: border-box;
+    text-align: center;
+    min-width: 35px;
+    height: 25px;
+}
+
+.switch_port.ok {
+    color: cyan;
+}
+.switch_port.dc {
+    color: grey;
+}
+.switch_port.warn {
+    border: 1px solid red;
+    border-radius: 30%;
+    color: red;
+}
+.switch_port.off {
+    border: 1px solid #ff00ff;
+    border-radius: 30%;
+    color: grey;
+}
+
+.services {
+    margin-top: 10px;
+    text-align: left;
+}
+.streams {
+    margin-top: 10px;
+    text-align: left;
+}
+.ports {
+    margin-top: 10px;
+}
