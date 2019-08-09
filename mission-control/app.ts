@@ -176,7 +176,7 @@ function handleResponse(response) {
                     i = Nodes.findIndex(k => k.Name == HostToRefresh);
                 }
                 mergeNodes(i,Hosts[HostToRefresh],HostToRefresh)
-                console.log(Nodes)
+                //console.log(Nodes)
             }
         }
     }
@@ -270,6 +270,25 @@ function calculateInterConnect() {
     }
    
     // Building connection graph
+    for(let i in Nodes) {
+        if(Nodes[i].Mac) console.log(Nodes[i].Mac)
+        if(Nodes[i].Type == "switch" && Nodes[i].Ports.length > 0) {
+            let connlist = linkd.filter(k => k.dataRef == i)[0];
+            console.log(connlist)
+            for(let p in Nodes[i].Ports) {
+                if(connlist.ports[p]) {
+                    Nodes[i].Ports[p].Neighbour=Nodes[connlist.ports[p][0]].IP
+                }
+                else if(Nodes[i].Ports[p].ConnectedMacs.length == 1){
+                    let d = Nodes.filter(k => k.Mac == Nodes[i].Ports[p].ConnectedMacs[0])
+                    console.log("size 1 : " + Nodes[i].Ports[p].ConnectedMacs[0])
+                    if(d.length == 1)
+                        Nodes[i].Ports[p].Neighbour=d[0].IP
+                }
+                console.log(Nodes[i].Ports[p].Neighbour)
+            }
+        }
+    }
 
     console.log(JSON.stringify(linkd.filter(k => k.ports.some(l => l.length == 1))))
 }
