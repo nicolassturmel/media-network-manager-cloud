@@ -128,12 +128,12 @@ function buildElem(node,elem) {
     }
 }
 
-function typeToGroup(type) {
+function colorOfType(type) {
     switch(type) {
         case "switch":
-            return 1
+            return "#007777"
     }
-    return 0;
+    return "#0077ff";
 }
 
 let visnode = new vis.DataSet([])
@@ -147,6 +147,19 @@ var data = {
 
 function initGraph() {
   var options = {
+
+    layout: {
+        hierarchical: {
+          direction: "UD",
+          sortMethod: "directed",
+          nodeSpacing: 400,
+          parentCentralization: true
+        }
+      },
+      interaction: {dragNodes :false},
+      physics: {
+          enabled: false
+      },
       nodes: {
         shape: 'dot',
         size: 30,
@@ -162,16 +175,6 @@ function initGraph() {
         "forceDirection": "none",
         "roundness": 0
       }
-    },
-    "physics": {
-      "barnesHut": {
-        "gravitationalConstant": -47540,
-        "centralGravity": 2.35,
-        "springLength": 140,
-        "springConstant": 0.78,
-        "damping": 1
-      },
-      "minVelocity": 0.75
     }
   }
 
@@ -183,13 +186,13 @@ function initGraph() {
 function buildGraph(nodes) {
     for(let i in nodes) {
         if(nodes[i].Name) {
-            visnode.update([{id: i , label: nodes[i].Name.split(".")[0], group: typeToGroup(nodes[i].Type)}])
             if(nodes[i].Type == "switch") {
+                visnode.update([{id: i , label: nodes[i].Name.split(".")[0], color: colorOfType(nodes[i].Type), shape: "box", font: { color: "#ffffff"}}])
                 for(let p of nodes[i].Ports) {
                     let n = nodes.findIndex(k => k.IP == p.Neighbour)
                     if(n > 0) {
-                        let e = {from: i, to: n}
-                        visedge.update(e)
+                        if(nodes[n].Type != "switch") visnode.update([{id: n , label: nodes[n].Name.split(".")[0], color: colorOfType(nodes[n].Type), font: { color: "#00ffff"}}])
+                        visedge.update({from: i, to: n, label: "port " + p.Name, font: { strokeWidth: 0, color: "#00ffff"}})
                     }
                 }
             }

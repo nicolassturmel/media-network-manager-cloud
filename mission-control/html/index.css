@@ -70,6 +70,12 @@ li {
     order: 1;
 }
 
+#mynetwork {
+    margin: auto;
+    height: auto;
+    width: 100%;
+}
+
 .fas {
     margin-right: 3px;
 }
