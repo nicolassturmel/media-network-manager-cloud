@@ -34,8 +34,6 @@ wss.on('connection', function connection(ws) {
             i = Nodes.findIndex(k => k.IP == node.IP);
         }
         mergeNodes(i,node,"")
-        //Nodes.push(JSON.parse(message))
-      console.log('received: %s - where ? %s', node, i);
       calculateInterConnect()
     });
    
@@ -154,7 +152,7 @@ function handleResponse(response) {
                     else {
                         getMacClear = false;
                         arp.getMAC(k.data, function(err, mac) {
-                            if (!err) {
+                            if (!err && mac.length>12) {
                                 Hosts[k.name].Macs.push(mac);
                                 Hosts[k.name].Mac = mac
                             }
@@ -186,7 +184,6 @@ function mergeNodes(index,newValue,Name: String)
 {
     if(Nodes[index] == newValue) return
     if(newValue.Type == "switch") {
-        console.log("merging switch")
         if(newValue.Schema == 1) {
             Nodes[index].Mac = newValue.Mac
             if(Nodes[index].Ports && Nodes[index].Ports.length != newValue.Ports.length) Nodes[index].Ports = []
@@ -228,7 +225,6 @@ function calculateInterConnect() {
     // Detecting interconnect
     for(let i in Nodes) {
         if(Nodes[i].Type == "switch" && Nodes[i].Ports.length > 0) {
-            console.log(Nodes[i])
             if(!linkd[i]) linkd[i] = {}
             linkd[i].dataRef = i;
             linkd[i].ports = [];
@@ -237,7 +233,7 @@ function calculateInterConnect() {
                 if(Nodes[j].Type == "switch" && Nodes[j].Ports.length > 0) {
                     console.log("Lookimg for " + Nodes[j].Mac)
                     for(let l in Nodes[i].Ports) {
-                        if(Nodes[i].Ports[l].ConnectedMacs.some(k => k == Nodes[j].Mac)) {
+                        if(Nodes[j].Macs && Nodes[i].Ports[l].ConnectedMacs.some(k => Nodes[j].Macs.some(l => l === k))) {
                             if(!linkd[i].ports[l] ) linkd[i].ports[l] = []
                             if(!linkd[i].ports[l].some(k => k == j)) linkd[i].ports[l].push(j);
                         }
@@ -280,9 +276,9 @@ function calculateInterConnect() {
                     Nodes[i].Ports[p].Neighbour=Nodes[connlist.ports[p][0]].IP
                 }
                 else if(Nodes[i].Ports[p].ConnectedMacs.length == 1){
-                    let d = Nodes.filter(k => k.Mac == Nodes[i].Ports[p].ConnectedMacs[0])
-                    console.log("size 1 : " + Nodes[i].Ports[p].ConnectedMacs[0])
-                    if(d.length == 1)
+                    let d = Nodes.filter(k => k.Macs && k.Macs.some(l => l === Nodes[i].Ports[p].ConnectedMacs[0]))
+                    console.log("size 1 : " + Nodes[i].Ports[p].ConnectedMacs[0] + " : d size " + d.length + " N->" + Nodes[i].Ports[p].Neighbour)
+                    if(d.length >= 1)
                         Nodes[i].Ports[p].Neighbour=d[0].IP
                 }
                 console.log(Nodes[i].Ports[p].Neighbour)

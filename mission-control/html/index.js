@@ -21,6 +21,7 @@ function run() {
         buildGraph(nodes)
         setTimeout(() => {missionControlWS.send("git it to me")},3000)
     }
+    initGraph()
 }
 
 function checkElem(root,id,domtype,classElem,innerHTML) {
@@ -135,29 +136,16 @@ function typeToGroup(type) {
     return 0;
 }
 
-function buildGraph(nodes) {
-    let visnode = [], visedge = [], g = 0;;
-    for(let i in nodes) {
-        if(nodes[i].Name) {
-            visnode.push({id: i , label: nodes[i].Name.split(".")[0], group: typeToGroup(nodes[i].Type)})
-            g++;
-            if(nodes[i].Type == "switch") {
-                for(let p of nodes[i].Ports) {
-                    let n = nodes.findIndex(k => k.IP == p.Neighbour)
-                    if(n > 0) {
-                        visedge.push({from: i, to: n})
-                    }
-                }
-            }
-        }
-    }
-    console.log(visnode, visedge)
-    // create a network
-  var container = document.getElementById('mynetwork');
-  var data = {
+let visnode = new vis.DataSet([])
+let  visedge = new vis.DataSet([])
+var network
+
+var data = {
     nodes: visnode,
     edges: visedge
   };
+
+function initGraph() {
   var options = {
       nodes: {
         shape: 'dot',
@@ -186,5 +174,26 @@ function buildGraph(nodes) {
       "minVelocity": 0.75
     }
   }
-  var network = new vis.Network(container, data, options);
+
+    // create a network
+    var container = document.getElementById('mynetwork');
+   network = new vis.Network(container, data, options);
+}
+
+function buildGraph(nodes) {
+    for(let i in nodes) {
+        if(nodes[i].Name) {
+            visnode.update([{id: i , label: nodes[i].Name.split(".")[0], group: typeToGroup(nodes[i].Type)}])
+            if(nodes[i].Type == "switch") {
+                for(let p of nodes[i].Ports) {
+                    let n = nodes.findIndex(k => k.IP == p.Neighbour)
+                    if(n > 0) {
+                        let e = {from: i, to: n}
+                        visedge.update(e)
+                    }
+                }
+            }
+        }
+    }
+    console.log(data)
 }
