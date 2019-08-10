@@ -48,11 +48,13 @@ li {
 }
 
  .switch {
+     background-color: #007777;
     text-align: center;
 } 
 
 .mdnsnode {
     text-align: center;
+    background-color: #0077ff;
 }
 
 #nodes_container li {
