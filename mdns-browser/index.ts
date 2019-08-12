@@ -1,32 +1,38 @@
 
-import arp from 'node-arp'
-import uniqid from 'uniqid'
+var arp = require('node-arp');
+var uniqid = require('uniqid');
 
 let mdns
-var Nodes : any = [{ Type: "null", id : "0"}]
 let Hosts : object = {};
 let Services : object = {}
 let getMacClear = true;
 let id_local = 0;
 
-let mergeNodes = function(index,newValue,Name) {}
+let sendNode = function(Value) {}
 
 export = (cb,_mdns) => {
-        if(_mdns) 
-            mdns = _mdns
-        else
-            mdns = require('multicast-dns')()
-        mdns.on('response', (response) => {
-            handleResponse(response)
-        })
-        mergeNodes = cb;
-        mdns.query({
-            questions:[{
-              name: '_http._tcp.local',
-              type: 'SRV'
-            }]
-        });
+    if(!cb) {
+        console.log("Error, empty callback given")
+        return
     }
+    if(_mdns) {
+        mdns = _mdns
+    } else {
+        mdns = require('multicast-dns')()
+    }
+    mdns.on('response', (response) => {
+        handleResponse(response)
+    })
+    sendNode = cb;
+    mdns.query({
+        questions:[{
+            name: '_http._tcp.local',
+            type: 'SRV'
+        }]
+    });
+}
+
+
 
 function handleResponse(response) {
     for(let k of response.answers){
@@ -34,6 +40,25 @@ function handleResponse(response) {
     }
     for(let k of response.additionals){
         handleItem(k)
+    }
+
+    function waitClearGetMac(k) {
+        if(!k)
+            return
+        if(!getMacClear) {
+            setTimeout(() => {waitClearGetMac(k) }, 100);
+        }
+        else {
+            getMacClear = false;
+            arp.getMAC(k.data, function(err, mac) {
+                if (!err && mac.length>12) {
+                    Hosts[k.name].Macs.push(mac);
+                    Hosts[k.name].Mac = mac
+                    sendNode(Hosts[k.name])
+                }
+                getMacClear = true
+            });
+        }
     }
 
     function handleItem(k) {
@@ -76,6 +101,7 @@ function handleResponse(response) {
             HostToRefresh = k.name
             if(!Hosts[k.name]) {
                 Hosts[k.name] = {
+                    Name: k.name,
                     IP: k.data,
                     Type: "MdnsNode",
                     Services: {},
@@ -97,36 +123,12 @@ function handleResponse(response) {
             }   
 
             if(getmac) {
-                waitClearGetMac()
-                function waitClearGetMac() {
-                    if(!getMacClear) {
-                        setTimeout(waitClearGetMac, 100);
-                    }
-                    else {
-                        getMacClear = false;
-                        arp.getMAC(k.data, function(err, mac) {
-                            if (!err && mac.length>12) {
-                                Hosts[k.name].Macs.push(mac);
-                                Hosts[k.name].Mac = mac
-                            }
-                            getMacClear = true
-                        });
-                    }
-                }
+                waitClearGetMac(k)
             }
         }
         if(refresh) {
             if(HostToRefresh != null) {
-                let i = Nodes.findIndex(k => k.IP == Hosts[HostToRefresh].IP);
-                if(i == -1) {
-                    Nodes.push(
-                        {Name: HostToRefresh,
-                        IP: Hosts[HostToRefresh].IP,
-                        Type: "Empty"}
-                    )
-                    i = Nodes.findIndex(k => k.Name == HostToRefresh);
-                }
-                mergeNodes(i,Hosts[HostToRefresh],HostToRefresh)
+                sendNode(Hosts[HostToRefresh])
                 //console.log(Nodes)
             }
         }

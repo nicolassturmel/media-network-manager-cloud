@@ -4,6 +4,19 @@
     "version": "2.0.0",
     "tasks": [
         {
+            "label": "tsc all",
+            "type": "shell",
+            "command": "for i in $(ls -d */) ; do echo $i ; cd $i ; tsc *.ts ; cd .. ; done",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            }
+        },
+        {
             "type": "typescript",
             "tsconfig": "mission-control/tsconfig.json",
             "problemMatcher": [
@@ -17,10 +30,7 @@
             "problemMatcher": [
                 "$tsc"
             ],
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            }
+            "group": "build"
         }
     ]
 }
