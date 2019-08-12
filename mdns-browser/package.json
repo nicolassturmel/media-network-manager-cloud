@@ -1,0 +1,11 @@
+{
+  "name": "mdns-browser",
+  "version": "1.0.0",
+  "description": "browse mdns services, builds MnMs device node",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Nicolas Sturmel",
+  "license": "MIT"
+}
