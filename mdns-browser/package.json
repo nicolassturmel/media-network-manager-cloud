@@ -7,5 +7,12 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Nicolas Sturmel",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "@types/node": "^12.7.1",
+    "multicast-dns": "^7.2.0",
+    "node-arp": "^1.0.6",
+    "os": "^0.1.1",
+    "uniqid": "^5.0.3"
+  }
 }

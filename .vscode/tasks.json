@@ -9,6 +9,14 @@
             "problemMatcher": [
                 "$tsc"
             ],
+            "group": "build"
+        },
+        {
+            "type": "typescript",
+            "tsconfig": "mdns-browser/tsconfig.json",
+            "problemMatcher": [
+                "$tsc"
+            ],
             "group": {
                 "kind": "build",
                 "isDefault": true
