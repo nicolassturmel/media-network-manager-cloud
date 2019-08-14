@@ -4,35 +4,13 @@ var uniqid = require('uniqid');
 
 let mdns
 let Hosts : object = {};
-let Services : object = {}
+
+var Services : object = {};
+
 let getMacClear = true;
 let id_local = 0;
 
 let sendNode = function(Value) {}
-
-export = (cb,_mdns) => {
-    if(!cb) {
-        console.log("Error, empty callback given")
-        return
-    }
-    if(_mdns) {
-        mdns = _mdns
-    } else {
-        mdns = require('multicast-dns')()
-    }
-    mdns.on('response', (response) => {
-        handleResponse(response)
-    })
-    sendNode = cb;
-    mdns.query({
-        questions:[{
-            name: '_http._tcp.local',
-            type: 'SRV'
-        }]
-    });
-}
-
-
 
 function handleResponse(response) {
     for(let k of response.answers){
@@ -71,15 +49,19 @@ function handleResponse(response) {
             if(Hosts[k.data.target]) {
                 
                 let subs = (Hosts[k.data.target].Services[k.name])? Hosts[k.data.target].Services[k.name].subs : [];
+                let txt = (Hosts[k.data.target].Services[k.name])? Hosts[k.data.target].Services[k.name].txt : [];
+
                 if(Services[k.name]) {
-                    refresh = (subs == Services[k.name])? refresh : true;
-                    subs = Services[k.name]
+                    refresh = (subs == Services[k.name].subs && txt == Services[k.name].txt)? refresh : true;
+                    subs = Services[k.name].subs
+                    txt = Services[k.name].txt
                 }
                 if(!Hosts[k.data.target].Services[k.name])
                     refresh = true;
                 Hosts[k.data.target].Services[k.name] = {
                     port: k.data.port,
-                    subs : subs
+                    subs : subs,
+                    txt: txt
                 }
             }
         }
@@ -88,11 +70,22 @@ function handleResponse(response) {
             let comps = k.name.split("._");
             if(comps[1] == "sub" ){
                 if(!Services[k.data] ){
-                    Services[k.data] = []
+                    Services[k.data] = {}
+                    Services[k.data].subs = []
+                    Services[k.data].txt = null
                 }
-                if(!Services[k.data].some(p => p === comps[0]) && comps[2] == "http") Services[k.data].push(comps[0])
+                if(!Services[k.data].subs.some(p => p === comps[0]) && comps[2] == "http") Services[k.data].subs.push(comps[0])
             } 
             //console.log(k)
+        }
+        else if(k.type == "TXT")
+        {
+            if(!Services[k.name] ){
+                Services[k.name] = {}
+                Services[k.name].subs = []
+                Services[k.name].txt = null
+            }
+            Services[k.name].txt = k.data
         }
         else if(k.type == "A")
         {
@@ -133,4 +126,27 @@ function handleResponse(response) {
             }
         }
     }
+}
+
+
+export = (cb,_mdns) => {
+    if(!cb) {
+        console.log("Error, empty callback given")
+        return
+    }
+    if(_mdns) {
+        mdns = _mdns
+    } else {
+        mdns = require('multicast-dns')()
+    }
+    mdns.on('response', (response) => {
+        handleResponse(response)
+    })
+    sendNode = cb;
+    mdns.query({
+        questions:[{
+            name: '_http._tcp.local',
+            type: 'SRV'
+        }]
+    });
 }

@@ -6,6 +6,7 @@ var sock = require('ws');
 var http = require('http')
 var exp = require('express')
 var uniqid = require('uniqid');
+var mdnsBrowser = require('../mdns-browser')
 var id_local = 0;
 
 
@@ -39,9 +40,6 @@ wss.on('connection', function connection(ws) {
    
   });
 
-mdns.on('response', (response) => {
-    handleResponse(response)
-})
 
 mdns.on('query', (query) => {
     if(query.questions.some(k => k.name == "_missioncontrol._socketio.local")) {
@@ -75,110 +73,23 @@ mdns.respond({
     }]
   })
 
-function handleResponse(response) {
-    for(let k of response.answers){
-        handleItem(k)
+  var mdnsBrowser_cb = (node) => {
+    if(node.Name != null) {
+        let i = Nodes.findIndex(k => k.IP == node.IP);
+        if(i == -1) {
+            Nodes.push(
+                {Name: node.Name,
+                IP: node.IP,
+                Type: "Empty"}
+            )
+            i = Nodes.findIndex(k => k.Name == node.Name);
+        }
+        mergeNodes(i,node,node.Name)
+        console.log(node)
     }
-    for(let k of response.additionals){
-        handleItem(k)
-    }
+  }
 
-    function handleItem(k) {
-        let refresh = false;
-        let HostToRefresh = null
-        if(k.type == "SRV")
-        {
-            //console.log(k)
-            HostToRefresh = k.data.target;
-            if(Hosts[k.data.target]) {
-                
-                let subs = (Hosts[k.data.target].Services[k.name])? Hosts[k.data.target].Services[k.name].subs : [];
-                if(Services[k.name]) {
-                    refresh = (subs == Services[k.name])? refresh : true;
-                    subs = Services[k.name]
-                }
-                if(!Hosts[k.data.target].Services[k.name])
-                    refresh = true;
-                Hosts[k.data.target].Services[k.name] = {
-                    port: k.data.port,
-                    subs : subs
-                }
-            }
-        }
-        else if(k.type == "PTR")
-        {
-            let comps = k.name.split("._");
-            if(comps[1] == "sub" ){
-                if(!Services[k.data] ){
-                    Services[k.data] = []
-                }
-                if(!Services[k.data].some(p => p === comps[0]) && comps[2] == "http") Services[k.data].push(comps[0])
-            } 
-            //console.log(k)
-        }
-        else if(k.type == "A")
-        {
-            //console.log(k)
-            let getmac = false
-            HostToRefresh = k.name
-            if(!Hosts[k.name]) {
-                Hosts[k.name] = {
-                    IP: k.data,
-                    Type: "MdnsNode",
-                    Services: {},
-                    OtherIPs: [],
-                    Macs: [],
-                    Schema: 1,
-                    Neighbour: "",
-                    Mac: "", 
-                    id: uniqid() + id_local++
-                }
-                getmac = true
-            } 
-            else if(Hosts[k.name].IP != k.data) {
-                if(!Hosts[k.name].OtherIPs.some(p => p == k.data)) {
-                    Hosts[k.name].OtherIPs.push(Hosts[k.name].IP)
-                    Hosts[k.name].IP = k.data
-                    getmac = true
-                }
-            }   
-
-            if(getmac) {
-                waitClearGetMac()
-                function waitClearGetMac() {
-                    if(!getMacClear) {
-                        setTimeout(waitClearGetMac, 100);
-                    }
-                    else {
-                        getMacClear = false;
-                        arp.getMAC(k.data, function(err, mac) {
-                            if (!err && mac.length>12) {
-                                Hosts[k.name].Macs.push(mac);
-                                Hosts[k.name].Mac = mac
-                            }
-                            getMacClear = true
-                        });
-                    }
-                }
-            }
-        }
-        if(refresh) {
-            if(HostToRefresh != null) {
-                let i = Nodes.findIndex(k => k.IP == Hosts[HostToRefresh].IP);
-                if(i == -1) {
-                    Nodes.push(
-                        {Name: HostToRefresh,
-                        IP: Hosts[HostToRefresh].IP,
-                        Type: "Empty"}
-                    )
-                    i = Nodes.findIndex(k => k.Name == HostToRefresh);
-                }
-                mergeNodes(i,Hosts[HostToRefresh],HostToRefresh)
-                //console.log(Nodes)
-            }
-        }
-    }
-}
+  let mdB = mdnsBrowser(mdnsBrowser_cb,mdns)
 
 function mergeNodes(index,newValue,Name: String)
 {
@@ -246,8 +157,11 @@ function calculateInterConnect() {
 
     console.log(JSON.stringify(linkd.filter(k => k.ports.some(l => l.length == 1))))
 
+    let old_cleared = null;
     while(linkd.some(k => k.ports.some(l => l.length > 1))) {
         let cleared = linkd.filter(k => k.ports.some(l => l.length == 1))
+        if(cleared == old_cleared) break;
+        old_cleared = cleared
         for(let i in linkd) {
             if(!(cleared.some(k => k.dataRef == linkd[i].dataRef ))) {
                 for(let p in linkd[i].ports) {
