@@ -4,12 +4,13 @@
   "description": "browse mdns services, builds MnMs device node",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node test.js"
   },
   "author": "Nicolas Sturmel",
   "license": "MIT",
   "dependencies": {
     "@types/node": "^12.7.1",
+    "dns-txt": "^2.0.2",
     "multicast-dns": "^7.2.0",
     "node-arp": "^1.0.6",
     "os": "^0.1.1",
