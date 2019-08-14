@@ -1,5 +1,6 @@
 
 var arp = require('node-arp');
+var dns_txt = require('dns-txt')()
 var uniqid = require('uniqid');
 
 let mdns
@@ -85,7 +86,16 @@ function handleResponse(response) {
                 Services[k.name].subs = []
                 Services[k.name].txt = null
             }
-            Services[k.name].txt = k.data
+            if(k.data.length > 0) {
+                let str = Buffer.allocUnsafe(0);
+                for(let s of k.data) {
+                    let size = Buffer.allocUnsafe(1)
+                    size.writeUInt8(s.length , 0);
+                    str = Buffer.concat([str, size],str.length + size.length)
+                    str = Buffer.concat([str, s],str.length + s.length)
+                }
+                Services[k.name].txt = dns_txt.decode(str)
+            }
         }
         else if(k.type == "A")
         {

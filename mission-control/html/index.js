@@ -156,7 +156,7 @@ function initGraph() {
           parentCentralization: true
         }
       },
-      interaction: {dragNodes :false},
+      interaction: {dragNodes :true},
       physics: {
           enabled: false
       },
