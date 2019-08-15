@@ -148,13 +148,14 @@ var data = {
 
 function initGraph() {
   var options = {
-
+    autoResize: true,
     layout: {
         hierarchical: {
           direction: "UD",
-          sortMethod: "directed",
+          //sortMethod: "directed",
           nodeSpacing: 400,
-          parentCentralization: true
+          parentCentralization: true,
+          blockShifting: false
         }
       },
       interaction: {dragNodes :true},
@@ -168,7 +169,7 @@ function initGraph() {
             size: 32
         },
         borderWidth: 2,
-        shadow:true
+        shadow:false
     },
     "edges": {
       "smooth": {
@@ -193,12 +194,12 @@ function buildGraph(nodes) {
     for(let i in nodes) {
         if(nodes[i].Name) {
             if(nodes[i].Type == "switch") {
-                newNodes.push({id: i , label: nodes[i].Name.split(".")[0], color: colorOfType(nodes[i].Type), shape: "box", font: { color: "#ffffff"}})
+                newNodes.push({id: i , label: nodes[i].Name.split(".")[0], widthConstraint : { minimum : 550, maximum : 550}, color: colorOfType(nodes[i].Type), shape: "box", font: { color: "#ffffff"}})
                 for(let p of nodes[i].Ports) {
                     let n = nodes.findIndex(k => k.IP == p.Neighbour)
                     if(n > 0) {
                         if(nodes[n].Type != "switch") newNodes.push({id: n , label: nodes[n].Name.split(".")[0], color: colorOfType(nodes[n].Type), font: { color: "#00ffff"}})
-                        newEdges.push({from: i, to: n, label: "port " + p.Name, font: { strokeWidth: 0, color: "#00ffff"}})
+                        newEdges.push({id: i + "_" + p.Name, from: i, to: n, label: "port " + p.Name, font: { strokeWidth: 0, color: "#00ffff"}})
                     }
                 }
             }

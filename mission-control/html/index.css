@@ -7,8 +7,15 @@ body {
 }
 
 #port {
-    height: 100vh;
-    width: 100vw;
+    height: 98vh;
+    width: 99vw;
+    margin: auto;
+    display: grid;
+    grid-template-columns: 200px 1fr ;
+    grid-template-rows: 250px auto;
+    grid-template-areas: 
+      "header header  "
+      "left net  ";
 }
 
 /* width */
@@ -40,7 +47,9 @@ a {
 li {
     list-style-type: none;
 }
-
+nav {
+    grid-area: header;
+}
 
 #nodes_container {
     display: flex;
@@ -67,7 +76,7 @@ li {
 
 #nodes_container li {
     min-width: 200px;
-    height: 250px;
+    height: 220px;
     order: 2;
     margin: 5;
     border: 3px solid cyan;
@@ -91,9 +100,8 @@ li {
 }
 
 #mynetwork {
-    margin: auto;
-    height: auto;
-    width: 100%;
+    height: 100%;
+    grid-area: net;
 }
 
 .fas {
