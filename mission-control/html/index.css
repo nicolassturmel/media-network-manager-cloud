@@ -51,7 +51,10 @@ li {
     margin: 0;
     padding: 0;
 }
-
+.node-unit {
+    position: sticky;
+    top: 0;
+}
  .switch {
      background-color: #007777;
     text-align: center;

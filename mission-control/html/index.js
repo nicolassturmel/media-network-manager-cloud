@@ -62,8 +62,9 @@ function buildElem(node,elem) {
     if(name.length > 21) {
         name = name.substr(0,12) + "..." + name.substr(-5)
     }
-    checkElem(elem,"node-name-" + node.Name,"div",node.Type,name)
-    checkElem(elem,"node-IP-" + node.Name,"div",node.Type,node.IP)
+    let unit = checkElem(elem,"node-unit-" + node.Name,"div","node-unit","")
+    checkElem(unit,"node-name-" + node.Name,"div",node.Type,name)
+    checkElem(unit,"node-IP-" + node.Name,"div",node.Type,node.IP)
     let services = checkElem(elem,"node-services-" + node.Name,"div","services","")
     if(node.Services) {
         Object.keys(node.Services).forEach((key) => {
@@ -183,20 +184,31 @@ function initGraph() {
    network = new vis.Network(container, data, options);
 }
 
+let oldNodes = []
+let oldEdges = []
+
 function buildGraph(nodes) {
+    let newNodes = [];
+    let newEdges = [];
     for(let i in nodes) {
         if(nodes[i].Name) {
             if(nodes[i].Type == "switch") {
-                visnode.update([{id: i , label: nodes[i].Name.split(".")[0], color: colorOfType(nodes[i].Type), shape: "box", font: { color: "#ffffff"}}])
+                newNodes.push({id: i , label: nodes[i].Name.split(".")[0], color: colorOfType(nodes[i].Type), shape: "box", font: { color: "#ffffff"}})
                 for(let p of nodes[i].Ports) {
                     let n = nodes.findIndex(k => k.IP == p.Neighbour)
                     if(n > 0) {
-                        if(nodes[n].Type != "switch") visnode.update([{id: n , label: nodes[n].Name.split(".")[0], color: colorOfType(nodes[n].Type), font: { color: "#00ffff"}}])
-                        visedge.update({from: i, to: n, label: "port " + p.Name, font: { strokeWidth: 0, color: "#00ffff"}})
+                        if(nodes[n].Type != "switch") newNodes.push({id: n , label: nodes[n].Name.split(".")[0], color: colorOfType(nodes[n].Type), font: { color: "#00ffff"}})
+                        newEdges.push({from: i, to: n, label: "port " + p.Name, font: { strokeWidth: 0, color: "#00ffff"}})
                     }
                 }
             }
         }
     }
-    console.log(data)
+    if(!(_.isEqual(newNodes, oldNodes) || _.isEqual(newEdges, oldEdges))) {
+        visnode.update(newNodes)
+        visedge.clear()
+        visedge.update(newEdges)
+        oldNodes = newNodes
+        oldEdges = newEdges
+    }
 }
