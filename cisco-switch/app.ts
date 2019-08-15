@@ -59,6 +59,7 @@ mdns.on('response', function(response) {
                         console.log(mc_ip)
 
                         console.log('ws://' + mc_ip + ':' + mc_port)
+                        wsc = null
                         wsc = new ws('ws://' + mc_ip + ':' + mc_port);
  
                         wsc.on('open', function open() {
@@ -286,7 +287,13 @@ function computeBandWidth() {
     });
     NewData = true
     console.log(Switch)
-    if(wsc) wsc.send(JSON.stringify(Switch))
+    if(wsc) {
+        try {
+            wsc.send(JSON.stringify(Switch))
+        } catch (error) {
+            console.error("Waiting to reconnect to ws...")
+        } 
+    }
 }
 
 function getPortStatus() {        

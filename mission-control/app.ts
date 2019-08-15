@@ -34,6 +34,9 @@ wss.on('connection', function connection(ws) {
             )
             i = Nodes.findIndex(k => k.IP == node.IP);
         }
+        else {
+            console.log(message)
+        }
         mergeNodes(i,node,"")
       calculateInterConnect()
     });

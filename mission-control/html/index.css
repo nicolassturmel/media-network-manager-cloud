@@ -4,7 +4,12 @@ body {
     font-size: 15;
     line-height: 1.5;
     background-color: #060606;
-  }
+}
+
+#port {
+    height: 100vh;
+    width: 100vw;
+}
 
 /* width */
 ::-webkit-scrollbar {
@@ -67,6 +72,16 @@ li {
     overflow-y: hidden;
     order: 2;
 } 
+
+#nodes_container li:hover {
+    border-color: white;
+    overflow-y: scroll;
+}
+
+#nodes_container li::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
 
 #nodes_container li .head{
     order: 1;

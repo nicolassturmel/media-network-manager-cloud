@@ -1,0 +1,18 @@
+{
+  "name": "mnms-client-ws-interface",
+  "version": "1.0.0",
+  "description": "client ws with service discovery to connect to MnMs mission control",
+  "main": "index.js",
+  "scripts": {
+    "test": "node test.js"
+  },
+  "author": "Nicolas Sturmel",
+  "license": "MIT",
+  "dependencies": {
+    "multicast-dns": "^7.2.0",
+    "ws": "^7.1.2"
+  },
+  "devDependencies": {
+    "@types/node": "^12.7.2"
+  }
+}

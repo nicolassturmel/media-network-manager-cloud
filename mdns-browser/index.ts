@@ -48,21 +48,28 @@ function handleResponse(response) {
             //console.log(k)
             HostToRefresh = k.data.target;
             if(Hosts[k.data.target]) {
-                
-                let subs = (Hosts[k.data.target].Services[k.name])? Hosts[k.data.target].Services[k.name].subs : [];
-                let txt = (Hosts[k.data.target].Services[k.name])? Hosts[k.data.target].Services[k.name].txt : [];
+                if(k.ttl > 0) {
+                    let subs = (Hosts[k.data.target].Services[k.name])? Hosts[k.data.target].Services[k.name].subs : [];
+                    let txt = (Hosts[k.data.target].Services[k.name])? Hosts[k.data.target].Services[k.name].txt : {}
 
-                if(Services[k.name]) {
-                    refresh = (subs == Services[k.name].subs && txt == Services[k.name].txt)? refresh : true;
-                    subs = Services[k.name].subs
-                    txt = Services[k.name].txt
+                    if(Services[k.name]) {
+                        refresh = (subs == Services[k.name].subs && txt == Services[k.name].txt)? refresh : true;
+                        subs = Services[k.name].subs
+                        txt = Services[k.name].txt
+                    }
+                    if(!Hosts[k.data.target].Services[k.name])
+                        refresh = true;
+                    Hosts[k.data.target].Services[k.name] = {
+                        port: k.data.port,
+                        subs : subs,
+                        txt: txt
+                    }
                 }
-                if(!Hosts[k.data.target].Services[k.name])
-                    refresh = true;
-                Hosts[k.data.target].Services[k.name] = {
-                    port: k.data.port,
-                    subs : subs,
-                    txt: txt
+                else {
+                    if(Hosts[k.data.target].Services[k.name]){
+                        delete Hosts[k.data.target].Services[k.name]
+                        refresh = true
+                    }
                 }
             }
         }
@@ -102,31 +109,39 @@ function handleResponse(response) {
             //console.log(k)
             let getmac = false
             HostToRefresh = k.name
-            if(!Hosts[k.name]) {
-                Hosts[k.name] = {
-                    Name: k.name,
-                    IP: k.data,
-                    Type: "MdnsNode",
-                    Services: {},
-                    OtherIPs: [],
-                    Macs: [],
-                    Schema: 1,
-                    Neighbour: "",
-                    Mac: "", 
-                    id: uniqid() + id_local++
-                }
-                getmac = true
-            } 
-            else if(Hosts[k.name].IP != k.data) {
-                if(!Hosts[k.name].OtherIPs.some(p => p == k.data)) {
-                    Hosts[k.name].OtherIPs.push(Hosts[k.name].IP)
-                    Hosts[k.name].IP = k.data
+            if(k.ttl > 0) {
+                if(!Hosts[k.name] || Hosts[k.name].Type == "disconnected") {
+                    Hosts[k.name] = {
+                        Name: k.name,
+                        IP: k.data,
+                        Type: "MdnsNode",
+                        Services: {},
+                        OtherIPs: [],
+                        Macs: [],
+                        Schema: 1,
+                        Neighbour: "",
+                        Mac: "", 
+                        id: uniqid() + id_local++
+                    }
                     getmac = true
-                }
-            }   
+                } 
+                else if(Hosts[k.name].IP != k.data) {
+                    if(!Hosts[k.name].OtherIPs.some(p => p == k.data)) {
+                        Hosts[k.name].OtherIPs.push(Hosts[k.name].IP)
+                        Hosts[k.name].IP = k.data
+                        getmac = true
+                    }
+                }   
 
-            if(getmac) {
-                waitClearGetMac(k)
+                if(getmac) {
+                    waitClearGetMac(k)
+                }
+            }
+            else {
+                if(Hosts[k.name]) {
+                    Hosts[k.name].Type == "disconnected"
+                    refresh = true
+                }
             }
         }
         if(refresh) {
@@ -153,10 +168,30 @@ export = (cb,_mdns) => {
         handleResponse(response)
     })
     sendNode = cb;
-    mdns.query({
-        questions:[{
-            name: '_http._tcp.local',
-            type: 'SRV'
-        }]
-    });
+    setTimeout(() => {
+        mdns.query({
+            questions:[{
+                name: '_http._tcp.local',
+                type: 'SRV'
+            }]
+        });
+        mdns.query({
+            questions:[{
+                name: '_ravenna._sub._http._tcp.local',
+                type: 'SRV'
+            }]
+        });
+        mdns.query({
+            questions:[{
+                name: '_ember._tcp.local',
+                type: 'SRV'
+            }]
+        });
+        mdns.query({
+            questions:[{
+                name: '_csco-sb._tcp.local',
+                type: 'SRV'
+            }]
+        });
+    },1000)
 }
