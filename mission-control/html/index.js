@@ -204,11 +204,18 @@ function buildGraph(nodes) {
             }
         }
     }
-    if(!(_.isEqual(newNodes, oldNodes) || _.isEqual(newEdges, oldEdges))) {
-        visnode.update(newNodes)
-        visedge.clear()
-        visedge.update(newEdges)
-        oldNodes = newNodes
-        oldEdges = newEdges
+    if(!(_.isEqual(newNodes, oldNodes))) {
+        oldNodes = JSON.parse(JSON.stringify(newNodes))
+        let tmp = newNodes.slice()
+        visnode.update(tmp)
+        console.log("new nodes")
+    }
+    if(!(_.isEqual(newEdges, oldEdges))) {
+        console.log(newEdges, oldEdges)
+        oldEdges = JSON.parse(JSON.stringify(newEdges))
+        let tmp = newEdges.slice()
+       visedge.clear()
+        visedge.update(tmp)
+        console.log("new edges")
     }
 }
