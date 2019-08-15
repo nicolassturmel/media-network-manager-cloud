@@ -1,6 +1,7 @@
 
 const mdns = require('multicast-dns')()
 const ws = require('ws');
+var fs = require('fs');
 
 let wsc = null;
 
@@ -47,9 +48,14 @@ function run() {
                 console.log(mc_target)
                 console.log(mc_ip)
 
-                console.log('ws://' + mc_ip + ':' + mc_port)
+                console.log('wss://' + k.name + ':' + mc_port)
                 wsc = null
-                wsc = new ws('ws://' + mc_ip + ':' + mc_port);
+                wsc = new ws('wss://' + k.name + ':' + mc_port, {
+                    //protocolVersion: 8,
+                    origin: 'wss://' + k.name + ':' + mc_port,
+                    rejectUnauthorized: false,
+                    cert: fs.readFileSync('../mission-control/server.cert'),
+                  });
 
                 wsc.on('open', function open() {
                     wsc.send(JSON.stringify({

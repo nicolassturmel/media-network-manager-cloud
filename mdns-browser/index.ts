@@ -45,7 +45,6 @@ function handleResponse(response) {
         let HostToRefresh = null
         if(k.type == "SRV")
         {
-            //console.log(k)
             HostToRefresh = k.data.target;
             if(Hosts[k.data.target]) {
                 if(k.ttl > 0) {

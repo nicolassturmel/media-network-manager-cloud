@@ -10,6 +10,8 @@
   "license": "MIT",
   "dependencies": {
     "@types/node": "^12.6.8",
+    "fs": "0.0.1-security",
+    "https": "^1.0.0",
     "multicast-dns": "^7.2.0",
     "node-arp": "^1.0.6",
     "uniqid": "^5.0.3",

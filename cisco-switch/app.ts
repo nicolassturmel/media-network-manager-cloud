@@ -6,11 +6,8 @@ const SwitchPollTime = 1
 
 const Telnet = require('telnet-client')
 const commandLineArgs = require('command-line-args')
-const mdns = require('multicast-dns')()
-const ws = require('ws');
 var uniqid = require('uniqid');
 
-var wsc = null
 
 // Command line arguments
 const optionDefinitions = [
@@ -21,75 +18,13 @@ const optionDefinitions = [
 
 const options = commandLineArgs(optionDefinitions)
 console.log(options)
-var mc_target;
-var mc_ip
-var mc_port
-var lookfor_target = false
-// Looking for mission control
 
-mdns.on('response', function(response) {
-    if(response.answers.length == 1) {
-        if(response.answers[0].name.startsWith('missioncontrol')) {
-            console.log(response.answers[0])
-            mc_port = response.answers[0].data.port
-            mc_target = response.answers[0].data.target
-            lookfor_target = true;
-            mdns.query({
-                questions:[{
-                    name: mc_target,
-                    type: 'A'
-                }]
-            })
-        }
-        if(lookfor_target) {
-            for(let k of response.answers){
-                handleItem(k)
-            }
-            for(let k of response.additionals){
-                handleItem(k)
-            }
-        
-            function handleItem(k) {
-                let refresh = false;
-                if(k.type == "A")
-                    if(k.name == mc_target) {
-                        lookfor_target = false
-                        mc_ip = k.data
-                        console.log(mc_target)
-                        console.log(mc_ip)
+var client = require('../mnms-client-ws-interface')
 
-                        console.log('ws://' + mc_ip + ':' + mc_port)
-                        wsc = null
-                        wsc = new ws('ws://' + mc_ip + ':' + mc_port);
- 
-                        wsc.on('open', function open() {
-                            wsc.send(JSON.stringify(Switch));
-                        });
-                        
-                        wsc.on('message', function incoming(data) {
-                            console.log(data);
-                        });
-
-                        wsc.on('close', function close() {
-                            console.log('close disconnected');
-                            //setTimeout(() => { handleItem(k)}, 2000);
-                          });
-
-                          wsc.on('error', function close() {
-                            console.log('error disconnected');
-                          });
-                    }
-            }
-        }
-    }
-  })
-   
-mdns.query({
-    questions:[{
-        name: '_missioncontrol._socketio.local',
-        type: 'SRV'
-    }]
-})
+client.challenge("thisisme")
+client.whoami("mnms client ws test prgm")
+client.setCallback((data) => {console.log(data)})
+client.run()
 
 // Connecting to switch
 
@@ -287,13 +222,11 @@ function computeBandWidth() {
     });
     NewData = true
     console.log(Switch)
-    if(wsc) {
-        try {
-            wsc.send(JSON.stringify(Switch))
-        } catch (error) {
-            console.error("Waiting to reconnect to ws...")
-        } 
-    }
+    try {
+        client.send(JSON.stringify(Switch))
+    } catch (error) {
+        console.error("Waiting to reconnect to ws...")
+    } 
 }
 
 function getPortStatus() {        

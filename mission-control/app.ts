@@ -8,7 +8,7 @@ var exp = require('express')
 var uniqid = require('uniqid');
 var mdnsBrowser = require('../mdns-browser')
 var id_local = 0;
-
+var fs = require('fs');
 
 // Side connected to other services
 //---------------------------------
@@ -20,7 +20,19 @@ let Hosts : object = {};
 let Services : object = {}
 let getMacClear = true;
 
-const wss = new sock.Server({ port: 16060 })
+// Building secure ssl
+// read ssl certificate
+var privateKey = fs.readFileSync('server.key', 'utf8');
+var certificate = fs.readFileSync('server.cert', 'utf8');
+
+var credentials = { key: privateKey, cert: certificate };
+var https = require('https');
+
+//pass in your credentials to create an https server
+var httpsServer = https.createServer(credentials);
+httpsServer.listen(16060);
+
+const wss = new sock.Server({ server: httpsServer })
 wss.on('connection', function connection(ws) {
     console.log("new client connected")
     ws.on('message', function incoming(message) {
@@ -38,7 +50,7 @@ wss.on('connection', function connection(ws) {
             console.log(message)
         }
         mergeNodes(i,node,"")
-      calculateInterConnect()
+        calculateInterConnect()
     });
    
   });
