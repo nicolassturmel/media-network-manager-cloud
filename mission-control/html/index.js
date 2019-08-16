@@ -2,7 +2,7 @@
 
 function run() {
     let container = document.getElementById("nodes_container")
-    var missionControlWS = new WebSocket("ws://localhost:8889")
+    var missionControlWS = new WebSocket("ws://" + window.location.host)
     missionControlWS.onmessage = function (event) {
         let nodes = JSON.parse(event.data)
         console.log(nodes)

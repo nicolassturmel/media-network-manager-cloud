@@ -9,6 +9,7 @@ var uniqid = require('uniqid');
 var mdnsBrowser = require('../mdns-browser')
 var id_local = 0;
 var fs = require('fs');
+var _ = require('lodash');
 
 // Side connected to other services
 //---------------------------------
@@ -175,8 +176,8 @@ function calculateInterConnect() {
     let old_cleared = null;
     while(linkd.some(k => k.ports.some(l => l.length > 1))) {
         let cleared = linkd.filter(k => k.ports.some(l => l.length == 1))
-        if(cleared == old_cleared) break;
-        old_cleared = cleared
+        if(_.isEqual(cleared, old_cleared)) break;
+        old_cleared = JSON.parse(JSON.stringify(cleared))
         for(let i in linkd) {
             if(!(cleared.some(k => k.dataRef == linkd[i].dataRef ))) {
                 for(let p in linkd[i].ports) {
@@ -224,8 +225,22 @@ function calculateInterConnect() {
 
 const user_app = exp();
 
+const server = http.createServer(user_app);
+
+//start our server
+
+user_app.use('/', exp.static(__dirname + '/html'));
+
+server.listen(8888, () => {
+    console.log(`Server started on port 8888 :)`);
+});
+
+user_app.get("/rest", (req, res, next) => {
+    res.json({"ola chica" : "aie aie aie"})
+})
+
 //initialize the WebSocket server instance
-const user_wss = new sock.Server({ port: 8889 });
+const user_wss = new sock.Server({ server: server });
 
 user_wss.on('connection', (ws) => {
 
@@ -237,17 +252,3 @@ user_wss.on('connection', (ws) => {
     //send immediatly a feedback to the incoming connection    
     ws.send(JSON.stringify(Nodes))
 });
-
-
-
-//start our server
-
-user_app.use('/', exp.static(__dirname + '/html'));
-
-user_app.listen(8888, () => {
-    console.log(`Server started on port 8888 :)`);
-});
-
-user_app.get("/rest", (req, res, next) => {
-    res.json({"ola chica" : "aie aie aie"})
-})

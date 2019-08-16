@@ -12,10 +12,22 @@ body {
     margin: auto;
     display: grid;
     grid-template-columns: 200px 1fr ;
-    grid-template-rows: 250px auto;
+    grid-template-rows: 20px 250px auto 20px;
     grid-template-areas: 
+      "top top"
       "header header  "
-      "left net  ";
+      "left net  "
+      "bottom bottom";
+}
+
+#top {
+    grid-area: top;
+    background-color: #0088ff;
+} 
+
+#bottom {
+    grid-area: bottom;
+    background-color: #0088ff
 }
 
 /* width */
