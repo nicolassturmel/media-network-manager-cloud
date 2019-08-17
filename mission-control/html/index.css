@@ -137,6 +137,10 @@ nav {
     margin-right: 3px;
 }
 
+.selected {
+    color: #ff00ff;
+}
+
 .switch_port {
     float: left;
     margin: 5px;

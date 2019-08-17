@@ -25,7 +25,20 @@ function run() {
     initGraph()
 }
 
+let lastSelected = null;
+
+var selectNew = (newSelected) => {
+    let elem = document.getElementById(lastSelected)
+    if(elem) elem.classList.remove("selected")
+    elem = document.getElementById(newSelected)
+    if(elem) elem.classList.add("selected")
+    lastSelected = newSelected;
+}
+
 var makeStreamInfo = (elem,streamname) => {
+
+    selectNew("node-service-div-" + streamname)
+
     let srcIP = "X.X.X.X",  
     dstIP = "X.X.X.X", 
     Name = "none", 
@@ -94,6 +107,7 @@ var checkElem = (root,id,domtype,classElem,innerHTML) => {
         return ( (typeof val === 'function') || (typeof val === 'object') );
     }
 
+
     let elem = document.getElementById(id)
     if(!elem) {
         if(isObject(domtype))
@@ -110,14 +124,13 @@ var checkElem = (root,id,domtype,classElem,innerHTML) => {
         else {
             elem = document.createElement(domtype)
         }
-        if(id.length > 0)
             elem.id = id
         if(classElem.length > 0)
             elem.className = classElem;
         root.appendChild(elem)
     }
-    
-    if(elem.innerHTML != innerHTML) elem.innerHTML = innerHTML
+
+    if(elem.innerHTML != innerHTML && innerHTML.length > 0) elem.innerHTML = innerHTML
     return elem;
 }
 
@@ -141,12 +154,12 @@ function buildElem(node,elem) {
             }
             if(key.includes("_http._tcp")) {
                 let subcontainer = checkElem(services,"node-service-div-" + key,"div","","")
-                checkElem(subcontainer,"","i","fas fa-link","")
+                checkElem(subcontainer,"node-service-icon-" + key,"i","fas fa-link","")
                 checkElem(subcontainer,"node-service-a-" + key,{type: "a", href: "http://" + node.IP + ":" + node.Services[key].port},"http",name)
             }
             else if(key.includes("_telnet")) {
                 let subcontainer = checkElem(services,"node-service-div-" + key,"div","","")
-                checkElem(subcontainer,"","i","fas fa-tty","")
+                checkElem(subcontainer,"node-service-icon-" + key,"i","fas fa-tty","")
                 checkElem(subcontainer,"node-service-a-" + key,"span","",name)
             }
         })
@@ -160,7 +173,7 @@ function buildElem(node,elem) {
             }
             if(key.includes("_rtsp._tcp")) {
                 let subcontainer = checkElem(streams,"node-service-div-" + key,"div","","")
-                checkElem(subcontainer,"","i","fas fa-play-circle","")
+                checkElem(subcontainer,"node-service-icon-" + key,"i","fas fa-play-circle","")
                 checkElem(subcontainer,"node-stream-a-" + key,"span","",name)
                 subcontainer.onclick = (e) => {
                     makeStreamInfo(elem,key)
