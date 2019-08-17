@@ -1,3 +1,9 @@
+:root {
+    --main-color-light: #0088ff;
+    --main-color-dim: #004488;
+    --sec-color-light: #00ffff;
+    --sec-color-dim: #008888;
+}
 
 body {
     font-family: Verdana, sans-serif;
@@ -22,20 +28,21 @@ body {
 
 #win {
     grid-area: left;
-    background-color: #0e2b38;
+    background-color: #000000;
     color: white;
     font-size: 12;
     overflow: hidden;
+    border-top: 1px solid var(--main-color-light);
 }
 
 #top {
     grid-area: top;
-    background-color: #0088ff;
+    background-color:var(--main-color-light);
 } 
 
 #bottom {
     grid-area: bottom;
-    background-color: #0088ff
+    background-color: var(--main-color-light);
 }
 
 /* width */
@@ -51,12 +58,12 @@ body {
   
   /* Handle */
   ::-webkit-scrollbar-thumb {
-    background: #008888; 
+    background: var(--main-color-dim); 
   }
   
   /* Handle on hover */
   ::-webkit-scrollbar-thumb:hover {
-    background: cyan; 
+    background: var(--main-color-light); 
   }
 
 a {
@@ -85,13 +92,13 @@ nav {
     top: 0;
 }
  .switch {
-     background-color: #007777;
+     background-color: var(--sec-color-dim);
     text-align: center;
 } 
 
 .mdnsnode {
     text-align: center;
-    background-color: #0077ff;
+    background-color: var(--main-color-dim);
 }
 
 #nodes_container li {
@@ -99,7 +106,7 @@ nav {
     height: 220px;
     order: 2;
     margin: 5;
-    border: 3px solid cyan;
+    border: 3px solid var(--sec-color-light);
     border-radius: 10%;
     overflow-y: hidden;
     order: 2;
@@ -122,6 +129,8 @@ nav {
 #mynetwork {
     height: 100%;
     grid-area: net;
+    border-top: 1px solid var(--main-color-light);
+    border-left: 1px solid var(--main-color-light);
 }
 
 .fas {
@@ -139,7 +148,7 @@ nav {
 }
 
 .switch_port.ok {
-    color: cyan;
+    color: var(--sec-color-light);
 }
 .switch_port.dc {
     color: grey;

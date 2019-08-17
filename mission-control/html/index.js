@@ -14,7 +14,7 @@ function run() {
                     elem._data = {}
                     elem.id = "node-" + Name
                     container.appendChild(elem)
-                    //elem.onclick = () => { document.getElementById("win").innerHTML = JSON.stringify(elem._data.node) }
+                    elem.onclick = () => { document.getElementById("win").innerHTML = JSON.stringify(elem._data.node) }
                 }
                 buildElem(node,elem)
             }
@@ -26,13 +26,68 @@ function run() {
 }
 
 var makeStreamInfo = (elem,streamname) => {
+    let srcIP = "X.X.X.X",  
+    dstIP = "X.X.X.X", 
+    Name = "none", 
+    channel = 0, 
+    codec = "none",
+    sr = 0, 
+    dstPort = 0, 
+    PTPid = null, 
+    packetTime = 0, 
+    avp_audio = false
+    
     let win = document.getElementById("win")
-    console.log(streamname)
-    win.innerHTML = JSON.stringify(elem._data.node.Services[streamname].SDP)
-    console.log(elem._data.node.Services[streamname].SDP)
+    win.innerHTML = ""
+    let SDP = elem._data.node.Services[streamname].SDP
+    if(!SDP) {
+        checkElem(win,"","div","","still trying to get SDP...")
+        return
+    }
+    console.log(SDP)
+    if(SDP.error) {
+        checkElem(win,"","div","","could not get sdp")
+        return
+    }
+    if(SDP.connection && SDP.connection.ip) dstIP = SDP.connection.ip
+    if(SDP.name) Name = SDP.name
+    if(SDP.origin && SDP.origin.address) srcIP = SDP.origin.address
+    if(SDP.media && SDP.media.length > 0) {
+        let M = SDP.media[0]
+        if(M.connection && M.connection.ip) dstIP = M.connection.ip
+        if(M.port) dstPort = M.port
+        let pay = M.payloads
+        if(M.ptime) packetTime=M.ptime
+        if(M.protocol && M.protocol == "RTP/AVP" && M.type && M.type == "audio") avp_audio = true
+        if(M.rtp && M.rtp.length > 0) {
+            let x = M.rtp.filter(k => k.payload == pay)
+            console.log(x, pay)
+            if(x.length > 0) {
+                sr = x[0].rate
+                channel = x[0].encoding
+                codec = x[0].codec
+            }
+        }
+        if(M.invalid) {
+            let ts_ref = M.invalid.filter(k => k.value.startsWith("ts-refclk"))
+            if(ts_ref.length > 0) PTPid = ts_ref[0].value.split(":")[2]
+             ts_ref = M.invalid.filter(k => k.value.startsWith("framecount"))
+            if(ts_ref.length > 0) packetTime = (ts_ref[0].value.split(":")[1]*1000/sr + "").substr(0,4)
+        }
+    }
+    if(SDP.invalid) {
+        let ts_ref = SDP.invalid.filter(k => k.value.startsWith("ts-refclk"))
+        if(ts_ref.length > 0) PTPid = ts_ref[0].value.split(":")[2]
+    }
+
+    checkElem(win,"","div","",srcIP + " -> " + dstIP + ":" + dstPort)
+    checkElem(win,"","div","",Name)
+    checkElem(win,"","div","",channel + " ch at " + sr + "Hz " + codec + " ( " + packetTime + "ms )")
+    checkElem(win,"","div","","PTP master id " + PTPid)
+    if(avp_audio && PTPid && channel <= 8) checkElem(win,"","div","","AES67")
 }
 
-function checkElem(root,id,domtype,classElem,innerHTML) {
+var checkElem = (root,id,domtype,classElem,innerHTML) => {
 
     function isObject(val) {
         if (val === null) { return false;}
@@ -61,6 +116,7 @@ function checkElem(root,id,domtype,classElem,innerHTML) {
             elem.className = classElem;
         root.appendChild(elem)
     }
+    
     if(elem.innerHTML != innerHTML) elem.innerHTML = innerHTML
     return elem;
 }
