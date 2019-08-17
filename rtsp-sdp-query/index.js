@@ -11,10 +11,18 @@ module.exports = function (url, cb) {
     Object.keys(headers).forEach(function (header, index) {
         string += header + ": " + headers[Object.keys(headers)[index]].toString() + "\r\n";
     });
-    var client = net.connect(port, hostname, function () {
-        client.on('data', on_data);
-        client.write(string + '\r\n');
-    });
+    var client = new net.Socket();
+    client.on('error', function () { cb({ "could not find": url, error: "no conection" }); });
+    try {
+        client.connect(port, hostname, function () {
+            client.on('data', on_data);
+            client.write(string + '\r\n');
+        });
+    }
+    catch (unused) {
+        cb({ "could not find": url, error: "no conection" });
+        return;
+    }
     var on_data = function (data) {
         var sData = data.toString('utf8');
         var lines = sData.split('\n');
@@ -41,6 +49,6 @@ module.exports = function (url, cb) {
         if (status == 200)
             cb(transform.parse(mediaHeaders));
         else
-            cb({ "could not find": true });
+            cb({ "could not find": url, error: status });
     };
 };

@@ -11,6 +11,7 @@ var id_local = 0;
 var fs = require('fs');
 var _ = require('lodash');
 const RTSPClient = require("yellowstone").RTSPClient;
+const sdpgetter = require("../rtsp-sdp-query")
 
 // Side connected to other services
 //---------------------------------
@@ -131,6 +132,7 @@ function mergeNodes(index,newValue,Name: String)
                         console.log("Update : " + key)
                         if(key.includes("_rtsp._tcp")) {
                             console.log(JSON.stringify(newValue.Services[key]))
+                            sdpgetter("rtsp://" + newValue.IP + ":" + newValue.Services[key].port + "/by-name/" +  encodeURIComponent(key.split("._")[0]),(sdp) => {  console.log(sdp) ; Nodes[index].Services[key].SDP = sdp})
                         }
                     }
                 })

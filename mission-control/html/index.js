@@ -14,7 +14,7 @@ function run() {
                     elem._data = {}
                     elem.id = "node-" + Name
                     container.appendChild(elem)
-                    elem.onclick = () => { document.getElementById("win").innerHTML = JSON.stringify(elem._data.node) }
+                    //elem.onclick = () => { document.getElementById("win").innerHTML = JSON.stringify(elem._data.node) }
                 }
                 buildElem(node,elem)
             }
@@ -27,7 +27,9 @@ function run() {
 
 var makeStreamInfo = (elem,streamname) => {
     let win = document.getElementById("win")
-    win.innerHTML = JSON.stringify(elem._data.node.Services.filter(k => k.name == streamname))
+    console.log(streamname)
+    win.innerHTML = JSON.stringify(elem._data.node.Services[streamname].SDP)
+    console.log(elem._data.node.Services[streamname].SDP)
 }
 
 function checkElem(root,id,domtype,classElem,innerHTML) {
@@ -105,7 +107,7 @@ function buildElem(node,elem) {
                 checkElem(subcontainer,"","i","fas fa-play-circle","")
                 checkElem(subcontainer,"node-stream-a-" + key,"span","",name)
                 subcontainer.onclick = (e) => {
-                    makeStreamInfo(elem,name)
+                    makeStreamInfo(elem,key)
                     e.stopPropagation();
                 }
             }

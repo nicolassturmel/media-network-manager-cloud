@@ -15,13 +15,19 @@ export = (url, cb) => {
     Object.keys(headers).forEach((header, index) => {
         string += `${header}: ${headers[Object.keys(headers)[index]].toString()}\r\n`;
     });
+    let client = new net.Socket()
+    client.on('error', () => {cb({"could not find" : url, error: "no conection"})})
+    try {
+        client.connect(port, hostname, () => {
 
-    let client = net.connect(port, hostname, () => {
-
-        client.on('data', on_data);
-
-        client.write(string + '\r\n');
-    });
+            client.on('data', on_data);
+            client.write(string + '\r\n');
+        });
+    } catch (unused) {
+        cb({"could not find" : url, error: "unknown error"})
+        return
+    }
+    
 
     let on_data = (data) => {
         let sData = data.toString('utf8');
@@ -50,6 +56,6 @@ export = (url, cb) => {
 
         client.destroy()
         if(status == 200) cb(transform.parse(mediaHeaders))
-        else cb({"could not find" : true})
+        else cb({"could not find" : url, error: status})
     }
 }
