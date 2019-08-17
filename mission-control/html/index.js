@@ -1,27 +1,33 @@
 
-
+let selectedElem = null;
 function run() {
     let container = document.getElementById("nodes_container")
     var missionControlWS = new WebSocket("ws://" + window.location.host)
     missionControlWS.onmessage = function (event) {
         let nodes = JSON.parse(event.data)
-        console.log(nodes)
         for(let node of nodes) {
             if(node.Type != "null" && node.Name) {
                 let Name = node.Name
                 let elem = document.getElementById("node-" + Name)
                 if(elem == undefined) {
                     elem = document.createElement("li")
+                    elem._data = {}
                     elem.id = "node-" + Name
                     container.appendChild(elem)
+                    elem.onclick = () => { document.getElementById("win").innerHTML = JSON.stringify(elem._data.node) }
                 }
                 buildElem(node,elem)
             }
         }
         buildGraph(nodes)
-        setTimeout(() => {missionControlWS.send("git it to me")},3000)
+        setTimeout(() => {missionControlWS.send("git it to me")},1500)
     }
     initGraph()
+}
+
+var makeStreamInfo = (elem,streamname) => {
+    let win = document.getElementById("win")
+    win.innerHTML = JSON.stringify(elem._data.node.Services.filter(k => k.name == streamname))
 }
 
 function checkElem(root,id,domtype,classElem,innerHTML) {
@@ -53,11 +59,14 @@ function checkElem(root,id,domtype,classElem,innerHTML) {
             elem.className = classElem;
         root.appendChild(elem)
     }
-    elem.innerHTML = innerHTML
+    if(elem.innerHTML != innerHTML) elem.innerHTML = innerHTML
     return elem;
 }
 
 function buildElem(node,elem) {
+    if(elem._data.node && _.isEqual(elem._data.mode,node))
+        return
+    elem._data.node = node
     let name = node.Name.split(".")[0]
     if(name.length > 21) {
         name = name.substr(0,12) + "..." + name.substr(-5)
@@ -95,6 +104,10 @@ function buildElem(node,elem) {
                 let subcontainer = checkElem(streams,"node-service-div-" + key,"div","","")
                 checkElem(subcontainer,"","i","fas fa-play-circle","")
                 checkElem(subcontainer,"node-stream-a-" + key,"span","",name)
+                subcontainer.onclick = (e) => {
+                    makeStreamInfo(elem,name)
+                    e.stopPropagation();
+                }
             }
         })
     }
@@ -121,7 +134,7 @@ function buildElem(node,elem) {
             }
             let port = checkElem(subcontainer,"node-port-" + p.Name + ":" + node.Name,"div","switch_port",p.Name)
             port.classList.remove("off")
-            port.classList.remove("waarn")
+            port.classList.remove("warn")
             port.classList.remove("dc")
             port.classList.remove("off")
             port.classList.add(classP)

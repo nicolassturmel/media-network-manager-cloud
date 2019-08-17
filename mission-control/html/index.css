@@ -20,6 +20,14 @@ body {
       "bottom bottom";
 }
 
+#win {
+    grid-area: left;
+    background-color: #0e2b38;
+    color: white;
+    font-size: 12;
+    overflow: hidden;
+}
+
 #top {
     grid-area: top;
     background-color: #0088ff;

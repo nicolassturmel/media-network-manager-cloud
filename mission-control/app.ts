@@ -10,6 +10,7 @@ var mdnsBrowser = require('../mdns-browser')
 var id_local = 0;
 var fs = require('fs');
 var _ = require('lodash');
+const RTSPClient = require("yellowstone").RTSPClient;
 
 // Side connected to other services
 //---------------------------------
@@ -48,7 +49,7 @@ wss.on('connection', function connection(ws) {
             i = Nodes.findIndex(k => k.IP == node.IP);
         }
         else {
-            console.log(message)
+            //console.log(message)
         }
         mergeNodes(i,node,"")
         calculateInterConnect()
@@ -101,7 +102,6 @@ mdns.respond({
             i = Nodes.findIndex(k => k.Name == node.Name);
         }
         mergeNodes(i,node,node.Name)
-        console.log(node)
     }
   }
 
@@ -109,7 +109,7 @@ mdns.respond({
 
 function mergeNodes(index,newValue,Name: String)
 {
-    if(Nodes[index] == newValue) return
+    if(_.isEqual(Nodes[index] , newValue)) return
     if(newValue.Type == "switch") {
         if(newValue.Schema == 1) {
             Nodes[index].Mac = newValue.Mac
@@ -123,9 +123,20 @@ function mergeNodes(index,newValue,Name: String)
     if(newValue.Type == "MdnsNode") {
         if(newValue.Schema == 1) {
             if(Nodes[index].Type && Nodes[index].Type != "switch") Nodes[index].Type = newValue.Type
-            Nodes[index].Services = newValue.Services
+            if(!Nodes[index].Services) Nodes[index].Services = {} 
+            if(true) {
+                Object.keys(newValue.Services).forEach((key) => {
+                    if(!(Nodes[index].Services[key] && _.isEqual(Nodes[index].Services[key],newValue.Services[key]))) {
+                        Nodes[index].Services[key] = newValue.Services[key]
+                        console.log("Update : " + key)
+                        if(key.includes("_rtsp._tcp")) {
+                            console.log(JSON.stringify(newValue.Services[key]))
+                        }
+                    }
+                })
+            }
             Nodes[index].OtherIPs = newValue.OtherIPs
-            Nodes[index].Macs = newValue.Macs 
+            Nodes[index].Macs = newValue.Macs  
             Nodes[index].Neighbour = newValue.Neighbour
             Nodes[index].Mac = newValue.Mac
             Nodes[index].id = newValue.id
@@ -234,10 +245,6 @@ user_app.use('/', exp.static(__dirname + '/html'));
 server.listen(8888, () => {
     console.log(`Server started on port 8888 :)`);
 });
-
-user_app.get("/rest", (req, res, next) => {
-    res.json({"ola chica" : "aie aie aie"})
-})
 
 //initialize the WebSocket server instance
 const user_wss = new sock.Server({ server: server });

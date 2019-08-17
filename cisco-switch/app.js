@@ -1,30 +1,58 @@
-'use strict';
 var SwitchPollTime = 1;
 var Telnet = require('telnet-client');
+var commandLineArgs = require('command-line-args');
+var uniqid = require('uniqid');
+// Command line arguments
+var optionDefinitions = [
+    { name: 'ip', alias: 'i', type: String, defaultValue: '192.168.1.201' },
+    { name: 'user', alias: 'u', type: String, defaultValue: 'cisco' },
+    { name: 'password', alias: 'p', type: String, defaultValue: 'cisco' }
+];
+var options = commandLineArgs(optionDefinitions);
+console.log(options);
+var client = require('../mnms-client-ws-interface');
+client.challenge("thisisme");
+client.whoami("mnms client ws test prgm");
+client.setCallback(function (data) { console.log(data); });
+client.run();
+// Connecting to switch
 var SwitchData = {};
 var OldValue = {};
-var Switch = { Ports: {}, Multicast: "off" };
+var Switch = {
+    Type: "switch",
+    IP: options.ip,
+    Schema: 1,
+    Ports: [],
+    Multicast: "off",
+    Neighbour: "",
+    Mac: "",
+    id: uniqid()
+};
 var ActionCount = 0;
 var ClearTime = 0;
 var CountTime = 0;
 var NewData;
 var params = {
-    host: '192.168.1.201',
+    host: options.ip,
     port: 23,
     shellPrompt: /\D+#/,
     loginPrompt: "User Name:",
     passwordPrompt: "Password:",
-    username: "cisco",
-    password: "cisco",
+    username: options.user,
+    password: options.password,
     pageSeparator: /More: <space>,  Qu.*/,
     timeout: 0
 };
 var express = require("express");
 var app = express();
 app.use('/', express.static(__dirname + '/html'));
-app.listen(3000, function () {
-    console.log("Server running on port 3000");
+/* try {
+    app.listen(3000, () => {
+ console.log("Server running on port 3000");
 });
+} catch (error) {
+    
+}*/
 app.get("/bw", function (req, res, next) {
     function waitNewData() { if (NewData == true)
         res.json(Switch);
@@ -38,20 +66,20 @@ var ParseState;
     ParseState["In"] = "In";
     ParseState["Out"] = "Out";
 })(ParseState || (ParseState = {}));
+switchTelnet.on('ready', function (prompt) {
+    StartSwitchDatamine();
+});
+switchTelnet.on('timeout', function () {
+    console.log('socket timeout!');
+});
+switchTelnet.on('error', function () {
+    setTimeout(startTelenetToSwitch, 2000);
+});
+switchTelnet.on('close', function () {
+    console.log('connection closed');
+    setTimeout(startTelenetToSwitch, 20000);
+});
 function startTelenetToSwitch() {
-    switchTelnet.on('ready', function (prompt) {
-        StartSwitchDatamine();
-    });
-    switchTelnet.on('timeout', function () {
-        console.log('socket timeout!');
-    });
-    switchTelnet.on('error', function () {
-        setTimeout(startTelenetToSwitch, 2000);
-    });
-    switchTelnet.on('close', function () {
-        console.log('connection closed');
-        setTimeout(startTelenetToSwitch, 20000);
-    });
     switchTelnet.connect(params);
 }
 function get_count() {
@@ -133,21 +161,40 @@ function clear_count() {
 }
 function computeBandWidth() {
     //console.log(CountTime)
+    Switch.Ports = [];
     Object.keys(SwitchData).forEach(function (key) {
         var val = SwitchData[key];
         //console.log("Port " + key + " - In : " + Math.round(val.In*8/10/1024/1024*100)/100 + "Mb/s - Out : " +  Math.round(val.Out*8/10/1024/1024*100)/100 + "Mb/s")
         var speed = "n.c.";
         var AdminState = "n.c.";
+        var ConnectedMacs = [];
+        if (val.ConnectedMacs)
+            ConnectedMacs = val.ConnectedMacs;
         if (val.Speed)
             speed = val.Speed;
         if (val.AdminState)
             AdminState = val.AdminState;
-        if (!Switch.Ports[key])
-            Switch.Ports[key] = {};
-        Switch.Ports[key] = { IGMP: { ForwardAll: val.ForwardAll, Groups: [] }, AdminState: AdminState, Speed: speed, In: Math.round(val.In * 8 / CountTime / 1024 / 1024 * 10 * 1000) / 10, Out: Math.round(val.Out * 8 / CountTime / 1024 / 1024 * 10 * 1000) / 10 };
+        Switch.Ports.push({
+            Name: key,
+            ConnectedMacs: ConnectedMacs,
+            IGMP: {
+                ForwardAll: val.ForwardAll,
+                Groups: []
+            },
+            AdminState: AdminState,
+            Speed: speed,
+            In: Math.round(val.In * 8 / CountTime / 1024 / 1024 * 10 * 1000) / 10,
+            Out: Math.round(val.Out * 8 / CountTime / 1024 / 1024 * 10 * 1000) / 10
+        });
     });
     NewData = true;
     console.log(Switch);
+    try {
+        client.send(JSON.stringify(Switch));
+    }
+    catch (error) {
+        console.error("Waiting to reconnect to ws...");
+    }
 }
 function getPortStatus() {
     switchTelnet.exec("show int status", function (err, response) {
@@ -217,6 +264,39 @@ function getBridgeIgmpStatus() {
         setTimeout(getNextFct("getBridgeIgmpStatus"), SwitchPollTime * 1000);
     });
 }
+function getMacAddressTable() {
+    switchTelnet.exec("show mac address-table ", function (err, response) {
+        var array;
+        try {
+            array = response.split("\n");
+        }
+        catch (error) {
+            console.log("Response error : can not split in array");
+            console.log(response);
+            setTimeout(function () { getPortConfig(); }, SwitchPollTime * 1000);
+            return;
+        }
+        Object.keys(SwitchData).forEach(function (key) {
+            SwitchData[key].ConnectedMacs = [];
+        });
+        for (var _i = 0, array_5 = array; _i < array_5.length; _i++) {
+            var line = array_5[_i];
+            var add = line.split(/\s+/);
+            //console.log(add)
+            if (add[1] == 1) {
+                if (add[3] == 0) {
+                    Switch.Mac = add[2];
+                }
+                else {
+                    if (SwitchData[add[3]]) {
+                        SwitchData[add[3]].ConnectedMacs.push(add[2]);
+                    }
+                }
+            }
+        }
+        setTimeout(getNextFct("getMacAddressTable"), SwitchPollTime * 1000);
+    });
+}
 function getNextFct(current) {
     switch (current) {
         case "clear_count":
@@ -228,6 +308,8 @@ function getNextFct(current) {
         case "getPortConfig":
             return getBridgeIgmpStatus;
         case "getBridgeIgmpStatus":
+            return getMacAddressTable;
+        case "getMacAddressTable":
             return get_count;
     }
 }

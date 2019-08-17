@@ -176,6 +176,12 @@ export = (cb,_mdns) => {
         });
         mdns.query({
             questions:[{
+                name: '_ravenna_stream._sub._rtsp._tcp.local',
+                type: 'SRV'
+            }]
+        });
+        mdns.query({
+            questions:[{
                 name: '_ravenna._sub._http._tcp.local',
                 type: 'SRV'
             }]
@@ -189,6 +195,12 @@ export = (cb,_mdns) => {
         mdns.query({
             questions:[{
                 name: '_csco-sb._tcp.local',
+                type: 'SRV'
+            }]
+        });
+        mdns.query({
+            questions:[{
+                name: '_telnet._tcp.local',
                 type: 'SRV'
             }]
         });
