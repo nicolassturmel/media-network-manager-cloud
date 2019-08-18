@@ -16,7 +16,7 @@ function run() {
                     container.appendChild(elem)
                     elem.onclick = () => { document.getElementById("win").innerHTML = JSON.stringify(elem._data.node) }
                 }
-                console.log(node)
+                //console.log(node)
                 buildElem(node,elem)
             }
         }
@@ -48,8 +48,10 @@ var makeStreamInfo = (elem,streamname) => {
     sr = 0, 
     dstPort = 0, 
     PTPid = null, 
+    PTPdom = null,
     packetTime = 0, 
-    avp_audio = false
+    avp_audio = false,
+    groups = {}
     
     let win = document.getElementById("win")
     win.innerHTML = ""
@@ -65,41 +67,70 @@ var makeStreamInfo = (elem,streamname) => {
     }
     if(SDP.connection && SDP.connection.ip) dstIP = SDP.connection.ip
     if(SDP.name) Name = SDP.name
+
+
+    checkElem(win,"","div","win-sdp-name",Name)
+
+
     if(SDP.origin && SDP.origin.address) srcIP = SDP.origin.address
-    if(SDP.media && SDP.media.length > 0) {
-        let M = SDP.media[0]
-        if(M.connection && M.connection.ip) dstIP = M.connection.ip
-        if(M.port) dstPort = M.port
-        let pay = M.payloads
-        if(M.ptime) packetTime=M.ptime
-        if(M.protocol && M.protocol == "RTP/AVP" && M.type && M.type == "audio") avp_audio = true
-        if(M.rtp && M.rtp.length > 0) {
-            let x = M.rtp.filter(k => k.payload == pay)
-            console.log(x, pay)
-            if(x.length > 0) {
-                sr = x[0].rate
-                channel = x[0].encoding
-                codec = x[0].codec
+    if(SDP.groups) {
+        for(let g of SDP.groups) {
+            if(g.type == "DUP") {
+                let ar = g.mids.split(" ")
+                for(let fl of ar) {
+                    groups[fl] = false;
+                }
             }
         }
-        if(M.invalid) {
-            let ts_ref = M.invalid.filter(k => k.value.startsWith("ts-refclk"))
-            if(ts_ref.length > 0) PTPid = ts_ref[0].value.split(":")[2]
-             ts_ref = M.invalid.filter(k => k.value.startsWith("framecount"))
-            if(ts_ref.length > 0) packetTime = (ts_ref[0].value.split(":")[1]*1000/sr + "").substr(0,4)
+    }
+    
+    if(SDP.media && SDP.media.length > 0) {
+        for(let M of SDP.media) {
+            if(M.mid && groups[M.mid] === false) groups[M.mid] = true;
+            if(M.connection && M.connection.ip) dstIP = M.connection.ip
+            if(M.port) dstPort = M.port
+            let pay = M.payloads
+            if(M.ptime) packetTime=M.ptime
+            if(M.protocol && M.protocol == "RTP/AVP" && M.type && M.type == "audio") avp_audio = true
+            if(M.rtp && M.rtp.length > 0) {
+                let x = M.rtp.filter(k => k.payload == pay)
+                if(x.length > 0) {
+                    sr = x[0].rate
+                    channel = x[0].encoding
+                    codec = x[0].codec
+                }
+            }
+            if(M.sourceFilter) srcIP = M.sourceFilter.srcList
+            if(M.invalid) {
+                let ts_ref = M.invalid.filter(k => k.value.startsWith("ts-refclk"))
+                if(ts_ref.length > 0) {
+                    PTPid = ts_ref[0].value.split(":")[2]
+                    PTPdom = ts_ref[0].value.split(":")[3]
+                }
+                ts_ref = M.invalid.filter(k => k.value.startsWith("framecount"))
+                if(ts_ref.length > 0) packetTime = (ts_ref[0].value.split(":")[1]*1000/sr + "").substr(0,4)
+            }
+
+    let ip_dst = dstIP.split("/")[0]
+    let ttl = dstIP.split("/")[1]
+    checkElem(win,"","div","win-sdp-connection",srcIP + " <br> " + ip_dst + "<br>port:" + dstPort + " /  ttl:" + ttl)
         }
     }
     if(SDP.invalid) {
         let ts_ref = SDP.invalid.filter(k => k.value.startsWith("ts-refclk"))
-        if(ts_ref.length > 0) PTPid = ts_ref[0].value.split(":")[2]
+        if(ts_ref.length > 0) {
+            PTPid = ts_ref[0].value.split(":")[2]
+            PTPdom = ts_ref[0].value.split(":")[3]
+        }
     }
-    let ip_dst = dstIP.split("/")[0]
-    let ttl = dstIP.split("/")[1]
-    checkElem(win,"","div","win-sdp-name",Name)
-    checkElem(win,"","div","win-sdp-connection",srcIP + " <br> " + ip_dst + "<br>port:" + dstPort + " /  ttl:" + ttl)
     checkElem(win,"","div","win-sdp-format",channel + " ch at " + sr + "Hz " + codec + " <br> " + packetTime + "ms per frame<br>(" + Math.ceil(packetTime*sr/1000) + " samples)")
-    checkElem(win,"","div","win-ptp-format","<b>PTP master</b><br>" + PTPid)
+    checkElem(win,"","div","win-ptp-format","<b>PTP master (" + PTPdom + ")</b><br>" + PTPid)
+    let dash7 = 4;
+    Object.keys(groups).forEach((key) => {
+        dash7 = dash7 && groups[key]
+    })
     if(avp_audio && PTPid && channel <= 8) checkElem(win,"","div","win-aes67","AES67")
+    if(dash7 && dash7 != 4) checkElem(win,"","div","win-dash7","SMPTE2022-7")
 }
 
 var checkElem = (root,id,domtype,classElem,innerHTML) => {

@@ -226,5 +226,12 @@ nav {
 .win-aes67 {
     border: 1px solid var(--main-color-dim);
     background-color: var(--main-color-dim);
-    margin: 0 60;
+    width: 55px;
+    margin: 5 auto;
+}
+
+.win-dash7 {
+    background-color: #646400;
+    width: 115px;
+    margin: 5 auto;
 }
