@@ -20,7 +20,7 @@ module.exports = function (url, cb) {
         });
     }
     catch (unused) {
-        cb({ "could not find": url, error: "no conection" });
+        cb({ "could not find": url, error: "unknown error" });
         return;
     }
     var on_data = function (data) {
