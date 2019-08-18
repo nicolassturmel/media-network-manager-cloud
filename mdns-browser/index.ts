@@ -169,39 +169,45 @@ export = (cb,_mdns) => {
     sendNode = cb;
     setTimeout(() => {
         mdns.query({
+            id:1,
             questions:[{
                 name: '_http._tcp.local',
-                type: 'SRV'
+                type: 'PTR'
             }]
         });
         mdns.query({
+            id:2,
             questions:[{
                 name: '_ravenna_stream._sub._rtsp._tcp.local',
-                type: 'SRV'
+                type: 'PTR'
             }]
         });
         mdns.query({
+            id:3,
             questions:[{
                 name: '_ravenna._sub._http._tcp.local',
-                type: 'SRV'
+                type: 'PTR'
             }]
         });
         mdns.query({
+            id:4,
             questions:[{
                 name: '_ember._tcp.local',
-                type: 'SRV'
+                type: 'PTR'
             }]
         });
         mdns.query({
+            id:5,
             questions:[{
                 name: '_csco-sb._tcp.local',
-                type: 'SRV'
+                type: 'PTR'
             }]
         });
         mdns.query({
+            id:6,
             questions:[{
                 name: '_telnet._tcp.local',
-                type: 'SRV'
+                type: 'PTR'
             }]
         });
     },1000)
