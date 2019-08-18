@@ -16,6 +16,7 @@ function run() {
                     container.appendChild(elem)
                     elem.onclick = () => { document.getElementById("win").innerHTML = JSON.stringify(elem._data.node) }
                 }
+                console.log(node)
                 buildElem(node,elem)
             }
         }
@@ -54,12 +55,12 @@ var makeStreamInfo = (elem,streamname) => {
     win.innerHTML = ""
     let SDP = elem._data.node.Services[streamname].SDP
     if(!SDP) {
-        checkElem(win,"","div","","still trying to get SDP...")
+        checkElem(win,"","div","win-sdp-error","still trying to get SDP...")
         return
     }
     console.log(SDP)
     if(SDP.error) {
-        checkElem(win,"","div","","could not get sdp")
+        checkElem(win,"","div","win-sdp-error","could not get sdp<br>Error " + SDP.error)
         return
     }
     if(SDP.connection && SDP.connection.ip) dstIP = SDP.connection.ip
@@ -92,12 +93,13 @@ var makeStreamInfo = (elem,streamname) => {
         let ts_ref = SDP.invalid.filter(k => k.value.startsWith("ts-refclk"))
         if(ts_ref.length > 0) PTPid = ts_ref[0].value.split(":")[2]
     }
-
-    checkElem(win,"","div","",srcIP + " -> " + dstIP + ":" + dstPort)
-    checkElem(win,"","div","",Name)
-    checkElem(win,"","div","",channel + " ch at " + sr + "Hz " + codec + " ( " + packetTime + "ms )")
-    checkElem(win,"","div","","PTP master id " + PTPid)
-    if(avp_audio && PTPid && channel <= 8) checkElem(win,"","div","","AES67")
+    let ip_dst = dstIP.split("/")[0]
+    let ttl = dstIP.split("/")[1]
+    checkElem(win,"","div","win-sdp-name",Name)
+    checkElem(win,"","div","win-sdp-connection",srcIP + " <br> " + ip_dst + "<br>port:" + dstPort + " /  ttl:" + ttl)
+    checkElem(win,"","div","win-sdp-format",channel + " ch at " + sr + "Hz " + codec + " <br> " + packetTime + "ms per frame<br>(" + Math.ceil(packetTime*sr/1000) + " samples)")
+    checkElem(win,"","div","win-ptp-format","<b>PTP master</b><br>" + PTPid)
+    if(avp_audio && PTPid && channel <= 8) checkElem(win,"","div","win-aes67","AES67")
 }
 
 var checkElem = (root,id,domtype,classElem,innerHTML) => {

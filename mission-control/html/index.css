@@ -10,6 +10,7 @@ body {
     font-size: 15;
     line-height: 1.5;
     background-color: #060606;
+    color: white;
 }
 
 #port {
@@ -26,23 +27,24 @@ body {
       "bottom bottom";
 }
 
-#win {
-    grid-area: left;
-    background-color: #000000;
-    color: white;
-    font-size: 12;
-    overflow: hidden;
-    border-top: 1px solid var(--main-color-light);
-}
-
 #top {
     grid-area: top;
     background-color:var(--main-color-light);
+    display: flex;
+    font-size: 14px;
 } 
 
 #bottom {
     grid-area: bottom;
     background-color: var(--main-color-light);
+    display: flex; 
+    font-size: 14px;
+    flex-direction: row-reverse;
+}
+
+
+.bar-comp {
+    margin: 0 20px;  
 }
 
 /* width */
@@ -91,10 +93,6 @@ nav {
     position: sticky;
     top: 0;
 }
- .switch {
-     background-color: var(--sec-color-dim);
-    text-align: center;
-} 
 
 .mdnsnode {
     text-align: center;
@@ -141,6 +139,11 @@ nav {
     color: #ff00ff;
 }
 
+.switch {
+    background-color: var(--sec-color-dim);
+   text-align: center;
+} 
+
 .switch_port {
     float: left;
     margin: 5px;
@@ -178,4 +181,50 @@ nav {
 }
 .ports {
     margin-top: 10px;
+}
+
+/* Windos information */
+
+#win {
+    grid-area: left;
+    background-color: #000000;
+    color: white;
+    font-size: 14;
+    overflow: hidden;
+    border-top: 1px solid var(--main-color-light);
+    text-align: center;
+}
+
+
+.win-sdp-error {
+    margin-top: 30%;
+}
+.win-sdp-name {
+    margin-top: 20px;
+    font-weight: bold;
+    box-sizing: border-box;
+    height: 65px;
+    margin: 15px;
+    overflow: hidden;
+}
+.win-sdp-connection {
+    line-height: 2;
+    box-sizing: border-box;
+    height: 100px;
+}
+.win-sdp-format {
+
+    box-sizing: border-box;
+    height: 80px;
+}
+.win-ptp-format {
+    box-sizing: border-box;
+    height: 70px;
+
+}
+
+.win-aes67 {
+    border: 1px solid var(--main-color-dim);
+    background-color: var(--main-color-dim);
+    margin: 0 60;
 }
