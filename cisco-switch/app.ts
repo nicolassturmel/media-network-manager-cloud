@@ -211,7 +211,7 @@ function computeBandWidth() {
             ConnectedMacs : ConnectedMacs, 
             IGMP : {
                 ForwardAll: val.ForwardAll, 
-                Groups: []
+                Groups: val.IGMPGroups
             }, 
             AdminState: AdminState, 
             Speed: speed, 
@@ -331,6 +331,86 @@ function getMacAddressTable() {
     })
 }
 
+function portList(x) {
+    let list = []
+
+    if(!x) return []
+    for(let e of x.split(",")) {
+        let r = e.match(/gi(\d+)-(\d+)/)
+        if(r) {
+            for(let i = parseInt(r[1]) ; i <= parseInt(r[2]) ; i++)
+                list.push("gi" + i)
+        }
+        else
+            list.push(e)
+    }
+    return list
+}
+
+function getMulticastSources() {        
+    switchTelnet.exec("show bridge multicast address-table", function (err, response) {
+        let tabs = response.split("\n\n")
+        Object.keys(SwitchData).forEach(function(key) {
+            SwitchData[key].IGMPGroups = {}
+        })
+        for(let i in tabs) {
+            let lines
+            switch(parseInt(i)) {
+                case 5:
+                        //console.log("Tab", tabs[i])
+                         lines = tabs[i].split("\n")
+                        lines.splice(0,2)
+                        for(let line of lines) {
+                            let toks = line.split(/\s+/)
+                            if(toks.length < 3) break
+                            let ps = portList(toks[3])
+                            for(let p of ps) {
+                                SwitchData[p].IGMPGroups[toks[1]] = true;
+                            }
+                        }
+                        break;
+                case 7:
+                        lines = tabs[i].split("\n")
+                        lines.splice(0,2)
+                        for(let line of lines) {
+                            let toks = line.split(/\s+/)
+                            if(toks.length < 2) break
+                            let ps = portList(toks[2])
+                            for(let p of ps) {
+                                SwitchData[p].IGMPGroups[toks[1]] = true;
+                            }
+                        }
+                        break;
+                case 9:
+                         lines = tabs[i].split("\n")
+                        lines.splice(0,2)
+                        for(let line of lines) {
+                            let toks = line.split(/\s+/)
+                            if(toks.length < 3) break
+                            let ps = portList(toks[3])
+                            for(let p of ps) {
+                                SwitchData[p].IGMPGroups[toks[1]] = true;
+                            }
+                        }
+                        break;
+                case 11:
+                        lines = tabs[i].split("\n")
+                        lines.splice(0,2)
+                        for(let line of lines) {
+                            let toks = line.split(/\s+/)
+                            if(toks.length < 2) break
+                            let ps = portList(toks[2])
+                            for(let p of ps) {
+                                SwitchData[p].IGMPGroups[toks[1]] = true;
+                            }
+                        }
+                        break;
+            }
+        }
+        setTimeout(getNextFct("getMulticastSources"), SwitchPollTime*1000);
+    })
+}
+
 function getNextFct(current)
 {
     switch(current) {
@@ -345,13 +425,18 @@ function getNextFct(current)
         case "getBridgeIgmpStatus" :
             return getMacAddressTable
         case "getMacAddressTable" :
+            return getMulticastSources
+        case "getMulticastSources" :
             return get_count
     }
 }
 
 function StartSwitchDatamine() {
-    switchTelnet.exec("terminal datad", (err, respond) => {})
-    setTimeout(clear_count, 1000);
+    switchTelnet.exec("terminal datad", (err, respond) => {
+        switchTelnet.exec("terminal width 0", (err, respond) => {
+            setTimeout(clear_count, 1000);
+        })
+    })
 }
 
 console.log("start")
