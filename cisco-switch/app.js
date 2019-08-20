@@ -315,74 +315,76 @@ function portList(x) {
 }
 function getMulticastSources() {
     switchTelnet.exec("show bridge multicast address-table", function (err, response) {
-        var tabs = response.split("\n\n");
-        Object.keys(SwitchData).forEach(function (key) {
-            SwitchData[key].IGMPGroups = {};
-        });
-        for (var i in tabs) {
-            var lines = void 0;
-            switch (parseInt(i)) {
-                case 5:
-                    //console.log("Tab", tabs[i])
-                    lines = tabs[i].split("\n");
-                    lines.splice(0, 2);
-                    for (var _i = 0, lines_1 = lines; _i < lines_1.length; _i++) {
-                        var line = lines_1[_i];
-                        var toks = line.split(/\s+/);
-                        if (toks.length < 3)
-                            break;
-                        var ps = portList(toks[3]);
-                        for (var _a = 0, ps_1 = ps; _a < ps_1.length; _a++) {
-                            var p = ps_1[_a];
-                            SwitchData[p].IGMPGroups[toks[1]] = true;
+        if (response) {
+            var tabs = response.split("\n\n");
+            Object.keys(SwitchData).forEach(function (key) {
+                SwitchData[key].IGMPGroups = {};
+            });
+            for (var i in tabs) {
+                var lines = void 0;
+                switch (parseInt(i)) {
+                    case 5:
+                        //console.log("Tab", tabs[i])
+                        lines = tabs[i].split("\n");
+                        lines.splice(0, 2);
+                        for (var _i = 0, lines_1 = lines; _i < lines_1.length; _i++) {
+                            var line = lines_1[_i];
+                            var toks = line.split(/\s+/);
+                            if (toks.length < 3)
+                                break;
+                            var ps = portList(toks[3]);
+                            for (var _a = 0, ps_1 = ps; _a < ps_1.length; _a++) {
+                                var p = ps_1[_a];
+                                SwitchData[p].IGMPGroups[toks[1]] = true;
+                            }
                         }
-                    }
-                    break;
-                case 7:
-                    lines = tabs[i].split("\n");
-                    lines.splice(0, 2);
-                    for (var _b = 0, lines_2 = lines; _b < lines_2.length; _b++) {
-                        var line = lines_2[_b];
-                        var toks = line.split(/\s+/);
-                        if (toks.length < 2)
-                            break;
-                        var ps = portList(toks[2]);
-                        for (var _c = 0, ps_2 = ps; _c < ps_2.length; _c++) {
-                            var p = ps_2[_c];
-                            SwitchData[p].IGMPGroups[toks[1]] = true;
+                        break;
+                    case 7:
+                        lines = tabs[i].split("\n");
+                        lines.splice(0, 2);
+                        for (var _b = 0, lines_2 = lines; _b < lines_2.length; _b++) {
+                            var line = lines_2[_b];
+                            var toks = line.split(/\s+/);
+                            if (toks.length < 2)
+                                break;
+                            var ps = portList(toks[2]);
+                            for (var _c = 0, ps_2 = ps; _c < ps_2.length; _c++) {
+                                var p = ps_2[_c];
+                                SwitchData[p].IGMPGroups[toks[1]] = true;
+                            }
                         }
-                    }
-                    break;
-                case 9:
-                    lines = tabs[i].split("\n");
-                    lines.splice(0, 2);
-                    for (var _d = 0, lines_3 = lines; _d < lines_3.length; _d++) {
-                        var line = lines_3[_d];
-                        var toks = line.split(/\s+/);
-                        if (toks.length < 3)
-                            break;
-                        var ps = portList(toks[3]);
-                        for (var _e = 0, ps_3 = ps; _e < ps_3.length; _e++) {
-                            var p = ps_3[_e];
-                            SwitchData[p].IGMPGroups[toks[1]] = true;
+                        break;
+                    case 9:
+                        lines = tabs[i].split("\n");
+                        lines.splice(0, 2);
+                        for (var _d = 0, lines_3 = lines; _d < lines_3.length; _d++) {
+                            var line = lines_3[_d];
+                            var toks = line.split(/\s+/);
+                            if (toks.length < 3)
+                                break;
+                            var ps = portList(toks[3]);
+                            for (var _e = 0, ps_3 = ps; _e < ps_3.length; _e++) {
+                                var p = ps_3[_e];
+                                SwitchData[p].IGMPGroups[toks[1]] = true;
+                            }
                         }
-                    }
-                    break;
-                case 11:
-                    lines = tabs[i].split("\n");
-                    lines.splice(0, 2);
-                    for (var _f = 0, lines_4 = lines; _f < lines_4.length; _f++) {
-                        var line = lines_4[_f];
-                        var toks = line.split(/\s+/);
-                        if (toks.length < 2)
-                            break;
-                        var ps = portList(toks[2]);
-                        for (var _g = 0, ps_4 = ps; _g < ps_4.length; _g++) {
-                            var p = ps_4[_g];
-                            SwitchData[p].IGMPGroups[toks[1]] = true;
+                        break;
+                    case 11:
+                        lines = tabs[i].split("\n");
+                        lines.splice(0, 2);
+                        for (var _f = 0, lines_4 = lines; _f < lines_4.length; _f++) {
+                            var line = lines_4[_f];
+                            var toks = line.split(/\s+/);
+                            if (toks.length < 2)
+                                break;
+                            var ps = portList(toks[2]);
+                            for (var _g = 0, ps_4 = ps; _g < ps_4.length; _g++) {
+                                var p = ps_4[_g];
+                                SwitchData[p].IGMPGroups[toks[1]] = true;
+                            }
                         }
-                    }
-                    break;
+                        break;
+                }
             }
         }
         setTimeout(getNextFct("getMulticastSources"), SwitchPollTime * 1000);

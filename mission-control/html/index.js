@@ -1,11 +1,15 @@
 
 let selectedElem = null;
+let maddress = []
+let mselection = {}
+let _nodes
+
 function run() {
     let container = document.getElementById("nodes_container")
     var missionControlWS = new WebSocket("ws://" + window.location.host)
     missionControlWS.onmessage = function (event) {
-        let nodes = JSON.parse(event.data)
-        for(let node of nodes) {
+        _nodes = JSON.parse(event.data)
+        for(let node of _nodes) {
             if(node.Type != "null" && node.Name) {
                 let Name = node.Name
                 let elem = document.getElementById("node-" + Name)
@@ -20,7 +24,7 @@ function run() {
                 buildElem(node,elem)
             }
         }
-        buildGraph(nodes)
+        buildGraph(_nodes)
         setTimeout(() => {missionControlWS.send("git it to me")},1500)
     }
     initGraph()
@@ -29,6 +33,8 @@ function run() {
 let lastSelected = null;
 
 var selectNew = (newSelected) => {
+    maddress = []
+    mselection = {}
     let elem = document.getElementById(lastSelected)
     if(elem) elem.classList.remove("selected")
     elem = document.getElementById(newSelected)
@@ -56,6 +62,7 @@ var makeStreamInfo = (elem,streamname) => {
     let win = document.getElementById("win")
     win.innerHTML = ""
     let SDP = elem._data.node.Services[streamname].SDP
+    mselection.nodeIP = elem._data.node.IP
     if(!SDP) {
         checkElem(win,"","div","win-sdp-error","still trying to get SDP...")
         return
@@ -83,7 +90,6 @@ var makeStreamInfo = (elem,streamname) => {
             }
         }
     }
-    
     if(SDP.media && SDP.media.length > 0) {
         for(let M of SDP.media) {
             if(M.mid && groups[M.mid] === false) groups[M.mid] = true;
@@ -110,10 +116,10 @@ var makeStreamInfo = (elem,streamname) => {
                 ts_ref = M.invalid.filter(k => k.value.startsWith("framecount"))
                 if(ts_ref.length > 0) packetTime = (ts_ref[0].value.split(":")[1]*1000/sr + "").substr(0,4)
             }
-
-    let ip_dst = dstIP.split("/")[0]
-    let ttl = dstIP.split("/")[1]
-    checkElem(win,"","div","win-sdp-connection",srcIP + " <br> " + ip_dst + "<br>port:" + dstPort + " /  ttl:" + ttl)
+            let ip_dst = dstIP.split("/")[0]
+            let ttl = dstIP.split("/")[1]
+            maddress.push(ip_dst)
+            checkElem(win,"","div","win-sdp-connection",srcIP + " <br> " + ip_dst + "<br>port:" + dstPort + " /  ttl:" + ttl)
         }
     }
     if(SDP.invalid) {
@@ -131,6 +137,7 @@ var makeStreamInfo = (elem,streamname) => {
     })
     if(avp_audio && PTPid && channel <= 8) checkElem(win,"","div","win-aes67","AES67")
     if(dash7 && dash7 != 4) checkElem(win,"","div","win-dash7","SMPTE2022-7")
+    buildGraph(_nodes)
 }
 
 var checkElem = (root,id,domtype,classElem,innerHTML) => {
@@ -246,7 +253,8 @@ function buildElem(node,elem) {
     }
 }
 
-function colorOfType(type) {
+function colorOfType(type,highlight) {
+    if(!highlight) return "#ff00ff"
     switch(type) {
         case "switch":
             return "#007777"
@@ -311,14 +319,26 @@ function buildGraph(nodes) {
     for(let i in nodes) {
         if(nodes[i].Name) {
             if(nodes[i].Type == "switch") {
-                newNodes.push({id: i , label: nodes[i].Name.split(".")[0], widthConstraint : { minimum : 550, maximum : 550}, color: colorOfType(nodes[i].Type), shape: "box", font: { color: "#ffffff"}})
+                console.log(nodes[i])
+                let isRouterForStream = false;
                 for(let p of nodes[i].Ports) {
+                    let color = "#0077bb"
                     let n = nodes.findIndex(k => k.IP == p.Neighbour)
                     if(n > 0) {
-                        if(nodes[n].Type != "switch") newNodes.push({id: n , label: nodes[n].Name.split(".")[0], color: colorOfType(nodes[n].Type), font: { color: "#00ffff"}})
-                        newEdges.push({id: i + "_" + p.Name, from: i, to: n, label: "port " + p.Name, font: { strokeWidth: 0, color: "#00ffff"}})
+                        for(let add of maddress) {
+                            if(p.IGMP.Groups[add] == true) {
+                                color = "#ff00ff"
+                                isRouterForStream = true;
+                            }
+                        }
+                        let bcolor = color;
+                        if(mselection.nodeIP && mselection.nodeIP == nodes[n].IP)  bcolor = "#00ffff"
+                        console.log(bcolor,mselection)
+                        if(nodes[n].Type != "switch") newNodes.push({id: n , label: nodes[n].Name.split(".")[0], borderWidth: 4, color: {border: bcolor, background: colorOfType(nodes[n].Type,color == "#0077bb")}, font: { color: "#00ffff"}})
+                        newEdges.push({id: i + "_" + p.Name, from: i, to: n, label: "port " + p.Name, color: {color : color}, font: { strokeWidth: 0, color: "white"}})
                     }
                 }
+                newNodes.push({id: i , label: nodes[i].Name.split(".")[0], widthConstraint : { minimum : 550, maximum : 550}, color: {border: colorOfType(nodes[i].Type,!isRouterForStream), background: colorOfType(nodes[i].Type,true)}, shape: "box", font: { color: "#ffffff"}})                
             }
         }
     }

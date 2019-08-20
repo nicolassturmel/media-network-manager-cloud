@@ -349,62 +349,64 @@ function portList(x) {
 
 function getMulticastSources() {        
     switchTelnet.exec("show bridge multicast address-table", function (err, response) {
-        let tabs = response.split("\n\n")
-        Object.keys(SwitchData).forEach(function(key) {
-            SwitchData[key].IGMPGroups = {}
-        })
-        for(let i in tabs) {
-            let lines
-            switch(parseInt(i)) {
-                case 5:
-                        //console.log("Tab", tabs[i])
-                         lines = tabs[i].split("\n")
-                        lines.splice(0,2)
-                        for(let line of lines) {
-                            let toks = line.split(/\s+/)
-                            if(toks.length < 3) break
-                            let ps = portList(toks[3])
-                            for(let p of ps) {
-                                SwitchData[p].IGMPGroups[toks[1]] = true;
+        if(response) {
+            let tabs = response.split("\n\n")
+            Object.keys(SwitchData).forEach(function(key) {
+                SwitchData[key].IGMPGroups = {}
+            })
+            for(let i in tabs) {
+                let lines
+                switch(parseInt(i)) {
+                    case 5:
+                            //console.log("Tab", tabs[i])
+                            lines = tabs[i].split("\n")
+                            lines.splice(0,2)
+                            for(let line of lines) {
+                                let toks = line.split(/\s+/)
+                                if(toks.length < 3) break
+                                let ps = portList(toks[3])
+                                for(let p of ps) {
+                                    SwitchData[p].IGMPGroups[toks[1]] = true;
+                                }
                             }
-                        }
-                        break;
-                case 7:
-                        lines = tabs[i].split("\n")
-                        lines.splice(0,2)
-                        for(let line of lines) {
-                            let toks = line.split(/\s+/)
-                            if(toks.length < 2) break
-                            let ps = portList(toks[2])
-                            for(let p of ps) {
-                                SwitchData[p].IGMPGroups[toks[1]] = true;
+                            break;
+                    case 7:
+                            lines = tabs[i].split("\n")
+                            lines.splice(0,2)
+                            for(let line of lines) {
+                                let toks = line.split(/\s+/)
+                                if(toks.length < 2) break
+                                let ps = portList(toks[2])
+                                for(let p of ps) {
+                                    SwitchData[p].IGMPGroups[toks[1]] = true;
+                                }
                             }
-                        }
-                        break;
-                case 9:
-                         lines = tabs[i].split("\n")
-                        lines.splice(0,2)
-                        for(let line of lines) {
-                            let toks = line.split(/\s+/)
-                            if(toks.length < 3) break
-                            let ps = portList(toks[3])
-                            for(let p of ps) {
-                                SwitchData[p].IGMPGroups[toks[1]] = true;
+                            break;
+                    case 9:
+                            lines = tabs[i].split("\n")
+                            lines.splice(0,2)
+                            for(let line of lines) {
+                                let toks = line.split(/\s+/)
+                                if(toks.length < 3) break
+                                let ps = portList(toks[3])
+                                for(let p of ps) {
+                                    SwitchData[p].IGMPGroups[toks[1]] = true;
+                                }
                             }
-                        }
-                        break;
-                case 11:
-                        lines = tabs[i].split("\n")
-                        lines.splice(0,2)
-                        for(let line of lines) {
-                            let toks = line.split(/\s+/)
-                            if(toks.length < 2) break
-                            let ps = portList(toks[2])
-                            for(let p of ps) {
-                                SwitchData[p].IGMPGroups[toks[1]] = true;
+                            break;
+                    case 11:
+                            lines = tabs[i].split("\n")
+                            lines.splice(0,2)
+                            for(let line of lines) {
+                                let toks = line.split(/\s+/)
+                                if(toks.length < 2) break
+                                let ps = portList(toks[2])
+                                for(let p of ps) {
+                                    SwitchData[p].IGMPGroups[toks[1]] = true;
+                                }
                             }
-                        }
-                        break;
+                            break;
+                }
             }
         }
         setTimeout(getNextFct("getMulticastSources"), SwitchPollTime*1000);
