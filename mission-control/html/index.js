@@ -4,6 +4,10 @@ let maddress = []
 let mselection = {}
 let _nodes
 
+let visnode = new vis.DataSet([])
+let  visedge = new vis.DataSet([])
+var network
+
 function run() {
     let container = document.getElementById("nodes_container")
     var missionControlWS = new WebSocket("ws://" + window.location.host)
@@ -18,7 +22,7 @@ function run() {
                     elem._data = {}
                     elem.id = "node-" + Name
                     container.appendChild(elem)
-                    elem.onclick = () => { document.getElementById("win").innerHTML = JSON.stringify(elem._data.node) }
+                    elem.onclick = () => { makeDevice(elem) }
                 }
                 //console.log(node)
                 buildElem(node,elem)
@@ -65,11 +69,13 @@ var makeStreamInfo = (elem,streamname) => {
     mselection.nodeIP = elem._data.node.IP
     if(!SDP) {
         checkElem(win,"","div","win-sdp-error","still trying to get SDP...")
+        buildGraph(_nodes)
         return
     }
     console.log(SDP)
     if(SDP.error) {
         checkElem(win,"","div","win-sdp-error","could not get sdp<br>Error " + SDP.error)
+        buildGraph(_nodes)
         return
     }
     if(SDP.connection && SDP.connection.ip) dstIP = SDP.connection.ip
@@ -140,6 +146,84 @@ var makeStreamInfo = (elem,streamname) => {
     buildGraph(_nodes)
 }
 
+var makeDevice = (elem) => {
+    let node = elem._data.node
+    selectNew("node-unit-" + node.Name)
+    
+    let win = document.getElementById("win")
+    win.innerHTML = ""
+    mselection.nodeIP = node.IP
+
+    buildGraph(_nodes)
+    checkElem(win,"","div","win-device-name",node.Name)
+    let ips = checkElem(win,"","div","win-device-ips","")
+    checkElem(ips,"","div","",node.IP)
+    for(let i of node.OtherIPs) {
+        checkElem(ips,"","div","",i)
+    }
+    let services = checkElem(win,"","div","services","")
+    if(node.Services) {
+        Object.keys(node.Services).forEach((key) => {
+            let name = key.split("._")[0]
+            if(key.includes("_http._tcp")) {
+                let subcontainer = checkElem(services,"","div","","")
+                checkElem(subcontainer,"","i","fas fa-link","")
+                checkElem(subcontainer,"",{type: "a", href: "http://" + node.IP + ":" + node.Services[key].port},"http",name)
+            }
+            else if(key.includes("_telnet")) {
+                let subcontainer = checkElem(services,"node-service-div-" + key,"div","","")
+                checkElem(subcontainer,"" ,"i","fas fa-tty","")
+                checkElem(subcontainer,"","span","",name)
+            }
+        })
+    }
+    let streams = checkElem(win,"".Name,"div","streams","")
+    if(node.Services) {
+        Object.keys(node.Services).forEach((key) => {
+            let name = key.split("._")[0]
+            if(key.includes("_rtsp._tcp")) {
+                let subcontainer = checkElem(streams,"","div","","")
+                checkElem(subcontainer,"","i","fas fa-play-circle","")
+                checkElem(subcontainer,"","span","",name)
+                subcontainer.onclick = (e) => {
+                    makeStreamInfo(elem,key)
+                    e.stopPropagation();
+                }
+            }
+        })
+    }
+    if(node.Ports) {
+        let subcontainer = checkElem(win,"".Name,"div","ports","")
+        for(let p of node.Ports) {
+            let classP = ""
+            if(p.AdminState == "Up") {
+                if(p.Speed > 0) {
+                    if(p.In/p.Speed < 0.5 && p.Out/p.Speed < 0.5) {
+                        classP += "ok"
+                    }
+                    else {
+                        classP += "warn"
+                    }
+                }
+                else {
+                    classP += "dc"
+                }
+            }
+            else {
+                classP += "off"
+            }
+            let port = checkElem(subcontainer,"","div","switch_port",p.Name)
+            port.classList.remove("off")
+            port.classList.remove("warn")
+            port.classList.remove("dc")
+            port.classList.remove("off")
+            port.classList.add(classP)
+        }
+    }
+
+    
+}
+
 var checkElem = (root,id,domtype,classElem,innerHTML) => {
 
     function isObject(val) {
@@ -174,7 +258,7 @@ var checkElem = (root,id,domtype,classElem,innerHTML) => {
     return elem;
 }
 
-function buildElem(node,elem) {
+var buildElem = (node,elem) => {
     if(elem._data.node && _.isEqual(elem._data.mode,node))
         return
     elem._data.node = node
@@ -208,8 +292,8 @@ function buildElem(node,elem) {
     if(node.Services) {
         Object.keys(node.Services).forEach((key) => {
             let name = key.split("._")[0]
-            if(name.length > 21) {
-                name = name.substr(0,12) + "..." + name.substr(-5)
+            if(name.length >= 20) {
+                name = name.substr(0,11) + "..." + name.substr(-5)
             }
             if(key.includes("_rtsp._tcp")) {
                 let subcontainer = checkElem(streams,"node-service-div-" + key,"div","","")
@@ -229,7 +313,6 @@ function buildElem(node,elem) {
             if(p.AdminState == "Up") {
                 if(p.Speed > 0) {
                     if(p.In/p.Speed < 0.5 && p.Out/p.Speed < 0.5) {
-                        console.log(p.Out/p.Speed )
                         classP += "ok"
                     }
                     else {
@@ -262,9 +345,6 @@ function colorOfType(type,highlight) {
     return "#0077ff";
 }
 
-let visnode = new vis.DataSet([])
-let  visedge = new vis.DataSet([])
-var network
 
 var data = {
     nodes: visnode,
@@ -319,7 +399,6 @@ function buildGraph(nodes) {
     for(let i in nodes) {
         if(nodes[i].Name) {
             if(nodes[i].Type == "switch") {
-                console.log(nodes[i])
                 let isRouterForStream = false;
                 for(let p of nodes[i].Ports) {
                     let color = "#0077bb"
@@ -333,12 +412,13 @@ function buildGraph(nodes) {
                         }
                         let bcolor = color;
                         if(mselection.nodeIP && mselection.nodeIP == nodes[n].IP)  bcolor = "#00ffff"
-                        console.log(bcolor,mselection)
-                        if(nodes[n].Type != "switch") newNodes.push({id: n , label: nodes[n].Name.split(".")[0], borderWidth: 4, color: {border: bcolor, background: colorOfType(nodes[n].Type,color == "#0077bb")}, font: { color: "#00ffff"}})
+                        if(nodes[n].Type != "switch") newNodes.push({id: n , label: nodes[n].Name.split(".")[0], borderWidth: 2, color: {border: bcolor, background: colorOfType(nodes[n].Type,color == "#0077bb")}, font: { color: "#00ffff"}})
                         newEdges.push({id: i + "_" + p.Name, from: i, to: n, label: "port " + p.Name, color: {color : color}, font: { strokeWidth: 0, color: "white"}})
                     }
                 }
-                newNodes.push({id: i , label: nodes[i].Name.split(".")[0], widthConstraint : { minimum : 550, maximum : 550}, color: {border: colorOfType(nodes[i].Type,!isRouterForStream), background: colorOfType(nodes[i].Type,true)}, shape: "box", font: { color: "#ffffff"}})                
+                let bcolor_sw = null;
+                if(mselection.nodeIP && mselection.nodeIP == nodes[i].IP)  bcolor_sw = "#00ffff"
+                newNodes.push({id: i , label: nodes[i].Name.split(".")[0], widthConstraint : { minimum : 550, maximum : 550}, color: {border: bcolor_sw? bcolor_sw : colorOfType(nodes[i].Type,!isRouterForStream), background: colorOfType(nodes[i].Type,true)}, shape: "box", font: { color: "#ffffff"}})                
             }
         }
     }
