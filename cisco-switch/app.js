@@ -1,4 +1,4 @@
-var SwitchPollTime = 1;
+var SwitchPollTime = 0.5;
 var Telnet = require('telnet-client');
 var commandLineArgs = require('command-line-args');
 var uniqid = require('uniqid');
@@ -41,7 +41,8 @@ var params = {
     username: options.user,
     password: options.password,
     pageSeparator: /More: <space>,  Qu.*/,
-    timeout: 0
+    timeout: 0,
+    execTimeout: 5000
 };
 var express = require("express");
 var app = express();
@@ -71,14 +72,15 @@ switchTelnet.on('ready', function (prompt) {
 });
 switchTelnet.on('timeout', function () {
     console.log('socket timeout!');
+    setTimeout(startTelenetToSwitch, 2000);
 });
 switchTelnet.on('error', function () {
-    setTimeout(startTelenetToSwitch, 2000);
 });
 switchTelnet.on('close', function () {
     console.log('connection closed');
     setTimeout(startTelenetToSwitch, 20000);
 });
+//switchTelnet.on('data', (data) => { console.log(data.toString())})
 function startTelenetToSwitch() {
     switchTelnet.connect(params);
 }
@@ -188,9 +190,9 @@ function computeBandWidth() {
         });
     });
     NewData = true;
-    console.log(Switch);
     try {
         client.send(JSON.stringify(Switch));
+        console.log("OK! " + options.ip);
     }
     catch (error) {
         console.error("Waiting to reconnect to ws...");
@@ -386,8 +388,12 @@ function getMulticastSources() {
                         break;
                 }
             }
+            setTimeout(getNextFct("getMulticastSources"), SwitchPollTime * 1000);
         }
-        setTimeout(getNextFct("getMulticastSources"), SwitchPollTime * 1000);
+        else {
+            console.log("Oupsy, error !");
+            setTimeout(getNextFct("getMulticastSources"), SwitchPollTime * 1000);
+        }
     });
 }
 function getNextFct(current) {
