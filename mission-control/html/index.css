@@ -191,7 +191,8 @@ nav {
     background-color: #000000;
     color: white;
     font-size: 14;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: scroll;
     border-top: 1px solid var(--main-color-light);
     text-align: center;
 }
@@ -227,12 +228,14 @@ nav {
 .win-aes67 {
     border: 1px solid var(--main-color-dim);
     background-color: var(--main-color-dim);
+    text-align: center;
     width: 55px;
     margin: 5 auto;
 }
 
 .win-dash7 {
     background-color: #646400;
+     text-align: center;
     width: 115px;
     margin: 5 auto;
 }

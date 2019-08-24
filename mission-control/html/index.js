@@ -60,7 +60,9 @@ var getSDPdata = (SDP) => {
         PTPdom : null,
         packetTime : 0, 
         avp_audio : false,
-        groups : {}
+        groups : {},
+        dash7: false,
+        aes67: true
     }
 
 
@@ -117,6 +119,12 @@ var getSDPdata = (SDP) => {
             Out.PTPdom = ts_ref[0].value.split(":")[3]
         }
     }
+    let dash7 = 4;
+    Object.keys(Out.groups).forEach((key) => {
+        dash7 = dash7 && Out.groups[key]
+    })
+    if(Out.avp_audio && Out.PTPid && Out.channel <= 8) Out.aes67 = true
+    if(dash7 && dash7 != 4) Out.dash7 = true
     return Out
 }
 
@@ -266,6 +274,8 @@ var makeDeviceInfo = (elem) => {
                         checkElem(SDPinfo,"","div","",add)
                     }
                     checkElem(SDPinfo,"","div","",info.sr + "/" + info.channel + "/" + info.codec)
+                    if(info.aes67) checkElem(SDPinfo,"","div","win-aes67","AES67")
+                    if(info.dash7) checkElem(SDPinfo,"","div","win-dash7","SMPTE2022-7")
                     subcontainer.onclick = (e) => {
                         makeStreamInfo(elem,key)
                         e.stopPropagation();
@@ -535,4 +545,5 @@ function buildGraph(nodes) {
         visedge.update(tmp)
         console.log("new edges")
     }
+    network.fit()
 }
