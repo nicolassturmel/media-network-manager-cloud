@@ -22,7 +22,7 @@ function run() {
                     elem._data = {}
                     elem.id = "node-" + Name
                     container.appendChild(elem)
-                    elem.onclick = () => { makeDevice(elem) }
+                    elem.onclick = () => { makeDeviceInfo(elem) }
                 }
                 //console.log(node)
                 buildElem(node,elem)
@@ -44,6 +44,80 @@ var selectNew = (newSelected) => {
     elem = document.getElementById(newSelected)
     if(elem) elem.classList.add("selected")
     lastSelected = newSelected;
+}
+
+var getSDPdata = (SDP) => {
+
+    let Out = {
+        srcIP : [],  
+        dstIP : [], 
+        Name : "none", 
+        channel : 0, 
+        codec : "none",
+        sr : 0, 
+        dstPort : 0, 
+        PTPid : null, 
+        PTPdom : null,
+        packetTime : 0, 
+        avp_audio : false,
+        groups : {}
+    }
+
+
+    if(SDP.connection && SDP.connection.ip) Out.dstIP[0] = SDP.connection.ip
+    if(SDP.name) Out.Name = SDP.name
+    if(SDP.origin && SDP.origin.address) Out.srcIP[0] = SDP.origin.address
+    if(SDP.groups) {
+        for(let g of SDP.groups) {
+            if(g.type == "DUP") {
+                let ar = g.mids.split(" ")
+                for(let fl of ar) {
+                    Out.groups[fl] = false;
+                }
+            }
+        }
+    }
+    let m_index = 0;
+    if(SDP.media && SDP.media.length > 0) {
+        for(let M of SDP.media) {
+            if(M.mid && Out.groups[M.mid] === false) Out.groups[M.mid] = true;
+            if(M.connection && M.connection.ip) Out.dstIP[m_index] = M.connection.ip
+            if(M.port) Out.dstPort = M.port
+            let pay = M.payloads
+            if(M.ptime) Out.packetTime = M.ptime
+            if(M.protocol && M.protocol == "RTP/AVP" && M.type && M.type == "audio") Out.avp_audio = true
+            if(M.rtp && M.rtp.length > 0) {
+                let x = M.rtp.filter(k => k.payload == pay)
+                if(x.length > 0) {
+                    Out.sr = x[0].rate
+                    Out.channel = x[0].encoding
+                    Out.codec = x[0].codec
+                }
+            }
+            if(M.sourceFilter) Out.srcIP[m_index] = M.sourceFilter.srcList
+            if(M.invalid) {
+                let ts_ref = M.invalid.filter(k => k.value.startsWith("ts-refclk"))
+                if(ts_ref.length > 0) {
+                    Out.PTPid = ts_ref[0].value.split(":")[2]
+                    Out.PTPdom = ts_ref[0].value.split(":")[3]
+                }
+                let frcount = M.invalid.filter(k => k.value.startsWith("framecount"))
+                if(frcount.length > 0) Out.packetTime = (frcount[0].value.split(":")[1]*1000/Out.sr + "").substr(0,4)
+            }
+            //let ip_dst = Out.dstIP.split("/")[0]
+            //let ttl = Out.dstIP.split("/")[1]
+            
+            m_index++   
+        }
+    }
+    if(SDP.invalid) {
+        let ts_ref = SDP.invalid.filter(k => k.value.startsWith("ts-refclk"))
+        if(ts_ref.length > 0) {
+            Out.PTPid = ts_ref[0].value.split(":")[2]
+            Out.PTPdom = ts_ref[0].value.split(":")[3]
+        }
+    }
+    return Out
 }
 
 var makeStreamInfo = (elem,streamname) => {
@@ -146,7 +220,7 @@ var makeStreamInfo = (elem,streamname) => {
     buildGraph(_nodes)
 }
 
-var makeDevice = (elem) => {
+var makeDeviceInfo = (elem) => {
     let node = elem._data.node
     selectNew("node-unit-" + node.Name)
     
@@ -171,7 +245,7 @@ var makeDevice = (elem) => {
                 checkElem(subcontainer,"",{type: "a", href: "http://" + node.IP + ":" + node.Services[key].port},"http",name)
             }
             else if(key.includes("_telnet")) {
-                let subcontainer = checkElem(services,"node-service-div-" + key,"div","","")
+                let subcontainer = checkElem(services,"" + key,"div","","")
                 checkElem(subcontainer,"" ,"i","fas fa-tty","")
                 checkElem(subcontainer,"","span","",name)
             }
@@ -185,15 +259,26 @@ var makeDevice = (elem) => {
                 let subcontainer = checkElem(streams,"","div","","")
                 checkElem(subcontainer,"","i","fas fa-play-circle","")
                 checkElem(subcontainer,"","span","",name)
-                subcontainer.onclick = (e) => {
-                    makeStreamInfo(elem,key)
-                    e.stopPropagation();
+                let SDPinfo = checkElem(subcontainer,"","div","mini-stream-info","")
+                if(node.Services[key].SDP && !node.Services[key].SDP.error) {
+                    let info = getSDPdata(node.Services[key].SDP)
+                    for(let add of info.dstIP) {
+                        checkElem(SDPinfo,"","div","",add)
+                    }
+                    checkElem(SDPinfo,"","div","",info.sr + "/" + info.channel + "/" + info.codec)
+                    subcontainer.onclick = (e) => {
+                        makeStreamInfo(elem,key)
+                        e.stopPropagation();
+                    }
+                }
+                else {
+                    checkElem(SDPinfo,"","div","","SDP not available")
                 }
             }
         })
     }
     if(node.Ports) {
-        let subcontainer = checkElem(win,"".Name,"div","ports","")
+        let subcontainer = checkElem(win,"".Name,"div","ports-win","")
         for(let p of node.Ports) {
             let classP = ""
             if(p.AdminState == "Up") {
@@ -212,12 +297,25 @@ var makeDevice = (elem) => {
             else {
                 classP += "off"
             }
-            let port = checkElem(subcontainer,"","div","switch_port",p.Name)
-            port.classList.remove("off")
-            port.classList.remove("warn")
-            port.classList.remove("dc")
-            port.classList.remove("off")
-            port.classList.add(classP)
+            let port = checkElem(subcontainer,"","div","","")
+            let mport = checkElem(port,"","span","switch_port_win port",p.Name)
+            if(classP == "dc") {
+                let text = checkElem(port,"","span","switch_port_win_text port","not connected")
+                text.classList.add(classP)
+            }
+            else if(classP == "off" ) {
+                let text = checkElem(port,"","span","switch_port_win_text port","port deactivated")
+                text.classList.add(classP)
+            }
+            else {
+                checkElem(port,"","span","switch_port_win_text","In")
+                let inp = checkElem(port,"","span","switch_port_win_bw port",parseInt(p.In) + "" )
+                inp.classList.add(classP)
+                checkElem(port,"","span","switch_port_win_text","Out")
+                let outp = checkElem(port,"","span","switch_port_win_bw port",parseInt(p.Out) + "")
+                outp.classList.add(classP)
+            }
+            mport.classList.add(classP)
         }
     }
 
@@ -240,6 +338,7 @@ var checkElem = (root,id,domtype,classElem,innerHTML) => {
                 case 'a':
                     elem = document.createElement("a")
                     elem.href = domtype.href
+                    elem.target = id
                     break
                 default:
                     break;
@@ -326,7 +425,7 @@ var buildElem = (node,elem) => {
             else {
                 classP += "off"
             }
-            let port = checkElem(subcontainer,"node-port-" + p.Name + ":" + node.Name,"div","switch_port",p.Name)
+            let port = checkElem(subcontainer,"node-port-" + p.Name + ":" + node.Name,"div","switch_port port",p.Name)
             port.classList.remove("off")
             port.classList.remove("warn")
             port.classList.remove("dc")
