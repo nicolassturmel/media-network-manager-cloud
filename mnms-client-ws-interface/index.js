@@ -53,9 +53,9 @@ function run() {
                 });
                 wsc.on('open', function open() {
                     wsc.send(JSON.stringify({
-                        who: whoami,
-                        challenge: challenge,
-                        data: null
+                        Who: whoami,
+                        Challenge: challenge,
+                        Type: "auth"
                     }));
                 });
                 wsc.on('message', function incoming(data) {

@@ -13,7 +13,9 @@ var uniqid = require('uniqid');
 const optionDefinitions = [
     { name: 'ip', alias: 'i', type: String, defaultValue: '192.168.1.201' },
     { name: 'user', alias: 'u', type: String, defaultValue: 'cisco' },
-    { name: 'password', alias: 'p', type: String, defaultValue: 'cisco' }
+    { name: 'password', alias: 'p', type: String, defaultValue: 'cisco' },
+    { name: 'key', alias: 'k', type: String, defaultValue: 'nokey' },
+    { name: 'id', alias: 'y', type: String, defaultValue: 'noid' }
   ]
 
 const options = commandLineArgs(optionDefinitions)
@@ -21,7 +23,7 @@ console.log(options)
 
 var client = require('../mnms-client-ws-interface')
 
-client.challenge("thisisme")
+client.challenge(options.key)
 client.whoami("mnms client ws test prgm")
 client.setCallback((data) => {console.log(data)})
 client.run()
@@ -38,7 +40,7 @@ var Switch = {
     Multicast: "off", 
     Neighbour: "",
     Mac: "", 
-    id: uniqid()
+    id: options.id
 };    
 var ActionCount = 0;
 var ClearTime = 0;

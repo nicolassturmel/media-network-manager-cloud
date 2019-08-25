@@ -47,6 +47,10 @@ body {
     margin: 0 20px;  
 }
 
+.bar-comp.off {
+    color: grey;
+}
+
 /* width */
 ::-webkit-scrollbar {
     width: 8px;
@@ -284,7 +288,7 @@ nav {
     margin-right: 15px;
     border: none;
     box-sizing: border-box;
-    width: 35px;
+    width: 30px;
     height: 10px;
 }
 .mini-stream-info {

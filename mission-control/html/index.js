@@ -13,23 +13,31 @@ function run() {
     var missionControlWS = new WebSocket("ws://" + window.location.host)
     missionControlWS.onmessage = function (event) {
         _nodes = JSON.parse(event.data)
-        for(let node of _nodes) {
-            if(node.Type != "null" && node.Name) {
-                let Name = node.Name
-                let elem = document.getElementById("node-" + Name)
-                if(elem == undefined) {
-                    elem = document.createElement("li")
-                    elem._data = {}
-                    elem.id = "node-" + Name
-                    container.appendChild(elem)
-                    elem.onclick = () => { makeDeviceInfo(elem) }
-                }
-                //console.log(node)
-                buildNodeNav(node,elem)
-            }
+        if(_nodes.Type && _nodes.Type == "MnmsData") {
+            document.getElementById("workspacename-bar").innerHTML = _nodes.Workspace;
+            console.log(_nodes)
+            setTimeout(() => {missionControlWS.send("data")},4000)
         }
-        buildGraph(_nodes)
-        setTimeout(() => {missionControlWS.send("git it to me")},1500)
+        else {
+            for(let node of _nodes) {
+                if(node.Type != "null" && node.Name) {
+                    let Name = node.Name
+                    let elem = document.getElementById("node-" + Name)
+                    if(elem == undefined) {
+                        elem = document.createElement("li")
+                        elem._data = {}
+                        elem.id = "node-" + Name
+                        container.appendChild(elem)
+                        elem.onclick = () => { makeDeviceInfo(elem) }
+                    }
+                    //console.log(node)
+                    buildNodeNav(node,elem)
+                }
+            }
+
+            setTimeout(() => {missionControlWS.send("nodes")},1500)
+            buildGraph(_nodes)
+        }
     }
     initGraph()
 }
@@ -105,10 +113,7 @@ var getSDPdata = (SDP) => {
                 }
                 let frcount = M.invalid.filter(k => k.value.startsWith("framecount"))
                 if(frcount.length > 0) Out.packetTime = (frcount[0].value.split(":")[1]*1000/Out.sr + "").substr(0,4)
-            }
-            //let ip_dst = Out.dstIP.split("/")[0]
-            //let ttl = Out.dstIP.split("/")[1]
-            
+            } 
             m_index++   
         }
     }
@@ -476,7 +481,7 @@ function buildGraph(nodes) {
         console.log(newEdges, oldEdges)
         oldEdges = JSON.parse(JSON.stringify(newEdges))
         let tmp = newEdges.slice()
-       visedge.clear()
+        visedge.clear()
         visedge.update(tmp)
         console.log("new edges")
     }
