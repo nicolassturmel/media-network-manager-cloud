@@ -49,7 +49,7 @@ wss.on('connection', function connection(ws) {
             if (sw.length == 1) {
                 var t = new Date;
                 sw[0].Timer = t.getTime();
-                console.log(node.id, MnmsData.Switches.filter(function (k) { return k.UID == node.id; })[0].Timer);
+                //console.log(node.id,MnmsData.Switches.filter(k => k.UID == node.id)[0].Timer)
             }
             else {
                 console.log("Could not find id =", node.id);

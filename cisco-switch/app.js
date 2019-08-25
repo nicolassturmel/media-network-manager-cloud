@@ -1,7 +1,6 @@
 var SwitchPollTime = 0.5;
 var Telnet = require('telnet-client');
 var commandLineArgs = require('command-line-args');
-var uniqid = require('uniqid');
 // Command line arguments
 var optionDefinitions = [
     { name: 'ip', alias: 'i', type: String, defaultValue: '192.168.1.201' },
@@ -46,23 +45,6 @@ var params = {
     timeout: 0,
     execTimeout: 5000
 };
-var express = require("express");
-var app = express();
-app.use('/', express.static(__dirname + '/html'));
-/* try {
-    app.listen(3000, () => {
- console.log("Server running on port 3000");
-});
-} catch (error) {
-    
-}*/
-app.get("/bw", function (req, res, next) {
-    function waitNewData() { if (NewData == true)
-        res.json(Switch);
-    else
-        setTimeout(waitNewData, 200); }
-    waitNewData();
-});
 var switchTelnet = new Telnet();
 var ParseState;
 (function (ParseState) {
