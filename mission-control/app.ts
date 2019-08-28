@@ -14,6 +14,7 @@ const RTSPClient = require("yellowstone").RTSPClient;
 const sdpgetter = require("../rtsp-sdp-query")
 const { spawn } = require('child_process');
 
+
 // Side connected to other services
 //---------------------------------
 
@@ -24,15 +25,12 @@ let Hosts : object = {};
 let Services : object = {}
 let getMacClear = true;
 
-// Building secure ssl
-// read ssl certificate
 var privateKey = fs.readFileSync('server.key', 'utf8');
 var certificate = fs.readFileSync('server.cert', 'utf8');
 
 var credentials = { key: privateKey, cert: certificate };
 var https = require('https');
 
-//pass in your credentials to create an https server
 var httpsServer = https.createServer(credentials);
 httpsServer.listen(16060);
 
@@ -79,6 +77,9 @@ wss.on('connection', function connection(ws) {
    
   });
 
+  
+// Handling MDNS query for mission control
+//------------------
 
 mdns.on('query', (query) => {
     if(query.questions.some(k => k.name == "_missioncontrol._socketio.local")) {
@@ -127,7 +128,15 @@ mdns.respond({
     }
   }
 
+
+// Browsing services
+//------------------
+
   let mdB = mdnsBrowser(mdnsBrowser_cb,mdns)
+
+
+// Shaping and linking data
+//-----------
 
 function mergeNodes(index,newValue,Name: String)
 {
@@ -164,17 +173,6 @@ function mergeNodes(index,newValue,Name: String)
             Nodes[index].Name = Name 
         }
     }
-}
-
-mdns.query({
-    questions:[{
-      name: '_http._tcp.local',
-      type: 'SRV'
-    }]
-});
-
-function buildServiceHttpLink(obj) {
-
 }
 
 function calculateInterConnect() {
@@ -258,15 +256,12 @@ const user_app = exp();
 
 const server = http.createServer(user_app);
 
-//start our server
-
 user_app.use('/', exp.static(__dirname + '/html'));
 
 server.listen(8888, () => {
     console.log(`Server started on port 8888 :)`);
 });
 
-//initialize the WebSocket server instance
 const user_wss = new sock.Server({ server: server });
 
 user_wss.on('connection', (ws) => {
@@ -289,8 +284,8 @@ user_wss.on('connection', (ws) => {
 });
 
 
-// db
-
+// db and other services start
+//------------------
 
 var Datastore = require('nedb')
   , db = new Datastore({ filename: 'data.db', autoload: true });

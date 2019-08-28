@@ -7,6 +7,7 @@ let visnode = new vis.DataSet([])
 let  visedge = new vis.DataSet([])
 var network
 
+/* init function */
 function run() {
     let container = document.getElementById("nodes_container")
     var missionControlWS = new WebSocket("ws://" + window.location.host)
@@ -40,6 +41,8 @@ function run() {
     initGraph()
 }
 
+
+/* Selection manipulation */
 let lastSelected = null;
 
 var selectNew = (newSelected,node) => {
@@ -158,6 +161,8 @@ var getSDPdata = (SDP) => {
     return Out
 }
 
+
+/* Left window fillers */
 var makeStreamInfo = (elem,streamname) => {
 
 
@@ -428,6 +433,8 @@ var buildNodeNav = (node,elem) => {
     }
 }
 
+
+/* Graph handling */
 function colorOfType(type,highlight) {
     if(!highlight) return "#ff00ff"
     switch(type) {
@@ -436,7 +443,6 @@ function colorOfType(type,highlight) {
     }
     return "#0077ff";
 }
-
 
 var data = {
     nodes: visnode,
