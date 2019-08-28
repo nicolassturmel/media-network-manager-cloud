@@ -3,6 +3,7 @@
     --main-color-dim: #004488;
     --sec-color-light: #00ffff;
     --sec-color-dim: #008888;
+    --tri-color-light: #ff00ff;
 }
 
 body {
@@ -19,12 +20,42 @@ body {
     margin: auto;
     display: grid;
     grid-template-columns: 200px 1fr ;
-    grid-template-rows: 20px 250px auto 20px;
+    grid-template-rows: 20px 250px 20px auto 20px;
     grid-template-areas: 
       "top top"
       "header header  "
+      "left navig"
       "left net  "
       "bottom bottom";
+}
+
+#navig {
+    grid-area: navig;
+    padding: 0 20px;
+    box-sizing: border-box;
+    font-size: 13px;
+    height: 100%;
+    border-top: 1px solid var(--main-color-light);
+    border-left: 1px solid var(--main-color-light);
+    background-color:var(--main-color-light);
+}
+
+.prim-off {
+    display: none;
+}
+
+.prim-on {
+    display: inline;
+    color: black;
+    background-color: var(--sec-color-light);
+    border-radius: 5px;
+    padding: 0 10px;
+}
+.prim-on-sec {
+    display: inline;
+    background-color: var(--tri-color-light);
+    border-radius: 5px;
+    padding: 0 10px;
 }
 
 #top {

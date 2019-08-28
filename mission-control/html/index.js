@@ -1,5 +1,4 @@
 
-let selectedElem = null;
 let maddress = []
 let mselection = {}
 let _nodes
@@ -43,14 +42,41 @@ function run() {
 
 let lastSelected = null;
 
-var selectNew = (newSelected) => {
+var selectNew = (newSelected,node) => {
     maddress = []
-    mselection = {}
+
     let elem = document.getElementById(lastSelected)
     if(elem) elem.classList.remove("selected")
     elem = document.getElementById(newSelected)
     if(elem) elem.classList.add("selected")
     lastSelected = newSelected;
+
+    console.log(elem)
+
+    let prim = document.getElementById("prim-selection")
+    prim.innerHTML = node.Name;
+    prim.className = "prim-on"
+    if(mselection.Type == "stream") {
+        let sec = document.getElementById("prim-selection-sec")
+        sec.innerHTML = mselection.Name.split("._")[0];
+        sec.className = "prim-on-sec"
+        sec.onclick = () => {
+            sec.className = "prim-off"
+            maddress = []
+            mselection = {} 
+            makeDeviceInfo(document.getElementById("node-" + node.Name))
+        }
+    }
+
+    prim.onclick = () => {
+        prim.className = "prim-off"
+        maddress = []
+        mselection = {} 
+        win = document.getElementById("win").innerHTML = ""
+
+        let elem = document.getElementById(lastSelected)
+        if(elem) elem.classList.remove("selected")
+    }
 }
 
 var getSDPdata = (SDP) => {
@@ -134,12 +160,15 @@ var getSDPdata = (SDP) => {
 
 var makeStreamInfo = (elem,streamname) => {
 
-    selectNew("node-service-div-" + streamname)
+
+    mselection.nodeIP = elem._data.node.IP
+    mselection.Type = "stream"
+    mselection.Name = streamname
+    selectNew("node-service-div-" + streamname,elem._data.node)
     
     let win = document.getElementById("win")
     win.innerHTML = ""
     let SDP = elem._data.node.Services[streamname].SDP
-    mselection.nodeIP = elem._data.node.IP
     if(!SDP) {
         checkElem(win,"","div","win-sdp-error","still trying to get SDP...")
         buildGraph(_nodes)
@@ -168,8 +197,9 @@ var makeStreamInfo = (elem,streamname) => {
 }
 
 var makeDeviceInfo = (elem) => {
+    mselection = {}
     let node = elem._data.node
-    selectNew("node-unit-" + node.Name)
+    selectNew("node-unit-" + node.Name,elem._data.node)
     
     let win = document.getElementById("win")
     win.innerHTML = ""
