@@ -285,13 +285,25 @@ nav {
     text-align: right;
     margin: 2px;
     margin-bottom: 1px;
-    margin-right: 15px;
     border: none;
     box-sizing: border-box;
-    width: 30px;
+    width: 40px;
     height: 10px;
 }
 .mini-stream-info {
     margin-left: 30px;
     margin-bottom: 20px;
+}
+
+.switch-port-container {
+    position: relative;
+    width: 100%;
+}
+
+.win-multi {
+    position: absolute;
+    right: 0;
+    top: 2px;
+    margin: 2px;
+    margin-bottom: 1px;
 }

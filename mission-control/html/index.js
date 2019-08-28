@@ -15,7 +15,6 @@ function run() {
         _nodes = JSON.parse(event.data)
         if(_nodes.Type && _nodes.Type == "MnmsData") {
             document.getElementById("workspacename-bar").innerHTML = _nodes.Workspace;
-            console.log(_nodes)
             setTimeout(() => {missionControlWS.send("data")},4000)
         }
         else {
@@ -176,6 +175,8 @@ var makeDeviceInfo = (elem) => {
     win.innerHTML = ""
     mselection.nodeIP = node.IP
 
+    console.log(node)
+
     buildGraph(_nodes)
     checkElem(win,"","div","win-device-name",node.Name)
     let ips = checkElem(win,"","div","win-device-ips","")
@@ -199,7 +200,7 @@ var makeDeviceInfo = (elem) => {
             }
         })
     }
-    let streams = checkElem(win,"".Name,"div","streams","")
+    let streams = checkElem(win,"strsub" ,"div","streams","")
     if(node.Services) {
         Object.keys(node.Services).forEach((key) => {
             let name = key.split("._")[0]
@@ -227,8 +228,12 @@ var makeDeviceInfo = (elem) => {
             }
         })
     }
+    if(node.Multicast) {
+        checkElem(win,"multisub" ,"div","streams","Multicast : " + node.Multicast)
+    }  
     if(node.Ports) {
-        let subcontainer = checkElem(win,"".Name,"div","ports-win","")
+        let subcontainer = checkElem(win,"portssub" ,"div","services","")
+        checkElem(subcontainer,"","div","switch_port_win_text","Port - I/O Mbps - (multi)")
         for(let p of node.Ports) {
             let classP = ""
             if(p.AdminState == "Up") {
@@ -247,8 +252,9 @@ var makeDeviceInfo = (elem) => {
             else {
                 classP += "off"
             }
-            let port = checkElem(subcontainer,"","div","","")
+            let port = checkElem(subcontainer,"","div","switch-port-container","")
             let mport = checkElem(port,"","span","switch_port_win port",p.Name)
+            console.log(p.IGMP.ForwardAll)
             if(classP == "dc") {
                 let text = checkElem(port,"","span","switch_port_win_text port","not connected")
                 text.classList.add(classP)
@@ -258,12 +264,19 @@ var makeDeviceInfo = (elem) => {
                 text.classList.add(classP)
             }
             else {
-                checkElem(port,"","span","switch_port_win_text","In")
-                let inp = checkElem(port,"","span","switch_port_win_bw port",parseInt(p.In) + "" )
+                let inp = checkElem(port,"","span","switch_port_win_bw port",(p.In) + "" )
                 inp.classList.add(classP)
-                checkElem(port,"","span","switch_port_win_text","Out")
-                let outp = checkElem(port,"","span","switch_port_win_bw port",parseInt(p.Out) + "")
+                checkElem(port,"","span","switch_port_win_text","/")
+                let outp = checkElem(port,"","span","switch_port_win_bw port",(p.Out) + "")
                 outp.classList.add(classP)
+
+                let multi 
+                if(p.IGMP.ForwardAll == "Yes") {
+                    multi = checkElem(port,"","span","win-multi","(all)")
+                }
+                else {
+                    nulti = checkElem(port,"","span","win-multi","(" + Object.keys(p.IGMP.Groups).length + ")")
+                }
             }
             mport.classList.add(classP)
         }
