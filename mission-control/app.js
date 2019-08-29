@@ -20,13 +20,10 @@ var Nodes = [{ Type: "null", id: "0" }];
 var Hosts = {};
 var Services = {};
 var getMacClear = true;
-// Building secure ssl
-// read ssl certificate
 var privateKey = fs.readFileSync('server.key', 'utf8');
 var certificate = fs.readFileSync('server.cert', 'utf8');
 var credentials = { key: privateKey, cert: certificate };
 var https = require('https');
-//pass in your credentials to create an https server
 var httpsServer = https.createServer(credentials);
 httpsServer.listen(16060);
 var wss = new sock.Server({ server: httpsServer });
@@ -69,6 +66,8 @@ wss.on('connection', function connection(ws) {
         }
     });
 });
+// Handling MDNS query for mission control
+//------------------
 mdns.on('query', function (query) {
     if (query.questions.some(function (k) { return k.name == "_missioncontrol._socketio.local"; })) {
         mdns.respond({
@@ -109,7 +108,11 @@ var mdnsBrowser_cb = function (node) {
         mergeNodes(i, node, node.Name);
     }
 };
+// Browsing services
+//------------------
 var mdB = mdnsBrowser(mdnsBrowser_cb, mdns);
+// Shaping and linking data
+//-----------
 function mergeNodes(index, newValue, Name) {
     if (_.isEqual(Nodes[index], newValue))
         return;
@@ -148,14 +151,6 @@ function mergeNodes(index, newValue, Name) {
             Nodes[index].Name = Name;
         }
     }
-}
-mdns.query({
-    questions: [{
-            name: '_http._tcp.local',
-            type: 'SRV'
-        }]
-});
-function buildServiceHttpLink(obj) {
 }
 function calculateInterConnect() {
     var linkd = [];
@@ -248,12 +243,10 @@ function calculateInterConnect() {
 //------------------
 var user_app = exp();
 var server = http.createServer(user_app);
-//start our server
 user_app.use('/', exp.static(__dirname + '/html'));
 server.listen(8888, function () {
     console.log("Server started on port 8888 :)");
 });
-//initialize the WebSocket server instance
 var user_wss = new sock.Server({ server: server });
 user_wss.on('connection', function (ws) {
     //connection is up, let's add a simple simple event
@@ -271,7 +264,8 @@ user_wss.on('connection', function (ws) {
     ws.send(JSON.stringify(MnmsData));
     ws.send(JSON.stringify(Nodes));
 });
-// db
+// db and other services start
+//------------------
 var Datastore = require('nedb'), db = new Datastore({ filename: 'data.db', autoload: true });
 var MnmsData = {
     Type: "MnmsData",

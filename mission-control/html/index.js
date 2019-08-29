@@ -38,6 +38,12 @@ function run() {
             buildGraph(_nodes)
         }
     }
+    missionControlWS.onerror =  () => {
+        document.getElementById("workspacename-bar").innerHTML  = "<b style='color:red;'>lost connection : socket error</b>"
+    }
+    missionControlWS.onclose = () => {
+        document.getElementById("workspacename-bar").innerHTML  = "<b style='color:red;'>lost connection : socket closed</b>"
+    }
     initGraph()
 }
 
@@ -57,10 +63,10 @@ var selectNew = (newSelected,node) => {
     console.log(elem)
 
     let prim = document.getElementById("prim-selection")
+    let sec = document.getElementById("prim-selection-sec")
     prim.innerHTML = node.Name;
     prim.className = "prim-on"
     if(mselection.Type == "stream") {
-        let sec = document.getElementById("prim-selection-sec")
         sec.innerHTML = mselection.Name.split("._")[0];
         sec.className = "prim-on-sec"
         sec.onclick = () => {
@@ -73,12 +79,15 @@ var selectNew = (newSelected,node) => {
 
     prim.onclick = () => {
         prim.className = "prim-off"
+        sec.className = "prim-off"
+        
         maddress = []
         mselection = {} 
         win = document.getElementById("win").innerHTML = ""
 
         let elem = document.getElementById(lastSelected)
         if(elem) elem.classList.remove("selected")
+        
     }
 }
 
