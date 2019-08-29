@@ -48,8 +48,7 @@ function run() {
                 wsc = new ws('wss://' + k.name + ':' + mc_port, {
                     //protocolVersion: 8,
                     origin: 'wss://' + k.name + ':' + mc_port,
-                    rejectUnauthorized: false,
-                    cert: fs.readFileSync('../mission-control/server.cert')
+                    rejectUnauthorized: false
                 });
                 wsc.on('open', function open() {
                     wsc.send(JSON.stringify({

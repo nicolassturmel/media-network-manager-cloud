@@ -41,8 +41,8 @@ export = function(LocalOptions) {
     var prename = pc_name.split('.')[0];
     var Nodes : any = [{ Type: "null", id : "0"}]
 
-    var privateKey = fs.readFileSync('server.key', 'utf8');
-    var certificate = fs.readFileSync('server.cert', 'utf8');
+    var privateKey = fs.readFileSync('./server.key', 'utf8');
+    var certificate = fs.readFileSync('./server.cert', 'utf8');
 
     var credentials = { key: privateKey, cert: certificate };
     var https = require('https');
@@ -62,6 +62,9 @@ export = function(LocalOptions) {
                 if(node.Challenge == MnmsData.Challenge) {
                     ws._data.auth = true
                     console.log("new client Auth")
+                }
+                else {
+                    console.log(node.Challemge,MnmsData.Challenge)
                 }
             } 
             else if(ws._data.auth && node.Type == "switch") {
@@ -342,7 +345,7 @@ export = function(LocalOptions) {
     var serviceLauncher = (ServiceOptions) => {
         let child_info
         if(Options.launch_services) {
-
+            child_info = Options.launch_services(ServiceOptions)
         }
         else {
             child_info = spawn("node",[ServicesDirectory[ServiceOptions.Name],"-i",ServiceOptions.Params.IP,"-k",MnmsData.Challenge,"-y",ServiceOptions.UID ])
@@ -358,7 +361,7 @@ export = function(LocalOptions) {
             MnmsData.Switches[s].Child = serviceLauncher({
                 Name : "cisco_switch",
                 Params:{IP : MnmsData.Switches[s].IP},
-                Challemge: MnmsData.Challenge, 
+                Challenge: MnmsData.Challenge, 
                 UID: MnmsData.Switches[s].UID
             })
         }

@@ -80,7 +80,7 @@ var selectNew = (newSelected,node) => {
     prim.onclick = () => {
         prim.className = "prim-off"
         sec.className = "prim-off"
-        
+
         maddress = []
         mselection = {} 
         win = document.getElementById("win").innerHTML = ""
@@ -365,6 +365,7 @@ var checkElem = (root,id,domtype,classElem,innerHTML) => {
 }
 
 var buildNodeNav = (node,elem) => {
+    let flex_id = 1000000;
     if(elem._data.node && _.isEqual(elem._data.mode,node))
         return
     elem._data.node = node
@@ -383,6 +384,7 @@ var buildNodeNav = (node,elem) => {
                 name = name.substr(0,12) + "..." + name.substr(-5)
             }
             if(key.includes("_http._tcp")) {
+                flex_id -= 1;
                 let subcontainer = checkElem(services,"node-service-div-" + key,"div","","")
                 checkElem(subcontainer,"node-service-icon-" + key,"i","fas fa-link","")
                 checkElem(subcontainer,"node-service-a-" + key,{type: "a", href: "http://" + node.IP + ":" + node.Services[key].port},"http",name)
@@ -402,6 +404,7 @@ var buildNodeNav = (node,elem) => {
                 name = name.substr(0,11) + "..." + name.substr(-5)
             }
             if(key.includes("_rtsp._tcp")) {
+                flex_id -= 10;
                 let subcontainer = checkElem(streams,"node-service-div-" + key,"div","","")
                 checkElem(subcontainer,"node-service-icon-" + key,"i","fas fa-play-circle","")
                 checkElem(subcontainer,"node-stream-a-" + key,"span","",name)
@@ -415,13 +418,16 @@ var buildNodeNav = (node,elem) => {
     if(node.Ports) {
         let subcontainer = checkElem(elem,"node-ports-" + node.Name,"div","ports","")
         for(let p of node.Ports) {
+            flex_id -= 100;
             let classP = ""
             if(p.AdminState == "Up") {
                 if(p.Speed > 0) {
                     if(p.In/p.Speed < 0.5 && p.Out/p.Speed < 0.5) {
+                        flex_id -= 100;
                         classP += "ok"
                     }
                     else {
+                        flex_id -= 1000;
                         classP += "warn"
                     }
                 }
@@ -440,6 +446,7 @@ var buildNodeNav = (node,elem) => {
             port.classList.add(classP)
         }
     }
+    elem.style.order = flex_id
 }
 
 

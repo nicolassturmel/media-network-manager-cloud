@@ -54,7 +54,6 @@ function run() {
                     //protocolVersion: 8,
                     origin: 'wss://' + k.name + ':' + mc_port,
                     rejectUnauthorized: false,
-                    cert: fs.readFileSync('../mission-control/server.cert'),
                   });
 
                 wsc.on('open', function open() {
