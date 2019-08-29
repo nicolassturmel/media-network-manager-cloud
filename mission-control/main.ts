@@ -1,0 +1,1 @@
+var missionControl = require("./app")();
