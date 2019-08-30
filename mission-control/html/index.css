@@ -82,6 +82,11 @@ body {
     color: grey;
 }
 
+.bar-comp.warn {
+    color: red;
+    font-weight: bold;
+}
+
 /* width */
 ::-webkit-scrollbar {
     width: 8px;

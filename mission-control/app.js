@@ -293,12 +293,14 @@ module.exports = function (LocalOptions) {
         Workspace: "Nicolas' test network",
         CurrentTime: 0,
         Challenge: "thisisatest",
+        OkSwitches: 0,
         Switches: [
             {
                 Type: "ciscoSG",
                 IP: "192.168.1.201",
                 Child: null,
                 Timer: null,
+                StartTime: null,
                 UID: "ddjtzlzégndfe"
             },
             {
@@ -306,6 +308,7 @@ module.exports = function (LocalOptions) {
                 IP: "192.168.1.129",
                 Child: null,
                 Timer: null,
+                StartTime: null,
                 UID: "aewtuzhmfdfgh"
             },
             {
@@ -313,6 +316,7 @@ module.exports = function (LocalOptions) {
                 IP: "192.168.1.130",
                 Child: null,
                 Timer: null,
+                StartTime: null,
                 UID: "bn,héioàtzjrtwrgw"
             }
         ]
@@ -326,21 +330,51 @@ module.exports = function (LocalOptions) {
             child_info = Options.launch_services(ServiceOptions);
         }
         else {
-            child_info = spawn("node", [ServicesDirectory[ServiceOptions.Name], "-i", ServiceOptions.Params.IP, "-k", MnmsData.Challenge, "-y", ServiceOptions.UID]);
-            child_info.on("error", function () {
-                child_info.kill();
-            });
+            var type = ServiceOptions.Name.split(":")[0];
+            var action = ServiceOptions.Name.split(":")[1];
+            if (action == "start") {
+                child_info = spawn("node", [ServicesDirectory[type], "-i", ServiceOptions.Params.IP, "-k", MnmsData.Challenge, "-y", ServiceOptions.UID]);
+                child_info.on("error", function () {
+                    child_info.kill();
+                });
+            }
+            else if (action == "stop") {
+                ServiceOptions.Params.Child.kill();
+                child_info = null;
+            }
         }
         return child_info;
     };
-    for (var s in MnmsData.Switches) {
-        if (MnmsData.Switches[s].Type == "ciscoSG") {
-            MnmsData.Switches[s].Child = serviceLauncher({
-                Name: "cisco_switch",
-                Params: { IP: MnmsData.Switches[s].IP },
-                Challenge: MnmsData.Challenge,
-                UID: MnmsData.Switches[s].UID
-            });
+    var watchDog = function () {
+        console.log("Waf waf");
+        var now = Date.now();
+        var okswitches = 0, instart = 0;
+        for (var s in MnmsData.Switches) {
+            if (MnmsData.Switches[s].Child) {
+                if (now - MnmsData.Switches[s].Timer < 10000)
+                    okswitches++;
+                else if (now - MnmsData.Switches[s].StartTime < 15000)
+                    instart++;
+                else
+                    MnmsData.Switches[s].Child = serviceLauncher({
+                        Name: "cisco_switch:stop",
+                        Params: { Child: MnmsData.Switches[s].Child },
+                        Challenge: MnmsData.Challenge,
+                        UID: MnmsData.Switches[s].UID
+                    });
+            }
+            else {
+                MnmsData.Switches[s].StartTime = Date.now();
+                MnmsData.Switches[s].Child = "starting";
+                MnmsData.Switches[s].Child = serviceLauncher({
+                    Name: "cisco_switch:start",
+                    Params: { IP: MnmsData.Switches[s].IP },
+                    Challenge: MnmsData.Challenge,
+                    UID: MnmsData.Switches[s].UID
+                });
+            }
         }
-    }
+        MnmsData.OkSwitches = okswitches;
+    };
+    setInterval(watchDog, 2000);
 };

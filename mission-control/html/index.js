@@ -15,6 +15,11 @@ function run() {
         _nodes = JSON.parse(event.data)
         if(_nodes.Type && _nodes.Type == "MnmsData") {
             document.getElementById("workspacename-bar").innerHTML = _nodes.Workspace;
+            let sw = document.getElementById("switch-info")
+            sw.innerHTML = "<i class=\"fas fa-network-wired\"></i> Switches (" + _nodes.OkSwitches + "/" + _nodes.Switches.length + ")";
+            if(_nodes.OkSwitches != _nodes.Switches.length)  sw.classList.add("warn")
+            else sw.classList.remove("warn")
+
             setTimeout(() => {missionControlWS.send("data")},4000)
         }
         else {
@@ -75,6 +80,9 @@ var selectNew = (newSelected,node) => {
             mselection = {} 
             makeDeviceInfo(document.getElementById("node-" + node.Name))
         }
+    }
+    else {
+        sec.className = "prim-off"
     }
 
     prim.onclick = () => {
@@ -366,7 +374,7 @@ var checkElem = (root,id,domtype,classElem,innerHTML) => {
 
 var buildNodeNav = (node,elem) => {
     let flex_id = 1000000;
-    if(elem._data.node && _.isEqual(elem._data.mode,node))
+    if(elem._data.node && _.isEqual(elem._data.node,node))
         return
     elem._data.node = node
     let name = node.Name.split(".")[0]
@@ -532,7 +540,7 @@ function buildGraph(nodes) {
                 }
                 let bcolor_sw = null;
                 if(mselection.nodeIP && mselection.nodeIP == nodes[i].IP)  bcolor_sw = "#00ffff"
-                newNodes.push({id: i , label: nodes[i].Name.split(".")[0], widthConstraint : { minimum : 550, maximum : 550}, color: {border: bcolor_sw? bcolor_sw : colorOfType(nodes[i].Type,!isRouterForStream), background: colorOfType(nodes[i].Type,true)}, shape: "box", font: { color: "#ffffff"}})                
+                newNodes.push({id: i , label: nodes[i].Name.split(".")[0], widthConstraint : { minimum : 350, maximum : 350}, color: {border: bcolor_sw? bcolor_sw : colorOfType(nodes[i].Type,!isRouterForStream), background: colorOfType(nodes[i].Type,true)}, shape: "box", font: { color: "#ffffff"}})                
             }
         }
     }

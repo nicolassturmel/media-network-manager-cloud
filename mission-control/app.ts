@@ -1,3 +1,4 @@
+import { SSL_OP_TLS_ROLLBACK_BUG } from "constants";
 
 var mdns = require('multicast-dns')()
 var os = require('os');
@@ -313,12 +314,14 @@ export = function(LocalOptions) {
         Workspace: "Nicolas' test network",
         CurrentTime: 0,
         Challenge: "thisisatest",
+        OkSwitches: 0,
         Switches : [
                 {
                     Type: "ciscoSG",
                     IP : "192.168.1.201",
                     Child: null,
                     Timer: null,
+                    StartTime: null,
                     UID: "ddjtzlzégndfe"
                 },
                 {
@@ -326,6 +329,7 @@ export = function(LocalOptions) {
                     IP : "192.168.1.129",
                     Child: null,
                     Timer: null,
+                    StartTime: null,
                     UID: "aewtuzhmfdfgh"
                 },
                 {
@@ -333,6 +337,7 @@ export = function(LocalOptions) {
                     IP : "192.168.1.130",
                     Child: null,
                     Timer: null,
+                    StartTime: null,
                     UID: "bn,héioàtzjrtwrgw"
                 }
             ]
@@ -348,22 +353,53 @@ export = function(LocalOptions) {
             child_info = Options.launch_services(ServiceOptions)
         }
         else {
-            child_info = spawn("node",[ServicesDirectory[ServiceOptions.Name],"-i",ServiceOptions.Params.IP,"-k",MnmsData.Challenge,"-y",ServiceOptions.UID ])
-            child_info.on("error",() => {
-                child_info.kill()
-            })
+            let type = ServiceOptions.Name.split(":")[0]
+            let action = ServiceOptions.Name.split(":")[1]
+            if(action == "start") {
+                child_info = spawn("node",[ServicesDirectory[type],"-i",ServiceOptions.Params.IP,"-k",MnmsData.Challenge,"-y",ServiceOptions.UID ])
+                child_info.on("error",() => {
+                    child_info.kill()
+                })
+            }
+            else if(action == "stop") {
+                ServiceOptions.Params.Child.kill()
+                child_info = null;
+            }
         }
         return child_info
     }
 
-    for(let s in MnmsData.Switches ){
-        if(MnmsData.Switches[s].Type == "ciscoSG") {
-            MnmsData.Switches[s].Child = serviceLauncher({
-                Name : "cisco_switch",
-                Params:{IP : MnmsData.Switches[s].IP},
-                Challenge: MnmsData.Challenge, 
-                UID: MnmsData.Switches[s].UID
-            })
+    var watchDog = () => {
+        console.log("Waf waf")
+        let now = Date.now()
+        let okswitches = 0, instart = 0;
+        for(let s in MnmsData.Switches ){
+            if(MnmsData.Switches[s].Child) {
+                if(now - MnmsData.Switches[s].Timer < 10000)
+                    okswitches++
+                else if(now - MnmsData.Switches[s].StartTime < 15000)
+                    instart++
+                else 
+                    MnmsData.Switches[s].Child = serviceLauncher({
+                        Name : "cisco_switch:stop",
+                        Params:{Child : MnmsData.Switches[s].Child},
+                        Challenge: MnmsData.Challenge, 
+                        UID: MnmsData.Switches[s].UID
+                    })
+            }
+            else {
+                MnmsData.Switches[s].StartTime = Date.now()
+                MnmsData.Switches[s].Child = "starting"
+                MnmsData.Switches[s].Child = serviceLauncher({
+                    Name : "cisco_switch:start",
+                    Params:{IP : MnmsData.Switches[s].IP},
+                    Challenge: MnmsData.Challenge, 
+                    UID: MnmsData.Switches[s].UID
+                })
+            }
         }
+        MnmsData.OkSwitches = okswitches
     }
+
+    setInterval( watchDog, 2000 )
 }
