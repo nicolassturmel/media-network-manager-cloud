@@ -5,7 +5,7 @@ let _nodes
 let _data
 
 let visnode = new vis.DataSet([])
-let  visedge = new vis.DataSet([])
+let visedge = new vis.DataSet([])
 var network
 
 /* init function */
@@ -48,7 +48,7 @@ function run() {
             }
             for(let s of _data.Switches) {
                 let swClass = "popUp-elem"
-                let secs = -(s.StartTime - _data.CurrentTime)/1000;
+                let secs = parseInt(-(s.StartTime - _data.CurrentTime)/1000);
                 let secsStr = " started " + parseInt(secs) + "s"
                 if(secs > 120)
                     secsStr = " started " + parseInt(secs/60) + "min"
@@ -419,11 +419,11 @@ var checkElem = (root,id,domtype,classElem,innerHTML) => {
             elem = document.createElement(domtype)
         }
             elem.id = id
-        if(classElem.length > 0)
-            elem.className = classElem;
         root.appendChild(elem)
     }
 
+    if(classElem.length > 0 && elem.className != classElem)
+        elem.className = classElem;
     if(elem.innerHTML != innerHTML && innerHTML.length > 0) elem.innerHTML = innerHTML
     return elem;
 }

@@ -280,6 +280,28 @@ module.exports = function (LocalOptions) {
                 MnmsData.CurrentTime = t.getTime();
                 ws.send(JSON.stringify(MnmsData));
             }
+            else {
+                try {
+                    var D_1 = JSON.parse(message);
+                    console.log("D", D_1);
+                    if (D_1.Type && D_1.Type == "ciscoSG") {
+                        if (!MnmsData.Switches.some(function (k) { return k.IP == D_1.IP; })) {
+                            MnmsData.Switches.push({
+                                Type: D_1.Type,
+                                IP: D_1.IP,
+                                Child: null,
+                                Timer: null,
+                                StartTime: null,
+                                UID: "ddjt" + Date.now() + ((encodeURIComponent(D_1.IP)))
+                            });
+                            console.log(MnmsData);
+                        }
+                    }
+                }
+                catch (error) {
+                    console.log("Error when parsing json on message reception");
+                }
+            }
         });
         //send immediatly a feedback to the incoming connection    
         ws.send(JSON.stringify(MnmsData));
@@ -295,22 +317,22 @@ module.exports = function (LocalOptions) {
         Challenge: "thisisatest",
         OkSwitches: 0,
         Switches: [
-            {
-                Type: "ciscoSG",
-                IP: "192.168.1.201",
-                Child: null,
-                Timer: null,
-                StartTime: null,
-                UID: "ddjtzlzégndfe"
-            },
-            {
-                Type: "ciscoSG",
-                IP: "192.168.1.129",
-                Child: null,
-                Timer: null,
-                StartTime: null,
-                UID: "aewtuzhmfdfgh"
-            },
+            /*           {
+                           Type: "ciscoSG",
+                           IP : "192.168.1.201",
+                           Child: null,
+                           Timer: null,
+                           StartTime: null,
+                           UID: "ddjtzlzégndfe"
+                       },
+                       {
+                           Type: "ciscoSG",
+                           IP : "192.168.1.129",
+                           Child: null,
+                           Timer: null,
+                           StartTime: null,
+                           UID: "aewtuzhmfdfgh"
+                       },*/
             {
                 Type: "ciscoSG",
                 IP: "192.168.1.130",

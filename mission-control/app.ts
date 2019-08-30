@@ -1,4 +1,5 @@
 import { SSL_OP_TLS_ROLLBACK_BUG } from "constants";
+import { kMaxLength } from "buffer";
 
 var mdns = require('multicast-dns')()
 var os = require('os');
@@ -295,6 +296,27 @@ export = function(LocalOptions) {
                 MnmsData.CurrentTime = t.getTime()
                 ws.send(JSON.stringify(MnmsData))
             }
+            else {
+                try {
+                    let D = JSON.parse(message)
+                    console.log("D" ,D)
+                    if(D.Type && D.Type == "ciscoSG") {
+                        if(!MnmsData.Switches.some(k => k.IP == D.IP)) {
+                            MnmsData.Switches.push({
+                                Type: D.Type,
+                                IP: D.IP,
+                                Child: null,
+                                Timer: null,
+                                StartTime: null,
+                                UID: "ddjt" + Date.now() + ((encodeURIComponent(D.IP)))
+                            })
+                            console.log(MnmsData)
+                        }
+                    }
+                } catch (error) {
+                    console.log("Error when parsing json on message reception")
+                }
+            }
         });
 
         //send immediatly a feedback to the incoming connection    
@@ -316,7 +338,7 @@ export = function(LocalOptions) {
         Challenge: "thisisatest",
         OkSwitches: 0,
         Switches : [
-                {
+     /*           {
                     Type: "ciscoSG",
                     IP : "192.168.1.201",
                     Child: null,
@@ -331,7 +353,7 @@ export = function(LocalOptions) {
                     Timer: null,
                     StartTime: null,
                     UID: "aewtuzhmfdfgh"
-                },
+                },*/
                 {
                     Type: "ciscoSG",
                     IP : "192.168.1.130",
