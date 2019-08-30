@@ -2,6 +2,7 @@
 let maddress = []
 let mselection = {}
 let _nodes
+let _data
 
 let visnode = new vis.DataSet([])
 let  visedge = new vis.DataSet([])
@@ -9,20 +10,75 @@ var network
 
 /* init function */
 function run() {
+    let switchInfo = document.getElementById("switch-info")
     let container = document.getElementById("nodes_container")
     var missionControlWS = new WebSocket("ws://" + window.location.host)
-    missionControlWS.onmessage = function (event) {
-        _nodes = JSON.parse(event.data)
-        if(_nodes.Type && _nodes.Type == "MnmsData") {
-            document.getElementById("workspacename-bar").innerHTML = _nodes.Workspace;
-            let sw = document.getElementById("switch-info")
-            sw.innerHTML = "<i class=\"fas fa-network-wired\"></i> Switches (" + _nodes.OkSwitches + "/" + _nodes.Switches.length + ")";
-            if(_nodes.OkSwitches != _nodes.Switches.length)  sw.classList.add("warn")
-            else sw.classList.remove("warn")
 
+    var switchMenu = () => {
+        console.log(_data)
+        let popUp = document.getElementById("popUp-menu") 
+        if(popUp) {
+            popUp.outerHTML = ""
+        }
+        else {
+            let popUp = checkElem(switchInfo,"popUp-menu","div","popUp-menu","")
+            makeSwitchMenu()
+        }
+    }
+
+    var makeSwitchMenu = () => {
+        let popUp = document.getElementById("popUp-menu") 
+        if(popUp) {
+            for(let n of _nodes) {
+                if(!_data.Switches.some(k => k.IP == n.IP)) {
+                    if(n.Services) Object.keys(n.Services).forEach(key => {
+                        if(key.search("_csco-sb") != -1) {
+                            let newSw = checkElem(popUp,"popup-switch-" + n.IP,"div","popUp-elem","Add cisco switch at " + n.IP)
+                            newSw.onclick = () => {
+                                missionControlWS.send(JSON.stringify(
+                                    {
+                                        Type: "ciscoSG",
+                                        IP: n.IP
+                                    }
+                                ))
+                            }
+                        }
+                    })
+                }
+            }
+            for(let s of _data.Switches) {
+                let swClass = "popUp-elem"
+                let secs = -(s.StartTime - _data.CurrentTime)/1000;
+                let secsStr = " started " + parseInt(secs) + "s"
+                if(secs > 120)
+                    secsStr = " started " + parseInt(secs/60) + "min"
+                if(secs > 7200)
+                    secsStr = " started " + parseInt(secs/3600) + "hours"
+                if(secs < 16) {
+                    secsStr = " starting..."
+                    swClass += " warn"
+                }
+                checkElem(popUp,"popup-switch-" + s.IP,"div",swClass,s.Type + ":" + s.IP + secsStr)
+            }
+        }
+    }
+
+    switchInfo.onclick = switchMenu
+
+    missionControlWS.onmessage = function (event) {
+        data = JSON.parse(event.data)
+        if(data.Type && data.Type == "MnmsData") {
+            _data = data
+            document.getElementById("workspacename-bar").innerHTML = _data.Workspace;
+            let swInfoTxt = checkElem(switchInfo,"switchInfoText","span","switch-info-span",
+                "<i class=\"fas fa-network-wired\"></i> Switches (" + _data.OkSwitches + "/" + _data.Switches.length + ")");
+            if(_data.OkSwitches != _data.Switches.length)  swInfoTxt.classList.add("warn")
+            else swInfoTxt.classList.remove("warn")
+            makeSwitchMenu()
             setTimeout(() => {missionControlWS.send("data")},4000)
         }
         else {
+            _nodes = data
             for(let node of _nodes) {
                 if(node.Type != "null" && node.Name) {
                     let Name = node.Name

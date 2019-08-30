@@ -73,16 +73,25 @@ body {
     flex-direction: row-reverse;
 }
 
+.popUp-menu {    
+    position: absolute;
+    bottom: 30;
+    right: 0;
+    background-color: var(--main-color-dim);
+    padding: 10px;
+    box-sizing: border-box;
+}
+
 
 .bar-comp {
     margin: 0 20px;  
 }
 
-.bar-comp.off {
+.off {
     color: grey;
 }
 
-.bar-comp.warn {
+.warn {
     color: red;
     font-weight: bold;
 }
