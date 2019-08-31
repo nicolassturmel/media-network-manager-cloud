@@ -8,6 +8,7 @@ var http = require('http')
 var exp = require('express')
 var mdnsBrowser = require('../mdns-browser')
 var fs = require('fs');
+var path = require('path')
 var _ = require('lodash');
 const sdpgetter = require("../rtsp-sdp-query")
 const { spawn } = require('child_process');
@@ -43,8 +44,8 @@ export = function(LocalOptions) {
     var prename = pc_name.split('.')[0];
     var Nodes : any = [{ Type: "null", id : "0"}]
 
-    var privateKey = fs.readFileSync('./server.key', 'utf8');
-    var certificate = fs.readFileSync('./server.cert', 'utf8');
+    var privateKey = fs.readFileSync(path.join(__dirname, 'server.key'), 'utf8');
+    var certificate = fs.readFileSync(path.join(__dirname, 'server.cert'), 'utf8');
 
     var credentials = { key: privateKey, cert: certificate };
     var https = require('https');
@@ -329,7 +330,7 @@ export = function(LocalOptions) {
     //------------------
 
     var Datastore = require('nedb')
-    , db = new Datastore({ filename: Options.database, autoload: true });
+    , db = new Datastore({ filename: path.join(__dirname, Options.database), autoload: true });
 
     var MnmsData = {
         Type: "MnmsData",

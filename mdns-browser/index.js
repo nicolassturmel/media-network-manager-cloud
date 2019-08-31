@@ -166,7 +166,13 @@ module.exports = function (cb, _mdns) {
                 next: {
                     serv: '_http._tcp.local',
                     next: {
-                        serv: '_csco-sb._tcp.local'
+                        serv: '_csco-sb._tcp.local',
+                        next: {
+                            serv: '_ravenna._sub._http._tcp.local',
+                            next: {
+                                serv: '_ravenna_session._sub._rtsp._tcp.local'
+                            }
+                        }
                     }
                 }
             }

@@ -6,6 +6,7 @@ var http = require('http');
 var exp = require('express');
 var mdnsBrowser = require('../mdns-browser');
 var fs = require('fs');
+var path = require('path');
 var _ = require('lodash');
 var sdpgetter = require("../rtsp-sdp-query");
 var spawn = require('child_process').spawn;
@@ -39,8 +40,8 @@ module.exports = function (LocalOptions) {
     var pc_name = os.hostname();
     var prename = pc_name.split('.')[0];
     var Nodes = [{ Type: "null", id: "0" }];
-    var privateKey = fs.readFileSync('./server.key', 'utf8');
-    var certificate = fs.readFileSync('./server.cert', 'utf8');
+    var privateKey = fs.readFileSync(path.join(__dirname, 'server.key'), 'utf8');
+    var certificate = fs.readFileSync(path.join(__dirname, 'server.cert'), 'utf8');
     var credentials = { key: privateKey, cert: certificate };
     var https = require('https');
     var httpsServer = https.createServer(credentials);
@@ -309,7 +310,7 @@ module.exports = function (LocalOptions) {
     });
     // db and other services start
     //------------------
-    var Datastore = require('nedb'), db = new Datastore({ filename: Options.database, autoload: true });
+    var Datastore = require('nedb'), db = new Datastore({ filename: path.join(__dirname, Options.database), autoload: true });
     var MnmsData = {
         Type: "MnmsData",
         Workspace: "Nicolas' test network",
