@@ -157,70 +157,30 @@ module.exports = function (cb, _mdns) {
         handleResponse(response);
     });
     sendNode = cb;
+    var servToScan = {
+        serv: "_csco-sb._tcp.local",
+        next: {
+            serv: '_telnet._tcp.local',
+            next: {
+                serv: '_rtsp._tcp.local',
+                next: {
+                    serv: '_http._tcp.local',
+                    next: {
+                        serv: '_csco-sb._tcp.local'
+                    }
+                }
+            }
+        }
+    };
     setTimeout(function () {
-        mdns.query({
-            id: 0,
-            questions: [{
-                    name: '_rtsp._tcp.local',
-                    type: 'PTR'
-                }, {
-                    name: '_ravenna_stream._sub._rtsp._tcp.local',
-                    type: 'PTR'
-                }, {
-                    name: '_ravenna._sub._http._tcp.local',
-                    type: 'PTR'
-                }, {
-                    name: '_http._tcp.local',
-                    type: 'PTR'
-                }, {
-                    name: '_ember._tcp.local',
-                    type: 'PTR'
-                }, {
-                    name: '_csco-sb._tcp.local',
-                    type: 'PTR'
-                }, {
-                    name: '_telnet._tcp.local',
-                    type: 'PTR'
-                }]
-        });
+        console.log("Scanning services");
+        var qq = function (stq) {
+            console.log(stq.serv);
+            mdns.query({ questions: [{ name: stq.serv, type: 'PTR' }] });
+            if (stq.next) {
+                setTimeout(qq, 1000, stq.next);
+            }
+        };
+        qq(servToScan);
     }, 1000);
-    setTimeout(function () {
-        mdns.query({
-            id: 0,
-            questions: [{
-                    name: '_rtsp._tcp.local',
-                    type: 'PTR'
-                }, {
-                    name: '_ravenna_stream._sub._rtsp._tcp.local',
-                    type: 'PTR'
-                }, {
-                    name: '_ravenna._sub._http._tcp.local',
-                    type: 'PTR'
-                }, {
-                    name: '_http._tcp.local',
-                    type: 'PTR'
-                }, {
-                    name: '_ember._tcp.local',
-                    type: 'PTR'
-                }, {
-                    name: '_csco-sb._tcp.local',
-                    type: 'PTR'
-                }, {
-                    name: '_telnet._tcp.local',
-                    type: 'PTR'
-                }]
-        });
-    }, 5000);
-    setTimeout(function () {
-        mdns.query({
-            id: 0,
-            questions: [{
-                    name: '_http._tcp.local',
-                    type: 'PTR'
-                }, {
-                    name: '_csco-sb._tcp.local',
-                    type: 'PTR'
-                }]
-        });
-    }, 10000);
 };
