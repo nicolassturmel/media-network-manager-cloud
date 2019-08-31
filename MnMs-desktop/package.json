@@ -1,0 +1,44 @@
+{
+  "name": "MnMs-desktop",
+  "version": "0.9.0",
+  "description": "Media Network Management Services",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "package-mac": "electron-packager . --overwrite --platform=darwin --arch=x64 --asar=false  --icon=assets/icons/mac/icon.icns --prune=true --out=release-builds",
+    "package-win": "electron-packager . MmMs-desktop --overwrite --asar=false --platform=win32 --arch=ia32 --icon=assets/icons/win/icon.ico --prune=true --out=release-builds --version-string.CompanyName=CE --version-string.FileDescription=CE --version-string.ProductName=\"MnMs Desktop\"",
+    "package-linux": "electron-packager . MmMs-desktop --overwrite --asar=false --platform=linux --arch=x64 --icon=assets/icons/png/1024x1024.png --prune=true --out=release-builds"
+  },
+  "repository": "",
+  "dependencies": {
+    "command-line-args": "^5.1.1",
+    "telnet-client": "^1.0.4",
+    "dns-txt": "^2.0.2",
+    "express": "^4.17.1",
+    "fs": "0.0.1-security",
+    "https": "^1.0.0",
+    "lodash": "^4.17.15",
+    "multicast-dns": "^7.2.0",
+    "nedb": "^1.8.0",
+    "node-arp": "^1.0.6",
+    "os": "^0.1.1",
+    "sdp-transform": "^2.12.0",
+    "uniqid": "^5.0.3",
+    "util": "^0.12.1",
+    "ws": "^7.1.2",
+    "yellowstone": "^3.0.1"
+  },
+  "keywords": [
+    "MnMs",
+    "AES67",
+    "RAVENNA",
+    "Network",
+    "ST2110"
+  ],
+  "author": "Nicolas Sturmel",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^6.0.1",
+    "electron-packager": "^14.0.4"
+  }
+}
