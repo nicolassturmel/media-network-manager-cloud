@@ -10,3 +10,4 @@ mdns-browser/package-lock.json
 mnms-client-ws-interface/package-lock.json
 rtsp-sdp-query/package-lock.json
 MnMs-desktop/release-builds/.DS_Store
+.DS_Store
