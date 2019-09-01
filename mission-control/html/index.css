@@ -194,6 +194,11 @@ nav {
    text-align: center;
 } 
 
+.disconnected {
+    background-color: gray;
+   text-align: center;
+} 
+
 .switch_port {
     float: left;
     margin: 5px;

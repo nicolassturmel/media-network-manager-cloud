@@ -43,7 +43,7 @@ function handleResponse(response) {
     function handleItem(k) {
         let refresh = false;
         let HostToRefresh = null
-        if(k.ttl == 0) console.log(k)
+        //if(k.ttl == 0) console.log(k)
         if(k.type == "SRV")
         {
             HostToRefresh = k.data.target;

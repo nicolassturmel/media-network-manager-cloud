@@ -442,7 +442,9 @@ var buildNodeNav = (node,elem) => {
     checkElem(unit,"node-IP-" + node.Name,"div",node.Type,node.IP)
     let services = checkElem(elem,"node-services-" + node.Name,"div","services","")
     if(node.Services) {
-        Object.keys(node.Services).forEach((key) => {
+        let numS = 0;
+        var buildServices = (key) => {
+            numS ++
             let name = key.split("._")[0]
             if(name.length > 21) {
                 name = name.substr(0,12) + "..." + name.substr(-5)
@@ -458,7 +460,12 @@ var buildNodeNav = (node,elem) => {
                 checkElem(subcontainer,"node-service-icon-" + key,"i","fas fa-tty","")
                 checkElem(subcontainer,"node-service-a-" + key,"span","",name)
             }
-        })
+        }
+        Object.keys(node.Services).forEach(buildServices)
+        if(numS != services.childNodes.length) {
+            services.innerHTML = ""
+            Object.keys(node.Services).forEach(buildServices)
+        }
     }
     let streams = checkElem(elem,"node-streams-" + node.Name,"div","streams","")
     if(node.Services) {

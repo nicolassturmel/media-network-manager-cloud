@@ -10,6 +10,26 @@ var path = require('path');
 var _ = require('lodash');
 var sdpgetter = require("../rtsp-sdp-query");
 var spawn = require('child_process').spawn;
+// Utils
+//-------------
+function makeid(length) {
+    var result = '';
+    var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    var charactersLength = characters.length;
+    for (var i = 0; i < length; i++) {
+        result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    return result;
+}
+function blankMnmsData(d) {
+    var out = JSON.parse(JSON.stringify(d));
+    out.Switches.forEach(function (s) {
+        s.Child = null;
+        s.Timer = null;
+        s.StartTime = null;
+    });
+    return out;
+}
 // Options and exports
 //--------------------------------
 var Options = {
@@ -167,12 +187,18 @@ module.exports = function (LocalOptions) {
                             }
                         }
                     });
-                    Object.keys(Nodes[index].Services).forEach(function (key) {
-                        if (!(newValue.Services[key])) {
-                            console.log("Deleting", key);
-                            delete Nodes[index].Services[key];
-                        }
-                    });
+                    if (1) {
+                        Object.keys(Nodes[index].Services).forEach(function (key) {
+                            if (!(newValue.Services[key])) {
+                                console.log("Deleting", key);
+                                delete Nodes[index].Services[key];
+                                if (Object.keys(Nodes[index].Services).length == 0) {
+                                    if (Nodes[index].Type && Nodes[index].Type != "switch")
+                                        Nodes[index].Type = "disconnected";
+                                }
+                            }
+                        });
+                    }
                 }
                 Nodes[index].OtherIPs = newValue.OtherIPs;
                 Nodes[index].Macs = newValue.Macs;
@@ -306,6 +332,7 @@ module.exports = function (LocalOptions) {
                                 StartTime: null,
                                 UID: "ddjt" + Date.now() + ((encodeURIComponent(D_1.IP)))
                             });
+                            db.update({ Type: "MnmsData" }, blankMnmsData(MnmsData), { upsert: true }, function (err, newDoc) { });
                             console.log(MnmsData);
                         }
                     }
@@ -321,40 +348,24 @@ module.exports = function (LocalOptions) {
     });
     // db and other services start
     //------------------
+    var MnmsData;
     var Datastore = require('nedb'), db = new Datastore({ filename: path.join(__dirname, Options.database), autoload: true });
-    var MnmsData = {
-        Type: "MnmsData",
-        Workspace: "Nicolas' test network",
-        CurrentTime: 0,
-        Challenge: "thisisatest",
-        OkSwitches: 0,
-        Switches: [
-            /*           {
-                           Type: "ciscoSG",
-                           IP : "192.168.1.201",
-                           Child: null,
-                           Timer: null,
-                           StartTime: null,
-                           UID: "ddjtzlzégndfe"
-                       },
-                       {
-                           Type: "ciscoSG",
-                           IP : "192.168.1.129",
-                           Child: null,
-                           Timer: null,
-                           StartTime: null,
-                           UID: "aewtuzhmfdfgh"
-                       },*/
-            {
-                Type: "ciscoSG",
-                IP: "192.168.1.130",
-                Child: null,
-                Timer: null,
-                StartTime: null,
-                UID: "bn,héioàtzjrtwrgw"
-            }
-        ]
-    };
+    db.find({ Type: "MnmsData" }, function (err, docs) {
+        console.log(docs);
+        if (docs.length == 1) {
+            MnmsData = docs[0];
+        }
+        else {
+            MnmsData = {
+                Type: "MnmsData",
+                Workspace: "Mnms - Network Name",
+                CurrentTime: 0,
+                Challenge: makeid(20),
+                OkSwitches: 0,
+                Switches: []
+            };
+        }
+    });
     var ServicesDirectory = {
         cisco_switch: "../cisco-switch/app.js"
     };
@@ -373,7 +384,8 @@ module.exports = function (LocalOptions) {
                 });
             }
             else if (action == "stop") {
-                ServiceOptions.Params.Child.kill();
+                if (ServiceOptions.Params.Child.kill)
+                    ServiceOptions.Params.Child.kill();
                 child_info = null;
             }
         }

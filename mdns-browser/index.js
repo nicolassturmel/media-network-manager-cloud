@@ -38,8 +38,7 @@ function handleResponse(response) {
     function handleItem(k) {
         var refresh = false;
         var HostToRefresh = null;
-        if (k.ttl == 0)
-            console.log(k);
+        //if(k.ttl == 0) console.log(k)
         if (k.type == "SRV") {
             HostToRefresh = k.data.target;
             if (Hosts[k.data.target]) {
