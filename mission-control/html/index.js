@@ -462,13 +462,15 @@ var buildNodeNav = (node,elem) => {
     }
     let streams = checkElem(elem,"node-streams-" + node.Name,"div","streams","")
     if(node.Services) {
-        Object.keys(node.Services).forEach((key) => {
+        let sNum = 0;
+        let buildStreams = (key) => {
             let name = key.split("._")[0]
             if(name.length >= 20) {
                 name = name.substr(0,11) + "..." + name.substr(-5)
             }
             if(key.includes("_rtsp._tcp")) {
                 flex_id -= 10;
+                sNum ++
                 let subcontainer = checkElem(streams,"node-service-div-" + key,"div","","")
                 checkElem(subcontainer,"node-service-icon-" + key,"i","fas fa-play-circle","")
                 checkElem(subcontainer,"node-stream-a-" + key,"span","",name)
@@ -477,7 +479,12 @@ var buildNodeNav = (node,elem) => {
                     e.stopPropagation();
                 }
             }
-        })
+        }
+        Object.keys(node.Services).forEach(buildStreams)
+        if(sNum != streams.childNodes.length) {
+            streams.innerHTML = ""
+            Object.keys(node.Services).forEach(buildStreams)
+        }
     }
     if(node.Ports) {
         let subcontainer = checkElem(elem,"node-ports-" + node.Name,"div","ports","")

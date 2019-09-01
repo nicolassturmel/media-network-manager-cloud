@@ -43,6 +43,7 @@ function handleResponse(response) {
     function handleItem(k) {
         let refresh = false;
         let HostToRefresh = null
+        if(k.ttl == 0) console.log(k)
         if(k.type == "SRV")
         {
             HostToRefresh = k.data.target;
@@ -58,11 +59,11 @@ function handleResponse(response) {
                     }
                     if(!Hosts[k.data.target].Services[k.name])
                         refresh = true;
-                    Hosts[k.data.target].Services[k.name] = {
-                        port: k.data.port,
-                        subs : subs,
-                        txt: txt
-                    }
+                        Hosts[k.data.target].Services[k.name] = {
+                            port: k.data.port,
+                            subs : subs,
+                            txt: txt
+                        }
                 }
                 else {
                     if(Hosts[k.data.target].Services[k.name]){
@@ -75,13 +76,29 @@ function handleResponse(response) {
         else if(k.type == "PTR")
         {
             let comps = k.name.split("._");
-            if(comps[1] == "sub" ){
-                if(!Services[k.data] ){
-                    Services[k.data] = {}
-                    Services[k.data].subs = []
-                    Services[k.data].txt = null
+            if(k.ttl > 0) {
+                if(comps[1] == "sub" ){
+                    if(!Services[k.data] ){
+                        Services[k.data] = {}
+                        Services[k.data].subs = []
+                        Services[k.data].txt = null
+                    }
+                    if(!Services[k.data].subs.some(p => p === comps[0]) && comps[2] == "http") Services[k.data].subs.push(comps[0])
                 }
-                if(!Services[k.data].subs.some(p => p === comps[0]) && comps[2] == "http") Services[k.data].subs.push(comps[0])
+            }
+            else {
+                if(Services[k.data]) {
+                    Object.keys(Hosts).forEach(key => {
+                        if(Hosts[key].Services[k.data]) {
+                            refresh = true
+                            HostToRefresh = key
+                            delete Hosts[key].Services[k.data]
+                        }
+                    })
+
+                    delete Services[k.data]
+
+                }  
             } 
             //console.log(k)
         }
@@ -137,6 +154,7 @@ function handleResponse(response) {
                 }
             }
             else {
+                console.log("ttl 0")
                 if(Hosts[k.name]) {
                     Hosts[k.name].Type == "disconnected"
                     refresh = true

@@ -38,6 +38,8 @@ function handleResponse(response) {
     function handleItem(k) {
         var refresh = false;
         var HostToRefresh = null;
+        if (k.ttl == 0)
+            console.log(k);
         if (k.type == "SRV") {
             HostToRefresh = k.data.target;
             if (Hosts[k.data.target]) {
@@ -67,14 +69,28 @@ function handleResponse(response) {
         }
         else if (k.type == "PTR") {
             var comps_1 = k.name.split("._");
-            if (comps_1[1] == "sub") {
-                if (!Services[k.data]) {
-                    Services[k.data] = {};
-                    Services[k.data].subs = [];
-                    Services[k.data].txt = null;
+            if (k.ttl > 0) {
+                if (comps_1[1] == "sub") {
+                    if (!Services[k.data]) {
+                        Services[k.data] = {};
+                        Services[k.data].subs = [];
+                        Services[k.data].txt = null;
+                    }
+                    if (!Services[k.data].subs.some(function (p) { return p === comps_1[0]; }) && comps_1[2] == "http")
+                        Services[k.data].subs.push(comps_1[0]);
                 }
-                if (!Services[k.data].subs.some(function (p) { return p === comps_1[0]; }) && comps_1[2] == "http")
-                    Services[k.data].subs.push(comps_1[0]);
+            }
+            else {
+                if (Services[k.data]) {
+                    Object.keys(Hosts).forEach(function (key) {
+                        if (Hosts[key].Services[k.data]) {
+                            refresh = true;
+                            HostToRefresh = key;
+                            delete Hosts[key].Services[k.data];
+                        }
+                    });
+                    delete Services[k.data];
+                }
             }
             //console.log(k)
         }
@@ -128,6 +144,7 @@ function handleResponse(response) {
                 }
             }
             else {
+                console.log("ttl 0");
                 if (Hosts[k.name]) {
                     Hosts[k.name].Type == "disconnected";
                     refresh = true;

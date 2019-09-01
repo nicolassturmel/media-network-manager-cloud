@@ -179,11 +179,18 @@ export = function(LocalOptions) {
                 if(!Nodes[index].Services) Nodes[index].Services = {} 
                 if(true) {
                     Object.keys(newValue.Services).forEach((key) => {
-                        if(!(Nodes[index].Services[key] && _.isEqual(Nodes[index].Services[key],newValue.Services[key]))) {
+                        if(!(Nodes[index].Services[key]) || !(Nodes[index].Services[key].SDP || _.isEqual(Nodes[index].Services[key],newValue.Services[key]))) {
+                            console.log("Creating",key)
                             Nodes[index].Services[key] = newValue.Services[key]
                             if(key.includes("_rtsp._tcp")) {
-                                sdpgetter("rtsp://" + newValue.IP + ":" + newValue.Services[key].port + "/by-name/" +  encodeURIComponent(key.split("._")[0]),(sdp) => {  Nodes[index].Services[key].SDP = sdp})
+                                sdpgetter("rtsp://" + newValue.IP + ":" + newValue.Services[key].port + "/by-name/" +  encodeURIComponent(key.split("._")[0]),(sdp) => {  if(Nodes[index].Services[key]) Nodes[index].Services[key].SDP = sdp})
                             }
+                        }
+                    })
+                    Object.keys(Nodes[index].Services).forEach((key) => {
+                        if(!(newValue.Services[key])) {
+                            console.log("Deleting",key)
+                            delete Nodes[index].Services[key]
                         }
                     })
                 }
@@ -194,6 +201,9 @@ export = function(LocalOptions) {
                 Nodes[index].id = newValue.id
                 Nodes[index].Name = Name 
             }
+        }
+        if(newValue.Type == "disconnected") {
+            Nodes[index].Type = "disconnected"
         }
     }
 
