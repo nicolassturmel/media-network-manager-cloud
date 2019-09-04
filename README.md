@@ -33,7 +33,7 @@ You have to tell the system to connect to the switches, click on the switch text
 
 ## Limitations
 
-The SG3XX switches MUST have telnet access enabled and the cisco/cisco user. You will be able to change this in the future.
+The SG3XX switches MUST have mdns, telnet access enabled and the cisco/cisco user. You will be able to change this in the future.
 
 Only does MDNS query on the default interface, you does not yet give you the choice of it
 
