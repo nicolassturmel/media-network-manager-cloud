@@ -32,7 +32,7 @@ The app will create a webserver running on port 8888, you can then access the UI
 
 Right now... this is only data mining and shaping
 
-## Component
+## Components
 
 ### mission control
 
