@@ -28,12 +28,14 @@ At the moment, the software only works with SG3XX cisco switches. Be my guest (o
 
 You have to tell the system to connect to the switches, click on the switch text in the bottom right and a list should appear if your switches have MDNS and TELNET activated.
 
-![SwitchTextSnapshot](./image002.png)
-
+<img src="./image002.png" width="300" alt="">
 
 ## Limitations
 
 The SG3XX switches MUST have mdns, telnet access enabled and the cisco/cisco user. You will be able to change this in the future.
+
+<img src="./image003.png" width="400" alt="">
+<img src="./image004.png" width="300" alt="">
 
 Only does MDNS query on the default interface, you does not yet give you the choice of it
 
