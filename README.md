@@ -24,9 +24,16 @@ You would have to accept some security warnings to launch the app. Or you can ta
 
 At the moment, the software only works with SG3XX cisco switches. Be my guest (or contact me) if you want other switches support. You can have any number of switches on the network, the software should resolver inter-switch connection.
 
+## First run
+
+You have to tell the system to connect to the switches, click on the switch text in the bottom right and a list should appear if your switches have MDNS and TELNET activated.
+
+![SwitchTextSnapshot](./image002.png)
+
+
 ## Limitations
 
-The SG3XX switches MUST have telnet access enabled and the cisco/cisco user. You will be able to change this in the future.
+The SG3XX switches MUST have mdns, telnet access enabled and the cisco/cisco user. You will be able to change this in the future.
 
 Only does MDNS query on the default interface, you does not yet give you the choice of it
 
