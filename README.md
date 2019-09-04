@@ -18,6 +18,8 @@ Windows: https://nicolas.sturmel.com/mnms/MmMs-desktop-win32-ia32.zip
 
 You would have to accept some security warnings to launch the app. Or you can take the whole repository and build-it yourself.
 
+![Snapshot of app](https://raw.githubusercontent.com/nicolassturmel/media-network-manager-cloud/master/image001.png)
+
 ## Prerequisite
 
 At the moment, the software only works with SG3XX cisco switches. Be my guest (or contact me) if you want other switches support. You can have any number of switches on the network, the software should resolver inter-switch connection.
