@@ -8,10 +8,10 @@ It is work in progress. At the moment it:
 * Shows the different MDNS services and, if there, shows SDP information and if it is AES67, ST-2022-7 
 * Traces the groups registration on the network (light the network path where the group has been registered)
 
-You can find an aggregated/app form of the tools here:
-Linux: https://nicolas.sturmel.com/mnms/MmMs-desktop-linux-x64.zip
-Mac: https://nicolas.sturmel.com/mnms/MnMs-desktop-darwin-x64.zip
-Windows: https://nicolas.sturmel.com/mnms/MmMs-desktop-win32-ia32.zip
+You can find an aggregated/app form of the tools here:  
+Linux: https://nicolas.sturmel.com/mnms/MmMs-desktop-linux-x64.zip  
+Mac: https://nicolas.sturmel.com/mnms/MnMs-desktop-darwin-x64.zip  
+Windows: https://nicolas.sturmel.com/mnms/MmMs-desktop-win32-ia32.zip  
 
 You would have to accept some security warnings to launch the app. Or you can take the whole repository and build-it yourself.
 
