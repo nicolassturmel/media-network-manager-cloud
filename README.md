@@ -1,4 +1,7 @@
 # media-network-manager-cloud
+
+**Also has the cool name of : MnMs (Media Network M{onitoring,anagement} S{ystem,ervices})**
+
 Set of tools for multiplatform real time media network (ST2110, AES67, Dante... ) monitoring and administration
 This is aimed a being a swarm of microservices all connected to a mission control app or website. 
 
@@ -52,5 +55,16 @@ Web socket client module to connect to mission control
 Does simple query to get SDP from RRTSP
 
 ### MnMs-desktop
+
+## About the poject owner
+
+I am Nicolas Sturmel, technical product manager and developer at Merging Technology, focusing on Media Network implmentations (test, validation, tools for users and installers). 
+
+This project is not link with Merging, any question or comment should go through me or this github page and will be handled on a best effort basis.
+
+## Licence
+
+MIT: do what you want with the code.
+If you are looking for a custom solution, you can contact me !
 
 The electron app builder, firt run npm cloud-copy before npm package-<system>
