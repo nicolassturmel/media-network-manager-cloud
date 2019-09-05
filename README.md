@@ -45,6 +45,8 @@ Right now... this is only data mining and shaping
 
 ## Components
 
+You have to run npm i in every subfolder
+
 ### mission control
 
 The user ui, builds a MDNS directory
@@ -67,17 +69,16 @@ Does simple query to get SDP from RRTSP
 
 ### MnMs-desktop
 
-Desktop app
+The electron app builder, firt run npm cloud-copy before npm package-<system>
 
 ## About the poject owner
 
 I am Nicolas Sturmel, technical product manager and developer at Merging Technology, focusing on Media Network implmentations (test, validation, tools for users and installers). 
 
-This project is not link with Merging, any question or comment should go through me or this github page and will be handled on a best effort basis.
+This project is not linked with Merging, any question or comment will be handled by me on a best effort basis.
 
 ## Licence
 
-MIT: do what you want with the code.
+MIT, do what you want with the code.
 If you are looking for a custom solution, you can contact me !
 
-The electron app builder, firt run npm cloud-copy before npm package-<system>
