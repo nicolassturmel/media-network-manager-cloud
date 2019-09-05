@@ -37,7 +37,7 @@ The SG3XX switches MUST have mdns, telnet access enabled and the cisco/cisco use
 <img src="./image003.png" width="400" alt="">
 <img src="./image004.png" width="300" alt="">
 
-Only does MDNS query on the default interface, you does not yet give you the choice of it
+Only does MDNS query on the default interface, does not yet give you the choice of it
 
 The app will create a webserver running on port 8888, you can then access the UI from other devices on the network
 
@@ -66,6 +66,8 @@ Web socket client module to connect to mission control
 Does simple query to get SDP from RRTSP
 
 ### MnMs-desktop
+
+Desktop app
 
 ## About the poject owner
 
