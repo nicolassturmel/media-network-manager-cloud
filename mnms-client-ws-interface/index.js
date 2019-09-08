@@ -62,6 +62,7 @@ function run() {
                 });
                 wsc.on('close', function close() {
                     console.log('close disconnected');
+                    process.exit();
                     //setTimeout(() => { handleItem(k)}, 2000);
                 });
                 wsc.on('error', function close() {

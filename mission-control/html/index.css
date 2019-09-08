@@ -186,7 +186,7 @@ nav {
 }
 
 .selected {
-    color: #ff00ff;
+    color: var(--tri-color-light);
 }
 
 .switch {
