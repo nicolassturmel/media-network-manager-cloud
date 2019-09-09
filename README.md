@@ -14,7 +14,7 @@ It is work in progress. At the moment it:
 You can find an aggregated/app form of the tools here:  
 Linux: https://nicolas.sturmel.com/mnms/MmMs-desktop-linux-x64.zip  
 Mac: https://nicolas.sturmel.com/mnms/MnMs-desktop-darwin-x64.zip  
-Windows: https://nicolas.sturmel.com/mnms/MmMs-desktop-win32-ia32.zip  
+Windows: https://nicolas.sturmel.com/mnms/MmMs-desktop-win32-ia32.zip  (currently buggy... trying to fix)
 
 You would have to accept some security warnings to launch the app. Or you can take the whole repository and build-it yourself.
 
