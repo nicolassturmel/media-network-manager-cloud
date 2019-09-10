@@ -59,7 +59,15 @@ module.exports = function (LocalOptions) {
     //---------------------------------
     var pc_name = os.hostname();
     var prename = pc_name.split('.')[0];
-    var Nodes = [{ Type: "null", id: "0" }];
+    var Nodes = [{ Type: "null",
+            IP: "",
+            id: "0",
+            Schema: 1,
+            Ports: [],
+            Services: {},
+            Multicast: null,
+            Neighbour: "",
+            Mac: "" }];
     var privateKey = fs.readFileSync(path.join(__dirname, 'server.key'), 'utf8');
     var certificate = fs.readFileSync(path.join(__dirname, 'server.cert'), 'utf8');
     var credentials = { key: privateKey, cert: certificate };
@@ -96,8 +104,15 @@ module.exports = function (LocalOptions) {
                 }
                 if (i == -1) {
                     Nodes.push({
+                        Type: "null",
                         IP: node.IP,
-                        Type: "Empty"
+                        id: "0",
+                        Schema: 1,
+                        Ports: [],
+                        Services: {},
+                        Multicast: null,
+                        Neighbour: "",
+                        Mac: ""
                     });
                     i = Nodes.findIndex(function (k) { return k.IP == node.IP; });
                 }
@@ -144,8 +159,15 @@ module.exports = function (LocalOptions) {
             var i = Nodes.findIndex(function (k) { return k.IP == node.IP; });
             if (i == -1) {
                 Nodes.push({ Name: node.Name,
+                    id: "0",
+                    Schema: 1,
+                    Ports: [],
+                    Services: {},
+                    Multicast: null,
+                    Neighbour: "",
+                    Mac: "",
                     IP: node.IP,
-                    Type: "Empty" });
+                    Type: "null" });
                 i = Nodes.findIndex(function (k) { return k.Name == node.Name; });
             }
             mergeNodes(i, node, node.Name);

@@ -1,3 +1,5 @@
+"use strict";
+exports.__esModule = true;
 var SwitchPollTime = 0.5;
 var Telnet = require('telnet-client');
 var commandLineArgs = require('command-line-args');
@@ -56,7 +58,6 @@ switchTelnet.on('ready', function (prompt) {
 });
 switchTelnet.on('timeout', function () {
     console.log('socket timeout!');
-    setTimeout(startTelenetToSwitch, 2000);
 });
 switchTelnet.on('error', function () {
 });

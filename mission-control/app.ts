@@ -1,6 +1,8 @@
 import { SSL_OP_TLS_ROLLBACK_BUG } from "constants";
 import { kMaxLength } from "buffer";
 
+import { MnMs_node } from "../types/types"
+
 var mdns = require('multicast-dns')()
 var os = require('os');
 var sock = require('ws');
@@ -63,7 +65,15 @@ export = function(LocalOptions) {
 
     var pc_name = os.hostname()
     var prename = pc_name.split('.')[0];
-    var Nodes : any = [{ Type: "null", id : "0"}]
+    var Nodes : MnMs_node[] = [{ Type: "null",
+    IP: "",
+    id: "0",
+    Schema: 1,
+    Ports: [],
+    Services: {},
+    Multicast: null,
+    Neighbour: "",
+    Mac: ""}]
 
     var privateKey = fs.readFileSync(path.join(__dirname, 'server.key'), 'utf8');
     var certificate = fs.readFileSync(path.join(__dirname, 'server.cert'), 'utf8');
@@ -105,8 +115,16 @@ export = function(LocalOptions) {
                 if(i == -1) {
                     Nodes.push(
                         {
-                        IP: node.IP,
-                        Type: "Empty"}
+                            Type: "null",
+                            IP: node.IP,
+                            id: "0",
+                            Schema: 1,
+                            Ports: [],
+                            Services: {},
+                            Multicast: null,
+                            Neighbour: "",
+                            Mac: ""
+                        }
                     )
                     i = Nodes.findIndex(k => k.IP == node.IP);
                 }
@@ -162,8 +180,15 @@ export = function(LocalOptions) {
             if(i == -1) {
                 Nodes.push(
                     {Name: node.Name,
+                    id: "0",
+                    Schema: 1,
+                    Ports: [],
+                    Services: {},
+                    Multicast: null,
+                    Neighbour: "",
+                    Mac: "",
                     IP: node.IP,
-                    Type: "Empty"}
+                    Type: "null"}
                 )
                 i = Nodes.findIndex(k => k.Name == node.Name);
             }
@@ -181,7 +206,7 @@ export = function(LocalOptions) {
     // Shaping and linking data
     //-----------
 
-    function mergeNodes(index,newValue,Name: String)
+    function mergeNodes(index: number,newValue ,Name: string)
     {
         if(_.isEqual(Nodes[index] , newValue)) return
         if(newValue.Type == "switch") {

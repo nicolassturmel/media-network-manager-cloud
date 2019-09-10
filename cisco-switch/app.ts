@@ -5,6 +5,7 @@ const SwitchPollTime = 0.5
 const Telnet = require('telnet-client')
 const commandLineArgs = require('command-line-args')
 
+import { MnMs_node } from "../types/types"
 
 // Command line arguments
 const optionDefinitions = [
@@ -29,7 +30,7 @@ client.run()
 
 var SwitchData: object = {};
 var OldValue: object = {}
-var Switch = { 
+var Switch : MnMs_node = { 
     Type: "switch", 
     IP: options.ip,
     Schema: 1, 
@@ -70,7 +71,6 @@ switchTelnet.on('ready', function (prompt) {
 
 switchTelnet.on('timeout', function () {
     console.log('socket timeout!')
-    setTimeout(startTelenetToSwitch, 2000);
 })
 
 switchTelnet.on('error', function () {

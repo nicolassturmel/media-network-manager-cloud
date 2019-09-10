@@ -44,30 +44,31 @@ function run() {
                 console.log(mc_target);
                 console.log(mc_ip);
                 console.log('wss://' + k.name + ':' + mc_port);
-                wsc = null;
-                wsc = new ws('wss://' + k.name + ':' + mc_port, {
-                    //protocolVersion: 8,
-                    origin: 'wss://' + k.name + ':' + mc_port,
-                    rejectUnauthorized: false
-                });
-                wsc.on('open', function open() {
-                    wsc.send(JSON.stringify({
-                        Who: whoami,
-                        Challenge: challenge,
-                        Type: "auth"
-                    }));
-                });
-                wsc.on('message', function incoming(data) {
-                    callback(data);
-                });
-                wsc.on('close', function close() {
-                    console.log('close disconnected');
-                    process.exit();
-                    //setTimeout(() => { handleItem(k)}, 2000);
-                });
-                wsc.on('error', function close() {
-                    console.log('error disconnected');
-                });
+                if (wsc == null) {
+                    wsc = new ws('wss://' + k.name + ':' + mc_port, {
+                        //protocolVersion: 8,
+                        origin: 'wss://' + k.name + ':' + mc_port,
+                        rejectUnauthorized: false
+                    });
+                    wsc.on('open', function open() {
+                        wsc.send(JSON.stringify({
+                            Who: whoami,
+                            Challenge: challenge,
+                            Type: "auth"
+                        }));
+                    });
+                    wsc.on('message', function incoming(data) {
+                        callback(data);
+                    });
+                    wsc.on('close', function close() {
+                        console.log('close disconnected');
+                        process.exit();
+                        //setTimeout(() => { handleItem(k)}, 2000);
+                    });
+                    wsc.on('error', function close() {
+                        console.log('error disconnected');
+                    });
+                }
             }
     }
     mdns.query({

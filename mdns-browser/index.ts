@@ -3,6 +3,8 @@ var arp = require('node-arp');
 var dns_txt = require('dns-txt')()
 var uniqid = require('uniqid');
 
+import { MnMs_node } from "../types/types"
+
 let mdns
 let Hosts : object = {};
 
