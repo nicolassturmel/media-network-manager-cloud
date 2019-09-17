@@ -18,7 +18,7 @@ Windows: https://nicolas.sturmel.com/mnms/MmMs-desktop-win32-ia32.zip
 
 You would have to accept some security warnings to launch the app. Or you can take the whole repository and build-it yourself.
 
-![Snapshot of app](https://raw.githubusercontent.com/nicolassturmel/media-network-manager-cloud/master/image001.png)
+![Snapshot of app](https://raw.githubusercontent.com/nicolassturmel/media-network-manager-cloud/master/media_assets/image001.png)
 
 ## Prerequisite
 
@@ -28,14 +28,14 @@ At the moment, the software only works with SG3XX cisco switches. Be my guest (o
 
 You have to tell the system to connect to the switches, click on the switch text in the bottom right and a list should appear if your switches have MDNS and TELNET activated.
 
-<img src="./image002.png" width="300" alt="">
+<img src="./media_assets/image002.png" width="300" alt="">
 
 ## Limitations
 
 The SG3XX switches MUST have mdns, telnet access enabled and the cisco/cisco user. You will be able to change this in the future.
 
-<img src="./image003.png" width="400" alt="">
-<img src="./image004.png" width="300" alt="">
+<img src="./media_assets/image003.png" width="400" alt="">
+<img src="./media_assets/image004.png" width="300" alt="">
 
 Only does MDNS query on the default interface, does not yet give you the choice of it
 
