@@ -370,22 +370,19 @@ module.exports = function (LocalOptions) {
     });
     // db and other services start
     //------------------
-    var MnmsData;
+    var MnmsData = {
+        Type: "MnmsData",
+        Workspace: "Mnms - Network Name",
+        CurrentTime: 0,
+        Challenge: makeid(20),
+        OkSwitches: 0,
+        Switches: []
+    };
     var Datastore = require('nedb'), db = new Datastore({ filename: path.join(__dirname, Options.database), autoload: true });
     db.find({ Type: "MnmsData" }, function (err, docs) {
         console.log(docs);
         if (docs.length == 1) {
             MnmsData = docs[0];
-        }
-        else {
-            MnmsData = {
-                Type: "MnmsData",
-                Workspace: "Mnms - Network Name",
-                CurrentTime: 0,
-                Challenge: makeid(20),
-                OkSwitches: 0,
-                Switches: []
-            };
         }
     });
     var ServicesDirectory = {
