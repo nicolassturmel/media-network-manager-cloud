@@ -13,7 +13,8 @@ const optionDefinitions = [
     { name: 'user', alias: 'u', type: String, defaultValue: 'cisco' },
     { name: 'password', alias: 'p', type: String, defaultValue: 'cisco' },
     { name: 'key', alias: 'k', type: String, defaultValue: 'nokey' },
-    { name: 'id', alias: 'y', type: String, defaultValue: 'noid' }
+    { name: 'id', alias: 'y', type: String, defaultValue: 'noid' },
+    { name: "missioncontrol", alias: "m", type: String}
   ]
 
 const options = commandLineArgs(optionDefinitions)
@@ -24,7 +25,7 @@ var client = require('../mnms-client-ws-interface')
 client.challenge(options.key)
 client.whoami("mnms client ws test prgm")
 client.setCallback((data) => {console.log(data)})
-client.run()
+client.run(options.missioncontrol)
 
 // Connecting to switch
 
