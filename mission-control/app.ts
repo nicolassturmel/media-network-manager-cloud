@@ -3,12 +3,12 @@ import { kMaxLength } from "buffer";
 
 import { MnMs_node } from "../types/types"
 
-var mdns = require('multicast-dns')()
+var mdns_ = require('../multicast-dns')
+var mdnss = []
 var os = require('os');
 var sock = require('ws');
 var http = require('http')
 var exp = require('express')
-var mdnsBrowser = require('../mdns-browser')
 var fs = require('fs');
 var path = require('path')
 var _ = require('lodash');
@@ -46,7 +46,8 @@ var Options = {
     clients_port: 8888,
     launch_services: null,
     launch_options: {},
-    client_cb: null
+    client_cb: null,
+    interfaces: null
 }
 
 export = function(LocalOptions) {
@@ -58,6 +59,7 @@ export = function(LocalOptions) {
     if(LocalOptions.launch_services) Options.launch_services = LocalOptions.launch_services
     if(LocalOptions.launch_options) Options.launch_options = LocalOptions.launch_options
     if(LocalOptions.client_cb) Options.client_cb = LocalOptions.client_cb
+    if(LocalOptions.interfaces) Options.interfaces = LocalOptions.interfaces
 
 
     // Side connected to other services
@@ -141,38 +143,26 @@ export = function(LocalOptions) {
     
     // Handling MDNS query for mission control
     //------------------
+    let mdB = []
 
-    mdns.on('query', (query) => {
-        if(query.questions.some(k => k.name == "_missioncontrol._socketio.local")) {
-
-            mdns.respond({
-                answers: [{
-                name: 'missioncontrol_'+prename+'._missioncontrol._socketio.local',
-                type: 'SRV',
-                data: {
-                    port:16060,
-                    weigth: 0,
-                    priority: 10,
-                    target: prename+'.local'
-                }
-                }]
-            })
-        }
-
-    })
-
-    mdns.respond({
-        answers: [{
-        name: 'missioncontrol_'+prename+'._missioncontrol._socketio.local',
-        type: 'SRV',
-        data: {
-            port:16060,
-            weigth: 0,
-            priority: 10,
-            target: prename+'.local'
-        }
-        }]
-    })
+    if(Options.interfaces == null)
+    {
+        mdnss.push(mdns_())
+    }
+    else {
+        Options.interfaces.forEach(i => {
+            console.log(i) ; 
+            mdnss.push(mdns_({
+                multicast: true, // use udp multicasting
+                interface: i, // explicitly specify a network interface. defaults to all
+                port: 5353, // set the udp port
+                ip: '224.0.0.251', // set the udp ip
+                ttl: 255, // set the multicast ttl
+                loopback: true, // receive your own packets
+                reuseAddr: true // set the reuseAddr option when creating the socket (requires node >=0.11.13)
+            }))
+        })
+    }
 
     var mdnsBrowser_cb = (node) => {
         if(node.Name != null) {
@@ -196,13 +186,45 @@ export = function(LocalOptions) {
         }
     }
 
+    for(var i in mdnss) {
+        let mdns = mdnss[i]
+        mdns.on('query', (query) => {
+            if(query.questions.some(k => k.name == "_missioncontrol._socketio.local")) {
 
-    // Browsing services
-    //------------------
+                mdns.respond({
+                    answers: [{
+                    name: 'missioncontrol_'+prename+'._missioncontrol._socketio.local',
+                    type: 'SRV',
+                    data: {
+                        port:16060,
+                        weigth: 0,
+                        priority: 10,
+                        target: prename+'.local'
+                    }
+                    }]
+                })
+            }
 
-    let mdB = mdnsBrowser(mdnsBrowser_cb,mdns)
+        })
 
+        mdns.respond({
+            answers: [{
+            name: 'missioncontrol_'+prename+'._missioncontrol._socketio.local',
+            type: 'SRV',
+            data: {
+                port:16060,
+                weigth: 0,
+                priority: 10,
+                target: prename+'.local'
+            }
+            }]
+        })
+        
+        // Browsing services
+        //------------------
+        mdB.push(require('../mdns-browser')(mdnsBrowser_cb,mdnss[i]))
 
+    }
     // Shaping and linking data
     //-----------
 
