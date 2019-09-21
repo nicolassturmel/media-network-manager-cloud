@@ -37,7 +37,36 @@ function createWindow () {
 // Some APIs can only be used after this event occurs.
 app.on('ready', createWindow)
 
+
+// Launching MnMs mission control with mdns on all interfaces
+
+var os = require('os');
+var ifaces = os.networkInterfaces();
+var interfaces = [];
+Object.keys(ifaces).forEach(function (ifname) {
+  var alias = 0;
+
+  ifaces[ifname].forEach(function (iface) {
+    if ('IPv4' !== iface.family || iface.internal !== false) {
+      // skip over internal (i.e. 127.0.0.1) and non-ipv4 addresses
+      return;
+    }
+
+    if (alias >= 1) {
+      // this single interface has multiple ipv4 addresses
+      console.log(ifname + ':' + alias, iface.address);
+      interfaces.push(iface.address)
+    } else {
+      // this interface has only one ipv4 adress
+      console.log(ifname, iface.address);
+      interfaces.push(iface.address)
+    }
+    ++alias;
+  });
+});
+
 var missionControl = require(("media-network-manager-cloud/mission-control"))({
+  interfaces: interfaces,
   launch_services: (options) => {
     console.log(options)
     let child_info = fork(require.resolve('media-network-manager-cloud/cisco-switch/app.js'),

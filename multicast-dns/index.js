@@ -62,10 +62,14 @@ module.exports = function (opts) {
   var bind = thunky(function (cb) {
     if (!port || opts.bind === false) return cb(null)
     socket.once('error', cb)
-    socket.bind(port, undefined, function () {
+    socket.bind({
+      port: port,
+      interface: opts.interface
+    }, function () {
       socket.removeListener('error', cb)
       cb(null)
     })
+    socket.addresssss = opts.interface
   })
 
   bind(function (err) {
@@ -85,6 +89,7 @@ module.exports = function (opts) {
       if (destroyed) return cb()
       if (err) return cb(err)
       var message = packet.encode(value)
+      console.log(socket)
       socket.send(message, 0, message.length, rinfo.port, rinfo.address || rinfo.host, cb)
     }
   }
@@ -139,7 +144,7 @@ module.exports = function (opts) {
     }
 
     if (!updated || !socket.setMulticastInterface) return
-    socket.setMulticastInterface(opts.interface || defaultInterface())
+    //socket.setMulticastInterface(opts.interface || defaultInterface())
   }
 
   return that
