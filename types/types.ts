@@ -1,11 +1,11 @@
-type boolString = "on" | "off" | null
+export type boolString = "on" | "off" | null
 
-interface MnMs_node_port_igmp {
+export interface MnMs_node_port_igmp {
     ForwardAll: boolString;
     Groups: object;
 }
 
-interface MnMs_node_port {
+export interface MnMs_node_port {
     Name: string;
     ConnectedMacs: string[];
     IGMP: MnMs_node_port_igmp;

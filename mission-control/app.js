@@ -115,7 +115,8 @@ module.exports = function (LocalOptions) {
                         Services: {},
                         Multicast: null,
                         Neighbour: "",
-                        Mac: ""
+                        Mac: "",
+                        OtherIPs: []
                     });
                     i_1 = Nodes.findIndex(function (k) { return k.IP == node.IP; });
                 }
@@ -210,6 +211,8 @@ module.exports = function (LocalOptions) {
             return;
         if (newValue.Type == "switch") {
             if (newValue.Schema == 1) {
+                if (newValue.Name)
+                    Nodes[index].Name = newValue.Name;
                 Nodes[index].Mac = newValue.Mac;
                 if (Nodes[index].Ports && Nodes[index].Ports.length != newValue.Ports.length)
                     Nodes[index].Ports = [];

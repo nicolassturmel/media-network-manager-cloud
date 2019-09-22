@@ -9,6 +9,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "command-line-args": "^5.1.1",
     "request": "^2.88.0"
   },
   "devDependencies": {
