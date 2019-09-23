@@ -236,6 +236,7 @@ export = function(LocalOptions) {
             if(newValue.Schema == 1) {
                 if(newValue.Name) Nodes[index].Name = newValue.Name
                 Nodes[index].Mac = newValue.Mac
+                if(newValue.Macs) Nodes[index].Macs = newValue.Macs
                 if(Nodes[index].Ports && Nodes[index].Ports.length != newValue.Ports.length) Nodes[index].Ports = []
                 Nodes[index].Ports = newValue.Ports
                 Nodes[index].Multicast = newValue.Multicast
@@ -306,7 +307,6 @@ export = function(LocalOptions) {
             }
         }
         //console.log(linkd)
-
         //console.log(JSON.stringify(linkd.filter(k => k.ports.some(l => l.length == 1))))
 
         let old_cleared = null;
