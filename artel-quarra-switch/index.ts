@@ -89,8 +89,8 @@ var getStatistics = (body) => {
         SwitchData[port.key] = {
             InOctets: port.val.RxOctets,
             OutOctets: port.val.TxOctets,
-            In : Math.round(SwitchData[port.key].In/1024/1024*10*1000)/10,
-            Out : Math.round(SwitchData[port.key].Out/1024/1024*10*1000)/10, 
+            In : Math.round(SwitchData[port.key].In*8/1024/1024*10*1000)/10,
+            Out : Math.round(SwitchData[port.key].Out*8/1024/1024*10*1000)/10, 
 
         }
     });
@@ -130,13 +130,21 @@ var getMacs = (body) => {
     body.result.forEach(mac => {
         //console.log(mac.key, mac.val)
         mac.val.PortList.forEach( p => {
-            Switch.Ports[Switch.Ports.findIndex(k => k.Name == p.split(" 1/").join(""))].ConnectedMacs.push(mac.key[1].toLowerCase())
+            if(mac.val.CopyToCpu == 0)
+                Switch.Ports[Switch.Ports.findIndex(k => k.Name == p.split(" 1/").join(""))].ConnectedMacs.push(mac.key[1].toLowerCase())
         })
         if(mac.val.PortList.length == 0 && mac.val.CopyToCpu == 1) {
             Switch.Mac = mac.key[1].toLowerCase()
             Switch.Macs = [mac.key[1].toLowerCase()]
             Switch.Name = "Artel " + mac.key[1].toLowerCase().substr(-8)
         }
+    })
+}
+
+var getMulticastSources = (body) => {
+    body.result.forEach(gr => {
+        console.log(gr.key,gr.val)
+        Switch.Ports[Switch.Ports.findIndex(k => k.Name == gr.key[2].split(" 1/").join(""))].IGMP.Groups[gr.key[1]] = true
     })
 }
 
@@ -155,11 +163,11 @@ var nextCmd = (path) => {
             postReq("mac.status.fdb.full.get",getMacs)
             break;
         case "mac.status.fdb.full.get":
-            postReq("ipmc-snooping.status.igmp.group-src-list.get",(r) => null)
+            postReq("ipmc-snooping.status.igmp.group-src-list.get",getMulticastSources)
             break;
         case "ipmc-snooping.status.igmp.group-src-list.get":
             client.send(JSON.stringify(Switch))
-            console.log(Switch)
+            //console.log(Switch)
             waitNext()
             break;
         default:

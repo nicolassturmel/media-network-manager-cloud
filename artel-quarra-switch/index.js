@@ -78,8 +78,8 @@ var getStatistics = function (body) {
         SwitchData[port.key] = {
             InOctets: port.val.RxOctets,
             OutOctets: port.val.TxOctets,
-            In: Math.round(SwitchData[port.key].In / 1024 / 1024 * 10 * 1000) / 10,
-            Out: Math.round(SwitchData[port.key].Out / 1024 / 1024 * 10 * 1000) / 10
+            In: Math.round(SwitchData[port.key].In * 8 / 1024 / 1024 * 10 * 1000) / 10,
+            Out: Math.round(SwitchData[port.key].Out * 8 / 1024 / 1024 * 10 * 1000) / 10
         };
     });
     SwitchData.oldT = nowT;
@@ -115,13 +115,20 @@ var getMacs = function (body) {
     body.result.forEach(function (mac) {
         //console.log(mac.key, mac.val)
         mac.val.PortList.forEach(function (p) {
-            Switch.Ports[Switch.Ports.findIndex(function (k) { return k.Name == p.split(" 1/").join(""); })].ConnectedMacs.push(mac.key[1].toLowerCase());
+            if (mac.val.CopyToCpu == 0)
+                Switch.Ports[Switch.Ports.findIndex(function (k) { return k.Name == p.split(" 1/").join(""); })].ConnectedMacs.push(mac.key[1].toLowerCase());
         });
         if (mac.val.PortList.length == 0 && mac.val.CopyToCpu == 1) {
             Switch.Mac = mac.key[1].toLowerCase();
             Switch.Macs = [mac.key[1].toLowerCase()];
             Switch.Name = "Artel " + mac.key[1].toLowerCase().substr(-8);
         }
+    });
+};
+var getMulticastSources = function (body) {
+    body.result.forEach(function (gr) {
+        console.log(gr.key, gr.val);
+        Switch.Ports[Switch.Ports.findIndex(function (k) { return k.Name == gr.key[2].split(" 1/").join(""); })].IGMP.Groups[gr.key[1]] = true;
     });
 };
 var nextCmd = function (path) {
@@ -139,11 +146,11 @@ var nextCmd = function (path) {
             postReq("mac.status.fdb.full.get", getMacs);
             break;
         case "mac.status.fdb.full.get":
-            postReq("ipmc-snooping.status.igmp.group-src-list.get", function (r) { return null; });
+            postReq("ipmc-snooping.status.igmp.group-src-list.get", getMulticastSources);
             break;
         case "ipmc-snooping.status.igmp.group-src-list.get":
             client.send(JSON.stringify(Switch));
-            console.log(Switch);
+            //console.log(Switch)
             waitNext();
             break;
         default:
