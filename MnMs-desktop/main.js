@@ -69,13 +69,23 @@ var missionControl = require(("media-network-manager-cloud/mission-control"))({
   interfaces: interfaces,
   launch_services: (options) => {
     console.log(options)
-    let child_info = fork(require.resolve('media-network-manager-cloud/cisco-switch/app.js'),
-      ["-i",options.Params.IP,"-k",options.Challenge,"-y",options.UID,"-m","localhost" ]
-      )
-    child_info.on("error",() => {
-                child_info.kill()
-    })
-    return child_info
+    let type = options.Name.split(":")[0]
+    let action = options.Name.split(":")[1]
+    if(type == "cisco_switch") {
+        if(action == "start") {
+        let child_info = fork(require.resolve('media-network-manager-cloud/cisco-switch/app.js'),
+          ["-i",options.Params.IP,"-k",options.Challenge,"-y",options.UID,"-m","localhost" ]
+          )
+        child_info.on("error",() => {
+                    child_info.kill()
+        })
+        return child_info
+      }
+      else if(action == "stop") {
+        options.Params.Child.kill()
+        return null
+      }
+    }
   }
 });
 
