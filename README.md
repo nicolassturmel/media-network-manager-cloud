@@ -11,7 +11,7 @@ It is work in progress. At the moment it:
 * Shows the different MDNS services and, if there, shows SDP information and if it is AES67, ST-2022-7 
 * Traces the groups registration on the network (light the network path where the group has been registered)
 
-You can find an aggregated/app form of the tools here (last update 22nd Sept):  
+You can find an aggregated/app form of the tools here (last update 24th Sept):  
 
 Linux: https://nicolas.sturmel.com/mnms/MnMs-desktop-linux-x64.zip  
 
