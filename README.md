@@ -1,3 +1,7 @@
+# Latest news
+
+25th Sept: Fixed a bug preventing connection to cisco switch.... if you tried and were unhappy, test latest version
+
 # media-network-manager-cloud
 
 **Also has the cool name of : MnMs (Media Network M{onitoring,anagement} S{ystem,ervices})**
@@ -11,7 +15,7 @@ It is work in progress. At the moment it:
 * Shows the different MDNS services and, if there, shows SDP information and if it is AES67, ST-2022-7 
 * Traces the groups registration on the network (light the network path where the group has been registered)
 
-You can find an aggregated/app form of the tools here (last update 24th Sept):  
+You can find an aggregated/app form of the tools here (last update 25th Sept):  
 
 Linux: https://nicolas.sturmel.com/mnms/MnMs-desktop-linux-x64.zip  
 
