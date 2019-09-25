@@ -39,7 +39,7 @@ var NewData;
 var params = {
     host: options.ip,
     port: 23,
-    shellPrompt: /\D+#/,
+    shellPrompt: /.+#/,
     loginPrompt: "User Name:",
     passwordPrompt: "Password:",
     username: options.user,
@@ -73,6 +73,7 @@ function startTelenetToSwitch() {
 function get_count() {
     var State = ParseState.In;
     switchTelnet.exec("show int coun", function (err, response) {
+        console.log(">>>>>>>>>", response, "<<<<<<<<<<");
         var now = new Date;
         //console.log(response)
         var array;
@@ -137,6 +138,7 @@ function get_count() {
 function clear_count() {
     NewData = false;
     switchTelnet.exec("clear counters", function (err, respond) {
+        console.log(">>>>>>>>>", respond, "<<<<<<<<<<");
         console.log("c : " + respond);
         if (respond != undefined) {
             var now = new Date;
@@ -186,6 +188,7 @@ function computeBandWidth() {
 }
 function getPortStatus() {
     switchTelnet.exec("show int status", function (err, response) {
+        console.log(">>>>>>>>>", response, "<<<<<<<<<<");
         var array;
         try {
             array = response.split("\n");
@@ -208,6 +211,7 @@ function getPortStatus() {
 }
 function getPortConfig() {
     switchTelnet.exec("show int config", function (err, response) {
+        console.log(">>>>>>>>>", response, "<<<<<<<<<<");
         var array;
         try {
             array = response.split("\n");
@@ -230,6 +234,7 @@ function getPortConfig() {
 }
 function getBridgeIgmpStatus() {
     switchTelnet.exec("show bridge multicast filtering 1", function (err, response) {
+        console.log(">>>>>>>>>", response, "<<<<<<<<<<");
         var array;
         try {
             array = response.split("\n");
@@ -254,6 +259,7 @@ function getBridgeIgmpStatus() {
 }
 function getMacAddressTable() {
     switchTelnet.exec("show mac address-table ", function (err, response) {
+        console.log(">>>>>>>>>", response, "<<<<<<<<<<");
         var array;
         try {
             array = response.split("\n");
@@ -303,6 +309,7 @@ function portList(x) {
 }
 function getMulticastSources() {
     switchTelnet.exec("show bridge multicast address-table", function (err, response) {
+        console.log(">>>>>>>>>", response, "<<<<<<<<<<");
         if (response) {
             var tabs = response.split("\n\n");
             Object.keys(SwitchData).forEach(function (key) {
