@@ -29,6 +29,24 @@ body {
       "bottom bottom";
 }
 
+#port.menu-expanded {
+    grid-template-columns: 200px 200px 1fr ;
+    grid-template-rows: 20px 250px 20px auto 20px;
+    grid-template-areas: 
+      "leftmenu top top"
+      "leftmenu header header  "
+      "leftmenu left navig"
+      "leftmenu left net  "
+      "bottom bottom bottom";
+}
+
+#leftmenu {
+    grid-area: leftmenu;
+    display: grid;
+    background-color: var(--main-color-dim);
+    height: 100%;
+}
+
 #navig {
     grid-area: navig;
     padding: 0 20px;
@@ -38,6 +56,31 @@ body {
     border-top: 1px solid var(--main-color-light);
     border-left: 1px solid var(--main-color-light);
     background-color:var(--main-color-light);
+}
+
+#nodeSearchBox {
+    position: relative;
+    border: 1px solid var(--sec-color-dim);
+    border-radius: 10px;
+    margin: auto;
+    padding: 0 10 0 10;
+    color: white;
+    background-color: var(--main-color-dim);
+    height: 18px;
+    line-height: 18px;
+}
+
+#nodeSearchInput {
+    position: relative;
+    top: 0;
+    background-color: inherit;
+    color: white;
+    border: none;
+    height: 14px;
+}
+
+.hidden {
+    display: none;
 }
 
 .prim-off {
@@ -84,7 +127,7 @@ body {
 
 
 .bar-comp {
-    margin: 0 20px;  
+    margin: 0 30px 0 5px;  
 }
 
 .off {
@@ -151,13 +194,12 @@ nav {
 
 #nodes_container li {
     min-width: 200px;
+    max-width: 200px;
     height: 220px;
-    order: 2;
     margin: 5;
     border: 3px solid var(--sec-color-light);
     border-radius: 10%;
     overflow-y: hidden;
-    order: 2;
 } 
 
 #nodes_container li:hover {

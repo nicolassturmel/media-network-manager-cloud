@@ -13,9 +13,16 @@
     </head>
     <body onload="run()">
         <div id=port>
+            <div id=leftmenu></div>
             <div id=top>
+                <div class="bar-comp" id="menu-btn"><i class="fas fa-bars"></i><span style="visibility:hidden;">g</span></div>    
                 <div class="bar-comp" id="workspacename-bar">Workspace name</div>
                 <div class="bar-comp off"><i class="fas fa-clock"></i>PTP</div>
+                <div id="nodeSearchBox">
+                    <i class="fas fa-search"></i>
+                    <input type="text" name="search" id="nodeSearchInput">
+                    <i class="far fa-times-circle" id="nodeSearchStop"></i>
+                </div>
             </div>
             <div id=win></div>
             <nav>

@@ -14,6 +14,40 @@ function run() {
     let container = document.getElementById("nodes_container")
     var missionControlWS = new WebSocket("ws://" + window.location.host)
 
+    document.getElementById("leftmenu").style.display = "none"
+
+    document.getElementById("menu-btn").onclick = () => {
+        document.getElementById("menu-btn").style.display = "none"
+        document.getElementById("leftmenu").style.display = "block"
+        document.getElementById("port").classList.add("menu-expanded")
+    }
+
+
+    let nodeSearch = document.getElementById("nodeSearchInput")
+    nodeSearch.oninput = () => {
+        console.log("Search change " + nodeSearch.value)
+        for(let n of _nodes) {
+            let el = document.getElementById("node-" + n.Name)
+            if(!el) continue
+            if(n.Name.includes(nodeSearch.value)
+                || n.Type.includes(nodeSearch.value)
+                || n.IP.includes(nodeSearch.value)
+                || n.OtherIPs.some(k => k.includes(nodeSearch.value))
+            )
+            {
+                el.classList.remove("hidden")
+            }
+            else
+            {
+                el.classList.add("hidden")   
+            }
+        }
+    }
+    document.getElementById("nodeSearchStop").onclick = () => {
+        nodeSearch.value = ""
+        nodeSearch.oninput()
+    }
+
     var switchMenu = () => {
         console.log(_data)
         let popUp = document.getElementById("popUp-menu") 
@@ -339,7 +373,7 @@ var makeDeviceInfo = (elem) => {
     if(node.Multicast) {
         checkElem(win,"multisub" ,"div","streams","Multicast : " + node.Multicast)
     }  
-    if(node.Ports) {
+    if(node.Ports && node.Ports.length > 0) {
         let subcontainer = checkElem(win,"portssub" ,"div","services","")
         checkElem(subcontainer,"","div","switch_port_win_text","Port - I/O Mbps - (multi)")
         for(let p of node.Ports) {
@@ -379,7 +413,7 @@ var makeDeviceInfo = (elem) => {
                 outp.classList.add(classP)
 
                 let multi 
-                if(p.IGMP.ForwardAll == "Yes") {
+                if(p.IGMP.ForwardAll == "on") {
                     multi = checkElem(port,"","span","win-multi","(all)")
                 }
                 else {
@@ -597,7 +631,7 @@ function buildGraph(nodes) {
                     let n = nodes.findIndex(k => k.IP == p.Neighbour)
                     if(n > 0) {
                         for(let add of maddress) {
-                            if(p.IGMP.Groups[add] == true) {
+                            if(p.IGMP.Groups[add] == true || p.IGMP.ForwardAll == "on") {
                                 color = "#ff00ff"
                                 isRouterForStream = true;
                             }
