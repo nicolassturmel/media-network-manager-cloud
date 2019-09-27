@@ -127,8 +127,25 @@ var getMacs = function (body) {
 };
 var getMulticastSources = function (body) {
     body.result.forEach(function (gr) {
-        console.log(gr.key, gr.val);
+        //console.log(gr.key,gr.val)
         Switch.Ports[Switch.Ports.findIndex(function (k) { return k.Name == gr.key[2].split(" 1/").join(""); })].IGMP.Groups[gr.key[1]] = true;
+    });
+};
+var getMulticastConfig = function (body) {
+    //console.log(body.result[0].val)
+    body.result.forEach(function (gr) {
+        if (gr.key == "VLAN 1") {
+            if (gr.val.QuerierStatus != "disabled") {
+                Switch.Multicast = "on";
+            }
+            else
+                Switch.Multicast = "off";
+        }
+    });
+};
+var getRouterPorts = function (body) {
+    body.result.forEach(function (gr) {
+        Switch.Ports[Switch.Ports.findIndex(function (k) { return k.Name == gr.key.split(" 1/").join(""); })].IGMP.ForwardAll = (gr.val.Status == "none") ? "off" : "on";
     });
 };
 var nextCmd = function (path) {
@@ -140,7 +157,7 @@ var nextCmd = function (path) {
             postReq("port.config.get", getPortConfig);
             break;
         case "port.config.get":
-            postReq("ipmc-snooping.status.igmp.vlan.get", function (r) { return null; });
+            postReq("ipmc-snooping.status.igmp.vlan.get", getMulticastConfig);
             break;
         case "ipmc-snooping.status.igmp.vlan.get":
             postReq("mac.status.fdb.full.get", getMacs);
@@ -149,8 +166,11 @@ var nextCmd = function (path) {
             postReq("ipmc-snooping.status.igmp.group-src-list.get", getMulticastSources);
             break;
         case "ipmc-snooping.status.igmp.group-src-list.get":
+            postReq("ipmc-snooping.status.igmp.router-port.get", getRouterPorts);
+            break;
+        case "ipmc-snooping.status.igmp.router-port.get":
             client.send(JSON.stringify(Switch));
-            //console.log(Switch)
+            //console.log(Switch.Ports)
             waitNext();
             break;
         default:

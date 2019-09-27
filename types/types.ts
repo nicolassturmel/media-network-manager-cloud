@@ -1,4 +1,4 @@
-export type boolString = "on" | "off" | null
+export type boolString = "on" | "off" | "warning, IGMP version diff" | null
 
 export interface MnMs_node_port_igmp {
     ForwardAll: boolString;

@@ -143,8 +143,27 @@ var getMacs = (body) => {
 
 var getMulticastSources = (body) => {
     body.result.forEach(gr => {
-        console.log(gr.key,gr.val)
+        //console.log(gr.key,gr.val)
         Switch.Ports[Switch.Ports.findIndex(k => k.Name == gr.key[2].split(" 1/").join(""))].IGMP.Groups[gr.key[1]] = true
+    })
+}
+
+var getMulticastConfig = (body) => {
+    //console.log(body.result[0].val)
+    body.result.forEach(gr => {
+        if(gr.key == "VLAN 1") {
+            if(gr.val.QuerierStatus != "disabled") {
+                Switch.Multicast = "on"
+            }
+            else 
+                Switch.Multicast = "off"
+        }
+    })
+}
+
+var getRouterPorts = (body) => {
+    body.result.forEach(gr => {
+        Switch.Ports[Switch.Ports.findIndex(k => k.Name == gr.key.split(" 1/").join(""))].IGMP.ForwardAll = (gr.val.Status == "none")? "off" : "on"
     })
 }
 
@@ -157,7 +176,7 @@ var nextCmd = (path) => {
             postReq("port.config.get",getPortConfig)
             break;
         case "port.config.get":
-            postReq("ipmc-snooping.status.igmp.vlan.get",(r) => null)
+            postReq("ipmc-snooping.status.igmp.vlan.get",getMulticastConfig)
             break;
         case "ipmc-snooping.status.igmp.vlan.get":
             postReq("mac.status.fdb.full.get",getMacs)
@@ -166,8 +185,11 @@ var nextCmd = (path) => {
             postReq("ipmc-snooping.status.igmp.group-src-list.get",getMulticastSources)
             break;
         case "ipmc-snooping.status.igmp.group-src-list.get":
+            postReq("ipmc-snooping.status.igmp.router-port.get",getRouterPorts)
+            break
+        case "ipmc-snooping.status.igmp.router-port.get":
             client.send(JSON.stringify(Switch))
-            //console.log(Switch)
+            //console.log(Switch.Ports)
             waitNext()
             break;
         default:
