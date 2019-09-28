@@ -30,7 +30,7 @@ body {
 }
 
 #port.menu-expanded {
-    grid-template-columns: 200px 200px 1fr ;
+    grid-template-columns: auto 200px 1fr ;
     grid-template-rows: 20px 250px 20px auto 20px;
     grid-template-areas: 
       "leftmenu top top"
@@ -45,6 +45,7 @@ body {
     display: grid;
     background-color: var(--main-color-dim);
     height: 100%;
+    overflow-y: scroll;
 }
 
 #navig {

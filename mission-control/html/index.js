@@ -20,6 +20,7 @@ function run() {
         document.getElementById("menu-btn").style.display = "none"
         document.getElementById("leftmenu").style.display = "block"
         document.getElementById("port").classList.add("menu-expanded")
+        makeSettingsMenu()
     }
 
 
@@ -142,6 +143,38 @@ function run() {
     initGraph()
 }
 
+var makeSettingsMenu = () => {
+    let menu = document.getElementById("leftmenu");
+    menu.innerHTML = ""
+    let close = checkElem(menu,"leftMenuClose","div","","close")
+    close.onclick = () => {
+        document.getElementById("menu-btn").style.display = "block"
+        document.getElementById("leftmenu").style.display = "none"
+        document.getElementById("port").classList.remove("menu-expanded")
+    }
+
+    var buildSettingsItem = (root,k,val,previd) => {
+        console.log(k,val)
+        let Id = previd + k
+        let elem = checkElem(root,Id,"div","settingsItem","")
+        if(k === "Child") {}
+        else if(Array.isArray(val[k])) {
+            checkElem(elem,"","div","settingsTitle",k + " : Array")
+            for(let l in val[k])
+                buildSettingsItem(elem,l,val[k],Id)
+        }
+        else if(typeof val[k] === "object") {
+            console.log(val[k])
+            Object.keys(val[k]).forEach(l => buildSettingsItem(elem,l,val[k],Id))
+        }
+        else {
+            checkElem(elem,"","div","settingsTitle",k)
+            checkElem(elem,"","div","settingsValue",val[k] + "")
+        }
+    } 
+
+    Object.keys(_data).forEach((k) => buildSettingsItem(menu,k,_data,"settings"))
+}
 
 /* Selection manipulation */
 let lastSelected = null;
