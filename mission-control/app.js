@@ -131,8 +131,13 @@ module.exports = function (LocalOptions) {
     // Handling MDNS query for mission control
     //------------------
     var mdB = [];
+    var mdns_data = [];
     if (Options.interfaces == null) {
         mdnss.push(mdns_());
+        mdns_data.push({
+            Name: "all",
+            Address: "224.0.0.251"
+        });
     }
     else {
         Options.interfaces.forEach(function (i) {
@@ -146,6 +151,10 @@ module.exports = function (LocalOptions) {
                 loopback: true,
                 reuseAddr: true // set the reuseAddr option when creating the socket (requires node >=0.11.13)
             }));
+            mdns_data.push({
+                Name: i,
+                Address: "224.0.0.251"
+            });
         });
     }
     var mdnsBrowser_cb = function (node) {
@@ -408,13 +417,15 @@ module.exports = function (LocalOptions) {
         CurrentTime: 0,
         Challenge: makeid(20),
         OkSwitches: 0,
-        Switches: []
+        Switches: [],
+        Mdns: mdns_data
     };
     var Datastore = require('nedb'), db = new Datastore({ filename: path.join(__dirname, Options.database), autoload: true });
     db.find({ Type: "MnmsData" }, function (err, docs) {
         console.log(docs);
         if (docs.length == 1) {
             MnmsData = docs[0];
+            MnmsData.Mdns = mdns_data;
         }
     });
     var ServicesDirectory = {

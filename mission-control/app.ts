@@ -146,9 +146,15 @@ export = function(LocalOptions) {
     //------------------
     let mdB = []
 
+    let mdns_data = []
+
     if(Options.interfaces == null)
     {
         mdnss.push(mdns_())
+        mdns_data.push({
+            Name: "all",
+            Address: "224.0.0.251"
+        })
     }
     else {
         Options.interfaces.forEach(i => {
@@ -162,6 +168,11 @@ export = function(LocalOptions) {
                 loopback: true, // receive your own packets
                 reuseAddr: true // set the reuseAddr option when creating the socket (requires node >=0.11.13)
             }))
+
+            mdns_data.push({
+                Name: i,
+                Address: "224.0.0.251"
+            })
         })
     }
 
@@ -420,7 +431,8 @@ export = function(LocalOptions) {
         CurrentTime: 0,
         Challenge: makeid(20),
         OkSwitches: 0,
-        Switches : []
+        Switches : [],
+        Mdns: mdns_data
     }
 
     var Datastore = require('nedb')
@@ -429,6 +441,7 @@ export = function(LocalOptions) {
         console.log(docs)
         if(docs.length==1) {
             MnmsData = docs[0]
+            MnmsData.Mdns = mdns_data
         }
     })
     

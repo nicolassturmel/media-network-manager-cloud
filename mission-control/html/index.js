@@ -108,6 +108,7 @@ function run() {
             let swInfoTxt = checkElem(switchInfo,"switchInfoText","span","switch-info-span",
                 "<i class=\"fas fa-network-wired\"></i> Switches (" + _data.OkSwitches + "/" + _data.Switches.length + ")");
             if(_data.OkSwitches != _data.Switches.length)  swInfoTxt.classList.add("warn")
+            if(_data.Mdns) checkElem(switchInfo,"mdns-info-txt","span","","MDNS (" + _data.Mdns.length + ")")
             else swInfoTxt.classList.remove("warn")
             makeSwitchMenu()
             setTimeout(() => {missionControlWS.send("data")},4000)
@@ -144,14 +145,6 @@ function run() {
 }
 
 var makeSettingsMenu = () => {
-    _data.test = [
-        {
-            Name : "test A"
-        },
-        {
-            Name : "test B"
-        }
-    ]
 
     let menu = document.getElementById("leftmenu");
     menu.innerHTML = ""
