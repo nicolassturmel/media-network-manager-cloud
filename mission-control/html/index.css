@@ -2,7 +2,7 @@
     --main-color-light: #0088ff;
     --main-color-dim: #004488;
     --sec-color-light: #00ffff;
-    --sec-color-dim: #008888;
+    --sec-color-dim: #008080;
     --tri-color-light: #ff00ff;
 }
 
@@ -403,6 +403,10 @@ nav {
 
 /* settings menu */
 
+#nodesNodes {
+    margin-top: 100px;
+}
+
 #leftMenuClose {
     width: 100%;
     text-align: right;
@@ -412,6 +416,11 @@ nav {
     height: 20px;
     overflow-y: hidden;
     padding-left: 20px;
+    margin-top: 10px;
+}
+
+.settingsValue {
+    background-color: var(--sec-color-dim);
 }
 
 .settingsItem:before {
