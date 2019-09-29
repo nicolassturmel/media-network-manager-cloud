@@ -94,7 +94,7 @@ export = function(LocalOptions) {
         }
         ws.on('message', function incoming(message) {
             let node = JSON.parse(message)
-            if(!ws._data.auth && node.Type == "auth") {
+            if(node.Type == "auth") {
                 if(node.Challenge == MnmsData.Challenge) {
                     ws._data.auth = true
                     console.log("new client Auth")
@@ -103,7 +103,7 @@ export = function(LocalOptions) {
                     console.log(node.Challemge,MnmsData.Challenge)
                 }
             } 
-            else if(ws._data.auth && node.Type == "switch") {
+            else if(ws._data.auth) {
                 let i = Nodes.findIndex(k => k.IP == node.IP);
                 let sw = MnmsData.Switches.filter(k => k.UID == node.id)
                 if(sw.length == 1) {
@@ -255,7 +255,7 @@ export = function(LocalOptions) {
                 Nodes[index].Type = newValue.Type 
             }
         }
-        if(newValue.Type == "MdnsNode") {
+        else if(newValue.Type == "MdnsNode") {
             if(newValue.Schema == 1) {
                 if(Nodes[index].Type && Nodes[index].Type != "switch") Nodes[index].Type = newValue.Type
                 if(!Nodes[index].Services) Nodes[index].Services = {} 
@@ -289,8 +289,11 @@ export = function(LocalOptions) {
                 Nodes[index].Name = Name 
             }
         }
-        if(newValue.Type == "disconnected") {
+        else if(newValue.Type == "disconnected") {
             Nodes[index].Type = "disconnected"
+        }
+        else {
+            console.log("Node type : " + newValue.Type + " not handled")
         }
     }
 
