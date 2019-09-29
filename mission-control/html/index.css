@@ -400,3 +400,48 @@ nav {
     margin: 2px;
     margin-bottom: 1px;
 }
+
+/* settings menu */
+
+#leftMenuClose {
+    width: 100%;
+    text-align: right;
+}
+
+.settingsItem {
+    height: 20px;
+    overflow-y: hidden;
+    padding-left: 20px;
+}
+
+.settingsItem:before {
+    font-family: "Font Awesome 5 Free";
+    content: "\f105";
+    display: inline-block;
+    padding-right: 3px;
+    vertical-align: middle;
+    font-weight:900;
+    margin-left: -20;
+ }
+
+.expanded {
+    height: auto;
+}
+
+.expanded:before {
+    font-family: "Font Awesome 5 Free";
+    content: "\f107";
+    display: inline-block;
+    padding-right: 3px;
+    vertical-align: middle;
+    font-weight:900;
+ }
+
+ .alone:before {
+    font-family: "Font Awesome 5 Free";
+    content: "\f141";
+    display: inline-block;
+    padding-right: 3px;
+    vertical-align: middle;
+    font-weight:900;
+ }

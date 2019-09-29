@@ -146,7 +146,7 @@ function run() {
 var makeSettingsMenu = () => {
     let menu = document.getElementById("leftmenu");
     menu.innerHTML = ""
-    let close = checkElem(menu,"leftMenuClose","div","","close")
+    let close = checkElem(menu,"leftMenuClose","div","","<i class=\"far fa-times-circle\"></i>")
     close.onclick = () => {
         document.getElementById("menu-btn").style.display = "block"
         document.getElementById("leftmenu").style.display = "none"
@@ -155,20 +155,51 @@ var makeSettingsMenu = () => {
 
     var buildSettingsItem = (root,k,val,previd) => {
         console.log(k,val)
+
+        if(val[k] == null || k=="MnmsData")
+            return;
+        else if(k === "UID" || k == "_id") { return }
+
         let Id = previd + k
         let elem = checkElem(root,Id,"div","settingsItem","")
-        if(k === "Child") {}
+        var clickElem = (X) => {
+            if(X.classList.contains("expanded")) {
+                X.classList.remove("expanded")
+            }
+            else {
+                X.classList.add("expanded")
+            }
+        }
+
+        if(k === "Child") {
+            if(val[k])
+            checkElem(elem,"","span","settingsTitle","pause")
+            else
+            checkElem(elem,"","span","settingsTitle","remove")
+        }
+        else if(k === "Type") {
+            checkElem(elem,"","span","settingsValue",val[k] + "")
+            elem.classList.add("alone")
+        }
         else if(Array.isArray(val[k])) {
-            checkElem(elem,"","div","settingsTitle",k + " : Array")
+            let toggle = checkElem(elem,"","span","settingsToggle",k)
+            toggle.onclick = () => clickElem(elem)
+
+            //checkElem(elem,"","div","settingsTitle",k + " : Array")
             for(let l in val[k])
                 buildSettingsItem(elem,l,val[k],Id)
         }
         else if(typeof val[k] === "object") {
+            let toggle = checkElem(elem,"","span","settingsToggle",k)
+            toggle.onclick = () => clickElem(elem)
+
             console.log(val[k])
             Object.keys(val[k]).forEach(l => buildSettingsItem(elem,l,val[k],Id))
         }
         else {
-            checkElem(elem,"","div","settingsTitle",k)
+            let toggle = checkElem(elem,"","span","settingsToggle",k)
+            elem.classList.add("expanded")
+            toggle.onclick = () => clickElem(elem)
             checkElem(elem,"","div","settingsValue",val[k] + "")
         }
     } 
