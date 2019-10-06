@@ -9,16 +9,20 @@ var optionDefinitions = [
     { name: 'user', alias: 'u', type: String, defaultValue: 'cisco' },
     { name: 'password', alias: 'p', type: String, defaultValue: 'cisco' },
     { name: 'key', alias: 'k', type: String, defaultValue: 'nokey' },
-    { name: 'id', alias: 'y', type: String, defaultValue: 'noid' },
+    { name: 'id', alias: 'y', type: String, defaultValue: undefined },
     { name: "missioncontrol", alias: "m", type: String }
 ];
 var options = commandLineArgs(optionDefinitions);
 console.log(options);
 var client = require('../mnms-client-ws-interface');
 client.challenge(options.key);
-client.whoami("mnms client ws test prgm");
 client.setCallback(function (data) { console.log(data); });
 client.run(options.missioncontrol);
+client.info({
+    Info: "Cisco  switch client",
+    ServiceClass: "Switches",
+    id: options.id
+});
 // Connecting to switch
 var SwitchData = {};
 var OldValue = {};
@@ -246,7 +250,7 @@ function getBridgeIgmpStatus() {
                 Switch.Multicast = "on";
             if (line.startsWith("gi")) {
                 var port = line.split(/\s+/);
-                SwitchData[port[0]].ForwardAll = (port[1] == "Forward") ? "Yes" : "No";
+                SwitchData[port[0]].ForwardAll = (port[1] == "Forward") ? "on" : "off";
             }
         }
         setTimeout(getNextFct("getBridgeIgmpStatus"), SwitchPollTime * 1000);

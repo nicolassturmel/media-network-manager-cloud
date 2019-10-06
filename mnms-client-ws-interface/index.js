@@ -2,14 +2,20 @@
 var mdns = require('multicast-dns')();
 var ws = require('ws');
 var fs = require('fs');
+var uuid = require('uuid/v4');
 var wsc = null;
 var mc_target;
 var mc_ip;
 var mc_port = 16060;
 var lookfor_target = false;
-var whoami = "not specified";
 var challenge = "none";
 var callback = function (data) { };
+var info = {
+    Info: "none",
+    ServiceClass: "none",
+    MultipleNodes: false,
+    id: uuid()
+};
 function run(target) {
     if (!target) {
         mdns.on('response', function (response) {
@@ -48,7 +54,7 @@ function run(target) {
             });
             wsc.on('open', function open() {
                 wsc.send(JSON.stringify({
-                    Who: whoami,
+                    Info: info,
                     Challenge: challenge,
                     Type: "auth"
                 }));
@@ -82,7 +88,7 @@ function run(target) {
                     });
                     wsc.on('open', function open() {
                         wsc.send(JSON.stringify({
-                            Who: whoami,
+                            Info: info,
                             Challenge: challenge,
                             Type: "auth"
                         }));
@@ -110,9 +116,17 @@ function run(target) {
 }
 module.exports = {
     run: run,
-    send: function (data) { if (wsc)
-        wsc.send(data); },
+    send: function (data) { if (wsc) {
+        console.log("sendings...");
+        wsc.send(data);
+    } },
     setCallback: function (cb) { callback = cb; },
-    whoami: function (w) { whoami = w; },
-    challenge: function (c) { challenge = c; }
+    challenge: function (c) { challenge = c; },
+    info: function (i) {
+        Object.keys(info).forEach(function (k) {
+            if (i[k] || i[k] === false) {
+                info[k] = i[k];
+            }
+        });
+    }
 };

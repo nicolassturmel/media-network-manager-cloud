@@ -2,6 +2,7 @@
 const mdns = require('multicast-dns')()
 const ws = require('ws');
 var fs = require('fs');
+var uuid = require('uuid/v4');
 
 let wsc = null;
 
@@ -10,9 +11,15 @@ var mc_ip
 var mc_port = 16060
 var lookfor_target = false
 
-let whoami = "not specified"
 let challenge = "none"
 let callback = (data) => {}
+
+let info = {
+    Info: "none",
+    ServiceClass: "none",
+    MultipleNodes: false,
+    id: uuid()
+}
 
 function run(target) {
     if(!target) {
@@ -52,7 +59,7 @@ function run(target) {
 
             wsc.on('open', function open() {
                 wsc.send(JSON.stringify({
-                    Who: whoami,
+                    Info: info,
                     Challenge: challenge,
                     Type: "auth"
                 }));
@@ -93,7 +100,7 @@ function run(target) {
 
                     wsc.on('open', function open() {
                         wsc.send(JSON.stringify({
-                            Who: whoami,
+                            Info: info,
                             Challenge: challenge,
                             Type: "auth"
                         }));
@@ -126,8 +133,14 @@ function run(target) {
 
 export = {
     run: run,
-    send: (data) => { if(wsc) wsc.send(data) },
+    send: (data) => { if(wsc) { console.log("sendings...") ; wsc.send(data) }},
     setCallback: (cb) => { callback = cb},
-    whoami: (w) => {whoami = w},
-    challenge: (c) => {challenge = c}
+    challenge: (c) => {challenge = c},
+    info: (i) => {
+        Object.keys(info).forEach(k => {
+            if(i[k] || i[k] === false) {
+                info[k] = i[k]
+            }
+        })
+    }
 }

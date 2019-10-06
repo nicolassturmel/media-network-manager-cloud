@@ -23,6 +23,7 @@ function makeid(length) {
 }
 function blankMnmsData(d) {
     var out = JSON.parse(JSON.stringify(d));
+    out.External = [];
     out.Switches.forEach(function (s) {
         s.Child = null;
         s.Timer = null;
@@ -83,27 +84,56 @@ module.exports = function (LocalOptions) {
         ws._data = {
             auth: false
         };
+        ws.on("close", function () {
+            console.log("Connection close: ", ws._data);
+            var sw = MnmsData[ws._data.Info.ServiceClass].findIndex(function (k) { return k.UID == ws._data.UID; });
+            if (sw != -1) {
+                console.log("Found at " + sw + " deleting");
+                MnmsData[ws._data.Info.ServiceClass].splice(sw, 1);
+            }
+            ws._data = {
+                auth: false
+            };
+        });
         ws.on('message', function incoming(message) {
             var node = JSON.parse(message);
-            if (!ws._data.auth && node.Type == "auth") {
+            if (node.Type == "auth") {
                 if (node.Challenge == MnmsData.Challenge) {
                     ws._data.auth = true;
                     console.log("new client Auth");
+                    if (!MnmsData[node.Info.ServiceClass])
+                        MnmsData[node.Info.ServiceClass] = [];
+                    var sw = MnmsData[node.Info.ServiceClass].filter(function (k) { return k.UID == node.Info.id; });
+                    if (sw.length == 1) {
+                        var t = new Date;
+                        sw[0].Timer = t.getTime();
+                        //console.log(node.id,MnmsData.Switches.filter(k => k.UID == node.id)[0].Timer)
+                    }
+                    else {
+                        console.log("Could not find id =", node.Info.id);
+                        var sw_1 = MnmsData[node.Info.ServiceClass].push({
+                            IP: node.IP,
+                            Type: node.Info.Type,
+                            Ws: ws,
+                            UID: node.Info.id,
+                            Info: node.Info.Info
+                        });
+                    }
+                    ws._data.UID = node.Info.id;
+                    ws._data.Info = node.Info;
                 }
                 else {
                     console.log(node.Challemge, MnmsData.Challenge);
                 }
             }
-            else if (ws._data.auth && node.Type == "switch") {
+            else if (ws._data.auth) {
+                console.log("Got a message");
                 var i_1 = Nodes.findIndex(function (k) { return k.IP == node.IP; });
-                var sw = MnmsData.Switches.filter(function (k) { return k.UID == node.id; });
+                var sw = MnmsData[ws._data.Info.ServiceClass].filter(function (k) { return k.UID == ws._data.Info.id; });
                 if (sw.length == 1) {
                     var t = new Date;
                     sw[0].Timer = t.getTime();
                     //console.log(node.id,MnmsData.Switches.filter(k => k.UID == node.id)[0].Timer)
-                }
-                else {
-                    console.log("Could not find id =", node.id);
                 }
                 if (i_1 == -1) {
                     Nodes.push({
@@ -120,6 +150,7 @@ module.exports = function (LocalOptions) {
                     });
                     i_1 = Nodes.findIndex(function (k) { return k.IP == node.IP; });
                 }
+                console.log("Merge now...");
                 mergeNodes(i_1, node, "");
                 calculateInterConnect();
             }
@@ -233,7 +264,7 @@ module.exports = function (LocalOptions) {
                 Nodes[index].Type = newValue.Type;
             }
         }
-        if (newValue.Type == "MdnsNode") {
+        else if (newValue.Type == "MdnsNode") {
             if (newValue.Schema == 1) {
                 if (Nodes[index].Type && Nodes[index].Type != "switch")
                     Nodes[index].Type = newValue.Type;
@@ -271,8 +302,11 @@ module.exports = function (LocalOptions) {
                 Nodes[index].Name = Name;
             }
         }
-        if (newValue.Type == "disconnected") {
+        else if (newValue.Type == "disconnected") {
             Nodes[index].Type = "disconnected";
+        }
+        else {
+            console.log("Node type : " + newValue.Type + " not handled");
         }
     }
     function calculateInterConnect() {
@@ -413,19 +447,23 @@ module.exports = function (LocalOptions) {
     //------------------
     var MnmsData = {
         Type: "MnmsData",
+        Schema: 1,
         Workspace: "Mnms - Network Name",
         CurrentTime: 0,
         Challenge: makeid(20),
         OkSwitches: 0,
         Switches: [],
+        External: [],
         Mdns: mdns_data
     };
     var Datastore = require('nedb'), db = new Datastore({ filename: path.join(__dirname, Options.database), autoload: true });
-    db.find({ Type: "MnmsData" }, function (err, docs) {
+    db.find({ Type: "MnmsData", Schema: 1 }, function (err, docs) {
         console.log(docs);
         if (docs.length == 1) {
             MnmsData = docs[0];
             MnmsData.Mdns = mdns_data;
+            if (!MnmsData.External)
+                MnmsData.External = [];
         }
     });
     var ServicesDirectory = {
@@ -439,16 +477,18 @@ module.exports = function (LocalOptions) {
         else {
             var type = ServiceOptions.Name.split(":")[0];
             var action = ServiceOptions.Name.split(":")[1];
-            if (action == "start") {
-                child_info = spawn("node", [ServicesDirectory[type], "-i", ServiceOptions.Params.IP, "-k", MnmsData.Challenge, "-y", ServiceOptions.UID]);
-                child_info.on("error", function () {
-                    child_info.kill();
-                });
-            }
-            else if (action == "stop") {
-                if (ServiceOptions.Params.Child.kill)
-                    ServiceOptions.Params.Child.kill();
-                child_info = null;
+            if (type == "cisco_switch") {
+                if (action == "start") {
+                    child_info = spawn("node", [ServicesDirectory[type], "-i", ServiceOptions.Params.IP, "-k", MnmsData.Challenge, "-y", ServiceOptions.UID]);
+                    child_info.on("error", function () {
+                        child_info.kill();
+                    });
+                }
+                else if (action == "stop") {
+                    if (ServiceOptions.Params.Child.kill)
+                        ServiceOptions.Params.Child.kill();
+                    child_info = null;
+                }
             }
         }
         return child_info;
