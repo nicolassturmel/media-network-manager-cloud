@@ -7,12 +7,13 @@ let _data
 let visnode = new vis.DataSet([])
 let visedge = new vis.DataSet([])
 var network
+var missionControlWS
 
 /* init function */
 function run() {
     let switchInfo = document.getElementById("switch-info")
     let container = document.getElementById("nodes_container")
-    var missionControlWS = new WebSocket("ws://" + window.location.host)
+    missionControlWS = new WebSocket("ws://" + window.location.host)
 
     document.getElementById("leftmenu").style.display = "none"
 
@@ -167,7 +168,6 @@ var makeSettingsMenu = () => {
     }
 
     var buildSettingsItem = (root,k,val,previd) => {
-        console.log(k,val)
 
         if(val[k] == null || k=="MnmsData")
             return;
@@ -176,7 +176,20 @@ var makeSettingsMenu = () => {
         let Id = previd + k
         let elem = checkElem(root,Id,"div","settingsItem"," ")
 
-        if(k === "Child") {
+        if(k === "Ws")
+        {
+            let act = checkElem(elem,"","span","settingsValue","disconnect and remove")
+            act.onclick = () => {
+
+                missionControlWS.send(JSON.stringify({
+                    UserAction: "remove_service",
+                    UID : val.UID
+                }))
+                console.log("Closing ??")
+                close.onclick()
+            }
+        }
+        else if(k === "Child") {
             if(val[k])
             checkElem(elem,"","span","settingsTitle","pause")
             else

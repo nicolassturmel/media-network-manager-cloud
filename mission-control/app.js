@@ -105,8 +105,7 @@ module.exports = function (LocalOptions) {
                         MnmsData[node.Info.ServiceClass] = [];
                     var sw = MnmsData[node.Info.ServiceClass].filter(function (k) { return k.UID == node.Info.id; });
                     if (sw.length == 1) {
-                        var t = new Date;
-                        sw[0].Timer = t.getTime();
+                        sw[0].Ws = ws;
                         //console.log(node.id,MnmsData.Switches.filter(k => k.UID == node.id)[0].Timer)
                     }
                     else {
@@ -432,6 +431,21 @@ module.exports = function (LocalOptions) {
                             db.update({ Type: "MnmsData" }, blankMnmsData(MnmsData), { upsert: true }, function (err, newDoc) { });
                             console.log(MnmsData);
                         }
+                    }
+                    else if (D_1.UserAction) {
+                        if (D_1.UserAction == "remove_service" && D_1.UID) {
+                            console.log("Asked to remove service of UID " + D_1.UID);
+                            var l = MnmsData.Switches.filter(function (k) { return k.UID == D_1.UID; });
+                            if (l.length == 0)
+                                l = MnmsData.External.filter(function (k) { return k.UID == D_1.UID; });
+                            if (l.length == 1) {
+                                var Ws = l[0].Ws;
+                                Ws.close();
+                            }
+                        }
+                    }
+                    else {
+                        console.log("No", D_1);
                     }
                 }
                 catch (error) {

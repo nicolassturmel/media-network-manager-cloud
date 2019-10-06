@@ -114,8 +114,7 @@ export = function(LocalOptions) {
                     if(!MnmsData[node.Info.ServiceClass]) MnmsData[node.Info.ServiceClass] = []
                     let sw = MnmsData[node.Info.ServiceClass].filter(k => k.UID == node.Info.id)
                     if(sw.length == 1) {
-                        let t = new Date
-                        sw[0].Timer = t.getTime()
+                        sw[0].Ws = ws
                         //console.log(node.id,MnmsData.Switches.filter(k => k.UID == node.id)[0].Timer)
                     }
                     else {
@@ -446,6 +445,21 @@ export = function(LocalOptions) {
                             db.update({Type: "MnmsData"},blankMnmsData(MnmsData), {upsert: true},(err, newDoc) => { })
                             console.log(MnmsData)
                         }
+                    }
+                    else if(D.UserAction) {
+                        if(D.UserAction == "remove_service" && D.UID) {
+                            console.log("Asked to remove service of UID " + D.UID)
+                            let l = MnmsData.Switches.filter(k => k.UID == D.UID)
+                            if(l.length == 0)
+                                l = MnmsData.External.filter(k => k.UID == D.UID)
+                            if(l.length == 1) {
+                                let Ws = l[0].Ws
+                                Ws.close()
+                            }
+                        }
+                    }
+                    else {
+                        console.log("No",D)
                     }
                 } catch (error) {
                     console.log("Error when parsing json on message reception")
