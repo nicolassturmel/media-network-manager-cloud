@@ -461,14 +461,29 @@ module.exports = function (LocalOptions) {
     //------------------
     var MnmsData = {
         Type: "MnmsData",
-        Schema: 1,
+        Schema: 2,
         Workspace: "Mnms - Network Name",
         CurrentTime: 0,
         Challenge: makeid(20),
         OkSwitches: 0,
         Switches: [],
         External: [],
-        Mdns: mdns_data
+        Mdns: mdns_data,
+        Services: {
+            Type: "ServiceLaunch",
+            cisco_switch: {
+                Type: "ciscoSG",
+                User: "",
+                Password: "",
+                IP: ""
+            },
+            artel_switch: {
+                Type: "artelQ",
+                User: "",
+                Password: "",
+                IP: ""
+            }
+        }
     };
     var Datastore = require('nedb'), db = new Datastore({ filename: path.join(__dirname, Options.database), autoload: true });
     db.find({ Type: "MnmsData", Schema: 1 }, function (err, docs) {
@@ -481,7 +496,8 @@ module.exports = function (LocalOptions) {
         }
     });
     var ServicesDirectory = {
-        cisco_switch: "../cisco-switch/app.js"
+        cisco_switch: "../cisco-switch/app.js",
+        artel_switch: "../artel-quarra-switch/app.js"
     };
     var serviceLauncher = function (ServiceOptions) {
         var child_info;
@@ -492,6 +508,19 @@ module.exports = function (LocalOptions) {
             var type = ServiceOptions.Name.split(":")[0];
             var action = ServiceOptions.Name.split(":")[1];
             if (type == "cisco_switch") {
+                if (action == "start") {
+                    child_info = spawn("node", [ServicesDirectory[type], "-i", ServiceOptions.Params.IP, "-k", MnmsData.Challenge, "-y", ServiceOptions.UID]);
+                    child_info.on("error", function () {
+                        child_info.kill();
+                    });
+                }
+                else if (action == "stop") {
+                    if (ServiceOptions.Params.Child.kill)
+                        ServiceOptions.Params.Child.kill();
+                    child_info = null;
+                }
+            }
+            else if (type == "artel_switch") {
                 if (action == "start") {
                     child_info = spawn("node", [ServicesDirectory[type], "-i", ServiceOptions.Params.IP, "-k", MnmsData.Challenge, "-y", ServiceOptions.UID]);
                     child_info.on("error", function () {
@@ -530,7 +559,11 @@ module.exports = function (LocalOptions) {
                 MnmsData.Switches[s].Child = "starting";
                 MnmsData.Switches[s].Child = serviceLauncher({
                     Name: "cisco_switch:start",
-                    Params: { IP: MnmsData.Switches[s].IP },
+                    Params: {
+                        IP: MnmsData.Switches[s].IP,
+                        User: MnmsData.Switches[s].User || "cisco",
+                        Password: MnmsData.Switches[s].Password || "cisco"
+                    },
                     Challenge: MnmsData.Challenge,
                     UID: MnmsData.Switches[s].UID
                 });

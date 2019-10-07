@@ -14,7 +14,24 @@ body {
     color: white;
 }
 
+#popupSpace {
+    position: absolute;
+    height: 98vh;
+    width: 99vw;
+}
+
+#popupBox {
+    position: absolute;
+    top:30%;
+    left:30%;
+    background-color: var(--main-color-dim);
+    min-height: 9vh;
+    min-width: 9vw;
+    z-index: 100;
+}
+
 #port {
+    position: absolute;
     height: 98vh;
     width: 99vw;
     margin: auto;
@@ -27,6 +44,10 @@ body {
       "left navig"
       "left net  "
       "bottom bottom";
+}
+
+.blured {
+    filter: blur(2px);
 }
 
 #port.menu-expanded {

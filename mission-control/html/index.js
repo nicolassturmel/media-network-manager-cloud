@@ -74,7 +74,9 @@ function run() {
                                 missionControlWS.send(JSON.stringify(
                                     {
                                         Type: "ciscoSG",
-                                        IP: n.IP
+                                        IP: n.IP,
+                                        User: "cisco",
+                                        Password: "cisco"
                                     }
                                 ))
                             }
@@ -167,9 +169,64 @@ var makeSettingsMenu = () => {
         }
     }
 
+    var onscreenPopup = (type,params) => {
+        if(document.getElementById("popupBox")) return
+        let root = document.getElementById("popupSpace");
+        let win = document.createElement("div")
+        win.id = "popupBox";
+        let port = document.getElementById("port")
+        port.classList.add("blured")
+        /*port.onclick = () => {
+            port.classList.remove("blured")
+            root.innerHTML = ""
+        }*/
+        if(type.Name) {
+            let a = checkElem(win,"","div","","")
+            checkElem(a,"","span","","Launch " + type.Name.replace("_"," "))
+        }
+
+        let fiedls = {};
+        Object.keys(params).forEach((k) => {
+            if(k == "Type") return
+            let a = checkElem(win,"","div","","")
+            checkElem(a,"popupField","span","",k)
+            let f = checkElem(a,"","input","","")
+            fiedls[k] = f
+        })
+
+
+        let a = checkElem(win,"","div","","")
+        let cancel = checkElem(a,"","span","popupCancel","Cancel")
+        let ok = checkElem(a,"","span","popupOk","Ok")
+        cancel.onclick = () => {
+            port.classList.remove("blured")
+            root.innerHTML = ""
+        }
+        ok.onclick = () => {
+            Object.keys(fiedls).forEach((k) => {
+                params[k] = fiedls[k].value
+            })
+            missionControlWS.send(JSON.stringify(params))
+            port.classList.remove("blured")
+            root.innerHTML = ""
+        }
+
+        root.appendChild(win)
+    }
+
     var buildSettingsItem = (root,k,val,previd) => {
 
-        if(val[k] == null || k=="MnmsData")
+        if(val["Type"] && val["Type"] == "ServiceLaunch") {
+            if(k == "Type") {
+                return
+            }
+            else {
+                let act = checkElem(root,previd + k,"div","settingsValue",k)
+                act.onclick = () => { onscreenPopup({Type: val["Type"], Name: k},val[k])}
+                return
+            }
+        }
+        else if(val[k] == null || k=="MnmsData")
             return;
         else if(k === "UID" || k == "_id") { return }
 
