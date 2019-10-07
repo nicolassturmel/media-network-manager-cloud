@@ -432,7 +432,7 @@ export = function(LocalOptions) {
                 try {
                     let D = JSON.parse(message)
                     console.log("D" ,D)
-                    if(D.Type && D.Type == "ciscoSG") {
+                    if(D.Type && (D.Type == "ciscoSG" || D.Type == "artelQ")) {
                         if(!MnmsData.Switches.some(k => k.IP == D.IP)) {
                             MnmsData.Switches.push({
                                 Type: D.Type,
