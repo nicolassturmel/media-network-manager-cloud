@@ -60,7 +60,7 @@ let params = {
     password: options.password,
     pageSeparator: /More: <space>,  Qu.*/,
     timeout: 0,
-    execTimeout: 5000
+    execTimeout: 10000
 }
 
 let switchTelnet = new Telnet()
@@ -401,7 +401,7 @@ function getMulticastSources() {
             setTimeout(getNextFct("getMulticastSources"), SwitchPollTime*1000);
         } 
         else {
-            console.log("Oupsy, error !")
+            console.log("Oupsy, error !",err,response)
             setTimeout(getNextFct("getMulticastSources"), SwitchPollTime*1000);
         }
     })

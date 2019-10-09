@@ -775,7 +775,7 @@ function buildGraph(nodes) {
                 let isRouterForStream = false;
                 for(let p of nodes[i].Ports) {
                     let color = "#0077bb"
-                    let n = nodes.findIndex(k => k.IP == p.Neighbour)
+                    let n = nodes.findIndex(k => { if(k.Type == "null") return false ; return( k.OtherIPs.some(l => l == p.Neighbour) || k.IP == p.Neighbour) })
                     if(n > 0) {
                         for(let add of maddress) {
                             if(p.IGMP.Groups[add] == true || p.IGMP.ForwardAll == "on") {
