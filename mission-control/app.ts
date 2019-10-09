@@ -96,7 +96,7 @@ export = function(LocalOptions) {
         ws.on("close", () => {
             console.log("Connection close: ",ws._data)
             let sw = MnmsData[ws._data.Info.ServiceClass].findIndex(k => k.UID == ws._data.UID)
-            if(sw != -1) {
+            if(sw != -1 && MnmsData[ws._data.Info.ServiceClass][sw].delete) {
                 console.log("Found at " + sw + " deleting")
                 MnmsData[ws._data.Info.ServiceClass].splice(sw,1)
             }       
@@ -453,6 +453,7 @@ export = function(LocalOptions) {
                             if(l.length == 0)
                                 l = MnmsData.External.filter(k => k.UID == D.UID)
                             if(l.length == 1) {
+                                l[0].delete = true;
                                 let Ws = l[0].Ws
                                 Ws.close()
                             }

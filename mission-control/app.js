@@ -87,7 +87,7 @@ module.exports = function (LocalOptions) {
         ws.on("close", function () {
             console.log("Connection close: ", ws._data);
             var sw = MnmsData[ws._data.Info.ServiceClass].findIndex(function (k) { return k.UID == ws._data.UID; });
-            if (sw != -1) {
+            if (sw != -1 && MnmsData[ws._data.Info.ServiceClass][sw]["delete"]) {
                 console.log("Found at " + sw + " deleting");
                 MnmsData[ws._data.Info.ServiceClass].splice(sw, 1);
             }
@@ -418,7 +418,7 @@ module.exports = function (LocalOptions) {
                 try {
                     var D_1 = JSON.parse(message);
                     console.log("D", D_1);
-                    if (D_1.Type && D_1.Type == "ciscoSG") {
+                    if (D_1.Type && (D_1.Type == "ciscoSG" || D_1.Type == "artelQ")) {
                         if (!MnmsData.Switches.some(function (k) { return k.IP == D_1.IP; })) {
                             MnmsData.Switches.push({
                                 Type: D_1.Type,
@@ -439,6 +439,7 @@ module.exports = function (LocalOptions) {
                             if (l.length == 0)
                                 l = MnmsData.External.filter(function (k) { return k.UID == D_1.UID; });
                             if (l.length == 1) {
+                                l[0]["delete"] = true;
                                 var Ws = l[0].Ws;
                                 Ws.close();
                             }

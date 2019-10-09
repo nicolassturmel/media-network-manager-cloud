@@ -74,7 +74,7 @@ var missionControl = require(("media-network-manager-cloud/mission-control"))({
     if(type == "cisco_switch") {
         if(action == "start") {
         let child_info = fork(require.resolve('media-network-manager-cloud/cisco-switch/app.js'),
-          ["-i",options.Params.IP,"-k",options.Challenge,"-y",options.UID,"-m","localhost" ]
+          ["-u",options.Params.User,"-p",options.Params.Password,"-i",options.Params.IP,"-k",options.Challenge,"-y",options.UID,"-m","localhost" ]
           )
         child_info.on("error",() => {
                     child_info.kill()
@@ -86,6 +86,21 @@ var missionControl = require(("media-network-manager-cloud/mission-control"))({
         return null
       }
     }
+    else if(type == "artel_switch") {
+      if(action == "start") {
+      let child_info = fork(require.resolve('media-network-manager-cloud/artel-quarra-switch/app.js'),
+        ["-u",options.Params.User,"-p",options.Params.Password,"-i",options.Params.IP,"-k",options.Challenge,"-y",options.UID,"-m","localhost" ]
+        )
+      child_info.on("error",() => {
+                  child_info.kill()
+      })
+      return child_info
+    }
+    else if(action == "stop") {
+      options.Params.Child.kill()
+      return null
+    }
+  }
   }
 });
 
