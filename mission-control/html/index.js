@@ -180,24 +180,26 @@ var makeSettingsMenu = () => {
             port.classList.remove("blured")
             root.innerHTML = ""
         }*/
+
+
         if(type.Name) {
             let a = checkElem(win,"","div","","")
-            checkElem(a,"","span","","Launch " + type.Name.replace("_"," "))
+            checkElem(a,"","h2","","Launch " + type.Name.replace("_"," "))
         }
 
         let fiedls = {};
         Object.keys(params).forEach((k) => {
             if(k == "Type") return
             let a = checkElem(win,"","div","","")
-            checkElem(a,"popupField","span","",k)
-            let f = checkElem(a,"","input","","")
+            checkElem(a,"popupField" + k,"span","popup-field",k)
+            let f = checkElem(a,"","input","right","")
             fiedls[k] = f
         })
 
 
         let a = checkElem(win,"","div","","")
-        let cancel = checkElem(a,"","span","popupCancel","Cancel")
-        let ok = checkElem(a,"","span","popupOk","Ok")
+        let cancel = checkElem(a,"","span","popupCancel left","Cancel")
+        let ok = checkElem(a,"","span","popupOk right","Ok")
         cancel.onclick = () => {
             port.classList.remove("blured")
             root.innerHTML = ""
@@ -212,6 +214,16 @@ var makeSettingsMenu = () => {
         }
 
         root.appendChild(win)
+
+        win.addEventListener("keyup", function(event) {
+            // Number 13 is the "Enter" key on the keyboard
+            if (event.keyCode === 13) {
+              // Cancel the default action, if needed
+              ok.onclick();
+              // Trigger the button element with a click
+              document.getElementById("myBtn").click();
+            }
+          });
     }
 
     var buildSettingsItem = (root,k,val,previd) => {

@@ -24,6 +24,7 @@ body {
     position: absolute;
     top:30%;
     left:30%;
+    padding: 10px;
     background-color: var(--main-color-dim);
     min-height: 9vh;
     min-width: 9vw;
@@ -101,6 +102,14 @@ body {
     height: 14px;
 }
 
+.left {
+    float: left;
+}
+
+.right {
+    float: right;
+}
+
 .hidden {
     display: none;
 }
@@ -145,6 +154,10 @@ body {
     background-color: var(--main-color-dim);
     padding: 10px;
     box-sizing: border-box;
+}
+
+.popup-field {
+    margin-right: 20px;
 }
 
 
