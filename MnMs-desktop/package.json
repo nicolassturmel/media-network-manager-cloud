@@ -8,12 +8,12 @@
     "cloud-copy": "rm -rf node_modules/media-network-manager-cloud ; rm ../mission-control/data.db ; mkdir -p node_modules/media-network-manager-cloud && cp -r ../{cisc*,rtsp*,mnms-client*,mission*,mdns*,multi*,artel*} node_modules/media-network-manager-cloud/",
     "package-mac": "electron-packager . MnMs-desktop-$(git describe --tags) --overwrite --platform=darwin --arch=x64 --asar=false  --icon=assets/icons/mac/icon.icns --prune=true --out=release-builds",
     "package-win": "electron-packager . MnMs-desktop-$(git describe --tags) --overwrite --asar=false --platform=win32 --arch=ia32 --icon=assets/icons/win/icon.ico --prune=true --out=release-builds --version-string.CompanyName=CE --version-string.FileDescription=CE --version-string.ProductName=\"MnMs Desktop\"",
-    "package-linux": "electron-packager . MnMs-desktop-$(git describe --tags) --overwrite --asar=false --platform=linux --arch=x64 --icon=assets/icons/png/1024x1024.png --prune=true --out=release-builds"
+    "package-linux": "electron-packager . MnMs-desktop-$(git describe --tags) --overwrite --asar=false --platform=linux --arch=x64 --icon=assets/icons/png/1024x1024.png --prune=true --out=release-builds",
+    "buildAll": "npm run cloud-copy && npm run package-mac && npm run package-win && npm run package-linux"
   },
   "repository": "",
   "dependencies": {
     "command-line-args": "^5.1.1",
-    "telnet-client": "^1.0.4",
     "dns-txt": "^2.0.2",
     "express": "^4.17.1",
     "fs": "0.0.1-security",
@@ -23,7 +23,8 @@
     "nedb": "^1.8.0",
     "node-arp": "^1.0.6",
     "os": "^0.1.1",
-    "sdp-transform": "^2.12.0",
+    "sdp-transform": "^2.13.0",
+    "telnet-client": "^1.2.0",
     "uniqid": "^5.0.3",
     "util": "^0.12.1",
     "ws": "^7.1.2",
@@ -39,7 +40,7 @@
   "author": "Nicolas Sturmel",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^6.0.1",
-    "electron-packager": "^14.0.4"
+    "electron": "^6.0.12",
+    "electron-packager": "^14.0.6"
   }
 }
