@@ -70,7 +70,7 @@ var missionControl = require(("media-network-manager-cloud/mission-control"))({
   launch_services: (options) => {
     console.log(options)
     let type = options.Name.split(":")[0]
-    let action = options.Name.split(":")[1]
+    let action = options.Name.split(":")[1] 
     if(type == "cisco_switch") {
         if(action == "start") {
           let child_info 
