@@ -73,8 +73,12 @@ var missionControl = require(("media-network-manager-cloud/mission-control"))({
     let action = options.Name.split(":")[1]
     if(type == "cisco_switch") {
         if(action == "start") {
-        let child_info = fork(require.resolve('media-network-manager-cloud/cisco-switch/app.js'),
-          ["-u",options.Params.User,"-p",options.Params.Password,"-i",options.Params.IP,"-k",options.Challenge,"-y",options.UID,"-m","localhost" ]
+          let child_info 
+          if(options.Params.Password == "")
+            child_info = fork(require.resolve('media-network-manager-cloud/cisco-switch/app.js'),["-u",options.Params.User,"-i",options.Params.IP,"-k",options.Challenge,"-y",options.UID,"-m","localhost" ]
+          )
+          else
+            child_info = fork(require.resolve('media-network-manager-cloud/cisco-switch/app.js'),["-p",options.Params.Password,"-u",options.Params.User,"-i",options.Params.IP,"-k",options.Challenge,"-y",options.UID,"-m","localhost" ]
           )
         child_info.on("error",() => {
                     child_info.kill()
@@ -88,8 +92,12 @@ var missionControl = require(("media-network-manager-cloud/mission-control"))({
     }
     else if(type == "artel_switch") {
       if(action == "start") {
-      let child_info = fork(require.resolve('media-network-manager-cloud/artel-quarra-switch/app.js'),
-        ["-u",options.Params.User,"-p",options.Params.Password,"-i",options.Params.IP,"-k",options.Challenge,"-y",options.UID,"-m","localhost" ]
+      let child_info
+      if(options.Params.Password == "")
+        child_info = fork(require.resolve('media-network-manager-cloud/artel-quarra-switch/index.js'),["-u",options.Params.User,"-i",options.Params.IP,"-k",options.Challenge,"-y",options.UID,"-m","localhost" ]
+        )
+      else
+        child_info = fork(require.resolve('media-network-manager-cloud/artel-quarra-switch/index.js'),["-p",options.Params.Password,"-u",options.Params.User,"-i",options.Params.IP,"-k",options.Challenge,"-y",options.UID,"-m","localhost" ]
         )
       child_info.on("error",() => {
                   child_info.kill()

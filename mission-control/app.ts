@@ -437,6 +437,8 @@ export = function(LocalOptions) {
                             MnmsData.Switches.push({
                                 Type: D.Type,
                                 IP: D.IP,
+                                User: D.User,
+                                Password: D.Password,
                                 Child: null,
                                 Timer: null,
                                 StartTime: null,
@@ -457,6 +459,7 @@ export = function(LocalOptions) {
                                 let Ws = l[0].Ws
                                 Ws.close()
                             }
+                            db.update({Type: "MnmsData"},blankMnmsData(MnmsData), {upsert: true},(err, newDoc) => { })
                         }
                     }
                     else {
@@ -505,7 +508,7 @@ export = function(LocalOptions) {
 
     var Datastore = require('nedb')
     , db = new Datastore({ filename: path.join(__dirname, Options.database), autoload: true });
-    db.find({ Type: "MnmsData", Schema: 1}, (err, docs) => {
+    db.find({ Type: "MnmsData", Schema: MnmsData.Schema}, (err, docs) => {
         console.log(docs)
         if(docs.length==1) {
             MnmsData = docs[0]
@@ -516,7 +519,7 @@ export = function(LocalOptions) {
     
     var ServicesDirectory = {
         cisco_switch: "../cisco-switch/app.js",
-        artel_switch: "../artel-quarra-switch/app.js"
+        artel_switch: "../artel-quarra-switch/index.js"
     }
 
     var serviceLauncher = (ServiceOptions) => {
@@ -529,7 +532,7 @@ export = function(LocalOptions) {
             let action = ServiceOptions.Name.split(":")[1]
             if(type == "cisco_switch") {
                 if(action == "start") {
-                    child_info = spawn("node",[ServicesDirectory[type],"-i",ServiceOptions.Params.IP,"-k",MnmsData.Challenge,"-y",ServiceOptions.UID ])
+                    child_info = spawn("node",[ServicesDirectory[type],"-p",ServiceOptions.Params.Password,"-u",ServiceOptions.Params.User,"-i",ServiceOptions.Params.IP,"-k",MnmsData.Challenge,"-y",ServiceOptions.UID ])
                     child_info.on("error",() => {
                         child_info.kill()
                     })
@@ -541,7 +544,12 @@ export = function(LocalOptions) {
             }
             else if(type == "artel_switch") {
                 if(action == "start") {
-                    child_info = spawn("node",[ServicesDirectory[type],"-i",ServiceOptions.Params.IP,"-k",MnmsData.Challenge,"-y",ServiceOptions.UID ])
+                    console.log([ServicesDirectory[type],"-p",ServiceOptions.Params.Password || "\"\"","-u",ServiceOptions.Params.User,"-i",ServiceOptions.Params.IP,"-k",MnmsData.Challenge,"-y",ServiceOptions.UID ])
+                    if(ServiceOptions.Params.Password == "")
+                        child_info = spawn("node",[ServicesDirectory[type],"-u",ServiceOptions.Params.User,"-i",ServiceOptions.Params.IP,"-k",MnmsData.Challenge,"-y",ServiceOptions.UID ])
+                    else
+                        child_info = spawn("node",[ServicesDirectory[type],"-p",ServiceOptions.Params.Password,"-u",ServiceOptions.Params.User,"-i",ServiceOptions.Params.IP,"-k",MnmsData.Challenge,"-y",ServiceOptions.UID ])
+                    
                     child_info.on("error",() => {
                         child_info.kill()
                     })
@@ -555,19 +563,24 @@ export = function(LocalOptions) {
         return child_info
     }
 
+    let switchShort = {
+        "ciscoSG":"cisco_switch",
+        "artelQ":"artel_switch"
+    }
+
     var watchDog = () => {
         console.log("Waf waf")
         let now = Date.now()
         let okswitches = 0, instart = 0;
         for(let s in MnmsData.Switches ){
             if(MnmsData.Switches[s].Child) {
-                if(now - MnmsData.Switches[s].Timer < 10000)
+                if(now - MnmsData.Switches[s].Timer < 30000)
                     okswitches++
                 else if(now - MnmsData.Switches[s].StartTime < 15000)
                     instart++
                 else 
                     MnmsData.Switches[s].Child = serviceLauncher({
-                        Name : "cisco_switch:stop",
+                        Name : switchShort[MnmsData.Switches[s].Type]+":stop",
                         Params:{Child : MnmsData.Switches[s].Child},
                         Challenge: MnmsData.Challenge, 
                         UID: MnmsData.Switches[s].UID
@@ -577,11 +590,11 @@ export = function(LocalOptions) {
                 MnmsData.Switches[s].StartTime = Date.now()
                 MnmsData.Switches[s].Child = "starting"
                 MnmsData.Switches[s].Child = serviceLauncher({
-                    Name : "cisco_switch:start",
+                    Name : switchShort[MnmsData.Switches[s].Type]+":start",
                     Params:{
                         IP : MnmsData.Switches[s].IP,
-                        User: MnmsData.Switches[s].User || "cisco",
-                        Password: MnmsData.Switches[s].Password || "cisco"
+                        User: MnmsData.Switches[s].User,
+                        Password: MnmsData.Switches[s].Password
                     },
                     Challenge: MnmsData.Challenge, 
                     UID: MnmsData.Switches[s].UID
