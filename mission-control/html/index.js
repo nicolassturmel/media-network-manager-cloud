@@ -789,8 +789,19 @@ function buildGraph(nodes) {
                     let color = "#0077bb"
                     let n = nodes.findIndex(k => { if(k.Type == "null") return false ; return( k.OtherIPs.some(l => l == p.Neighbour) || k.IP == p.Neighbour) })
                     if(n > 0) {
+                        if(nodes[n].Type == "switch") {
+                            if(p.IGMP.ForwardAll == "on") {
+                                for(let xp of nodes[i].Ports) {
+                                    Object.keys(xp.IGMP.Groups).forEach(xadd => {
+                                    //    if(!nodes[n].Ports.some(cp => cp.IGMP.Groups[xadd] == true)) {
+                                            p.IGMP.Groups[xadd] = true
+                                    //    }
+                                    })
+                                }
+                            }
+                        }
                         for(let add of maddress) {
-                            if(p.IGMP.Groups[add] == true || p.IGMP.ForwardAll == "on") {
+                            if(p.IGMP.Groups[add] == true) {
                                 color = "#ff00ff"
                                 isRouterForStream = true;
                             }
