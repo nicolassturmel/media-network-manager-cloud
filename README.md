@@ -1,6 +1,8 @@
 # Latest news
 
-25th Sept: Fixed a bug preventing connection to cisco switch.... if you tried and were unhappy, test latest version
+14th Oct: Artel switch supported in desktop app, settings menu and daily app build !
+
+25th Sept: Fixed a bug preventing connection to cisco switch.... if you tried and were unhappy, test latest version  
 
 # media-network-manager-cloud
 
@@ -15,13 +17,13 @@ It is work in progress. At the moment it:
 * Shows the different MDNS services and, if there, shows SDP information and if it is AES67, ST-2022-7 
 * Traces the groups registration on the network (light the network path where the group has been registered)
 
-You can find an aggregated/app form of the tools here (last update 25th Sept):  
+You can find an aggregated/app form of the tools here (nightly build):  
 
-Linux: https://nicolas.sturmel.com/mnms/MnMs-desktop-linux-x64.zip  
+[Linux](https://mnms.sturmel.com/latest-linux) 
 
-Mac: https://nicolas.sturmel.com/mnms/MnMs-desktop-darwin-x64.zip  (copy the app in /Applications folder)
+[MacOS](https://mnms.sturmel.com/latest-darwin)   (copy the app in /Applications folder)
 
-Windows: https://nicolas.sturmel.com/mnms/MnMs-desktop-win32-ia32.zip
+[Windws](https://mnms.sturmel.com/latest-win32) 
 
 You would have to accept some security warnings to launch the app. Or you can take the whole repository and build-it yourself.
 
@@ -29,13 +31,39 @@ You would have to accept some security warnings to launch the app. Or you can ta
 
 ## Prerequisite
 
-At the moment, the software only works with SG3XX cisco switches. Be my guest (or contact me) if you want other switches support. You can have any number of switches on the network, the software should resolver inter-switch connection.
+At the moment, the software only works with SG3XX cisco switches or Artel Quarra switches. Be my guest (or contact me) if you want other switches support. You can have any number of switches on the network, the software should resolver inter-switch connection.
 
-## First run
+## Cisco switch: First run (easy path)
 
 You have to tell the system to connect to the switches, click on the switch text in the bottom right and a list should appear if your switches have MDNS and TELNET activated.
 
 <img src="./media_assets/image002.png" width="300" alt="">
+
+Or you can launch the services by hand ! (still need telnet on cisco)
+
+
+## Launching switches by hand (Artel, Cisco... custom user/pwd)
+
+Open the left menu
+
+<img src="./media_assets/leftmenu01.png" width="300" alt="">
+
+Click on services
+
+<img src="./media_assets/leftmenu03.png" width="200" alt="">
+
+Choose the switch you want
+
+<img src="./media_assets/leftmenu04.png" width="200" alt="">
+
+Enter data
+
+<img src="./media_assets/leftmenu05.png" width="300" alt="">
+
+Here it should be there
+
+<img src="./media_assets/leftmenu06.png" width="400" alt="">
+
 
 ## Limitations
 
@@ -44,7 +72,7 @@ The SG3XX switches MUST have mdns, telnet access enabled and the cisco/cisco use
 <img src="./media_assets/image003.png" width="400" alt="">
 <img src="./media_assets/image004.png" width="300" alt="">
 
-Only does MDNS query on the default interface, does not yet give you the choice of it
+Does MDNS query on the default interface, does not yet give you the choice of it
 
 The app will create a webserver running on port 8888, you can then access the UI from other devices on the network
 
