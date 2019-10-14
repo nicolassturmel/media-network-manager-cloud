@@ -1,6 +1,7 @@
 # Latest news
 
-25th Sept: Fixed a bug preventing connection to cisco switch.... if you tried and were unhappy, test latest version
+25th Sept: Fixed a bug preventing connection to cisco switch.... if you tried and were unhappy, test latest version  
+
 14th Oct: Artel switch supported in desktop app, settings menu and daily app build !
 
 # media-network-manager-cloud
