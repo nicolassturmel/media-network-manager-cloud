@@ -31,26 +31,16 @@ You would have to accept some security warnings to launch the app. Or you can ta
 
 ## Prerequisite
 
-At the moment, the software only works with SG3XX cisco switches. Be my guest (or contact me) if you want other switches support. You can have any number of switches on the network, the software should resolver inter-switch connection.
+At the moment, the software only works with SG3XX cisco switches or Artel Quarra switches. Be my guest (or contact me) if you want other switches support. You can have any number of switches on the network, the software should resolver inter-switch connection.
 
-## First run
+## Cisco switch: First run (easy path)
 
 You have to tell the system to connect to the switches, click on the switch text in the bottom right and a list should appear if your switches have MDNS and TELNET activated.
 
 <img src="./media_assets/image002.png" width="300" alt="">
 
-## Limitations
+Or you can launch the services by hand ! (still need telnet on cisco)
 
-The SG3XX switches MUST have mdns, telnet access enabled and the cisco/cisco user. You will be able to change this in the future.
-
-<img src="./media_assets/image003.png" width="400" alt="">
-<img src="./media_assets/image004.png" width="300" alt="">
-
-Only does MDNS query on the default interface, does not yet give you the choice of it
-
-The app will create a webserver running on port 8888, you can then access the UI from other devices on the network
-
-Right now... this is only data mining and shaping
 
 ## Launching switches by hand (Artel, Cisco... custom user/pwd)
 
@@ -74,6 +64,19 @@ Here it should be there
 
 <img src="./media_assets/leftmenu06.png" width="400" alt="">
 
+
+## Limitations
+
+The SG3XX switches MUST have mdns, telnet access enabled and the cisco/cisco user. You will be able to change this in the future.
+
+<img src="./media_assets/image003.png" width="400" alt="">
+<img src="./media_assets/image004.png" width="300" alt="">
+
+Does MDNS query on the default interface, does not yet give you the choice of it
+
+The app will create a webserver running on port 8888, you can then access the UI from other devices on the network
+
+Right now... this is only data mining and shaping
 
 ## Components
 
