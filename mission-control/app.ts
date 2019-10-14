@@ -99,6 +99,8 @@ export = function(LocalOptions) {
             if(sw != -1 && MnmsData[ws._data.Info.ServiceClass][sw].delete) {
                 console.log("Found at " + sw + " deleting")
                 MnmsData[ws._data.Info.ServiceClass].splice(sw,1)
+
+                db.update({Type: "MnmsData"},blankMnmsData(MnmsData), {upsert: true},(err, newDoc) => { })
             }       
             ws._data = {
                 auth: false
