@@ -46,7 +46,7 @@ Or you can launch the services by hand ! (still need telnet on cisco)
 
 Open the left menu
 
-<img src="./media_assets/leftmenu01.png" width="300" alt="">
+<img src="./media_assets/leftmenu02.png" width="300" alt="">
 
 Click on services
 
