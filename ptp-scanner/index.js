@@ -28,9 +28,23 @@ var PtPPacketHeader = /** @class */ (function () {
         return (0x0F & this._data.readInt8(0));
     };
     PtPPacketHeader.prototype.domain = function () {
+        if (this._data.length < 34)
+            return -1;
         return this._data.readInt8(4);
     };
     return PtPPacketHeader;
+}());
+var PtpDomain = /** @class */ (function () {
+    function PtpDomain(number) {
+        this._number = number;
+    }
+    PtpDomain.prototype.rcvSync = function (message) {
+        return { error: 0, message: "" };
+    };
+    PtpDomain.prototype.rcvAnnounce = function (message) {
+        return { error: 0, message: "" };
+    };
+    return PtpDomain;
 }());
 var socket = dgram.createSocket({ type: "udp4", reuseAddr: true });
 var socket2 = dgram.createSocket({ type: "udp4", reuseAddr: true });
@@ -42,6 +56,9 @@ socket.on("listening", function () {
     var address = socket.address();
     socket.on("message", function (message, rinfo) {
         var pack = new PtPPacketHeader(message);
+        if (pack.messageType() == MessageType.SYNC) {
+            console.info("Sync from: " + rinfo.address + ":" + rinfo.port + ", domain " + pack.domain() + " for version " + pack.version());
+        }
     });
 });
 socket2.bind(PORT + 1);
@@ -51,8 +68,10 @@ socket2.on("listening", function () {
     socket2.on("message", function (message, rinfo) {
         var pack = new PtPPacketHeader(message);
         if (pack.messageType() == MessageType.ANNOUNCE) {
-            console.log("Annouce !!!!!!");
-            console.info("Message from: " + rinfo.address + ":" + rinfo.port + ", domain " + pack.domain() + " for version " + pack.version());
+            console.info("Annouce from: " + rinfo.address + ":" + rinfo.port + ", domain " + pack.domain() + " for version " + pack.version());
+        }
+        if (pack.messageType() == MessageType.SYNC) {
+            console.info("Sync from: " + rinfo.address + ":" + rinfo.port + ", domain " + pack.domain() + " for version " + pack.version());
         }
     });
 });

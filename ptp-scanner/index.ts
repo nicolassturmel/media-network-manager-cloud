@@ -31,7 +31,23 @@ class PtPPacketHeader {
     }
 
     domain() : number {
+        if(this._data.length < 34) return -1;
         return this._data.readInt8(4)
+    }
+}
+
+class PtpDomain {
+    _number: number;
+
+    constructor(number) {
+        this._number = number;
+    }
+
+    rcvSync(message) : object {
+        return {error: 0, message: ""}
+    }
+    rcvAnnounce(message) : object {
+        return {error: 0, message: ""}
     }
 }
 
@@ -47,6 +63,9 @@ socket.on("listening", function() {
     const address = socket.address();
     socket.on("message", function(message, rinfo) {
         let pack = new PtPPacketHeader(message)
+        if(pack.messageType() == MessageType.SYNC) {
+            console.info(`Sync from: ${rinfo.address}:${rinfo.port}, domain ${pack.domain()} for version ${pack.version()}`);
+          }
       });
   });
   
@@ -58,8 +77,10 @@ socket.on("listening", function() {
       socket2.on("message", function(message, rinfo) {
           let pack = new PtPPacketHeader(message)
           if(pack.messageType() == MessageType.ANNOUNCE) {
-              console.log("Annouce !!!!!!")
-              console.info(`Message from: ${rinfo.address}:${rinfo.port}, domain ${pack.domain()} for version ${pack.version()}`);
+              console.info(`Annouce from: ${rinfo.address}:${rinfo.port}, domain ${pack.domain()} for version ${pack.version()}`);
             }
+            if(pack.messageType() == MessageType.SYNC) {
+                console.info(`Sync from: ${rinfo.address}:${rinfo.port}, domain ${pack.domain()} for version ${pack.version()}`);
+              }
         });
     });
