@@ -349,28 +349,50 @@ export = function(LocalOptions) {
                                 if(!linkd[i].ports[l] ) linkd[i].ports[l] = []
                                 if(!linkd[i].ports[l].some(k => k == j)) linkd[i].ports[l].push(j);
                             }
+                            if(Nodes[j].Macs && Nodes[i].Ports[l].ConnectedMacs.includes(Nodes[j].Mac)) {
+                                if(!linkd[i].ports[l] ) linkd[i].ports[l] = []
+                                if(!linkd[i].ports[l].some(k => k == j)) linkd[i].ports[l].push(j);
+                            }
                         }
                     }
                 }
             }
         }
-        //console.log(linkd)
-        //console.log(JSON.stringify(linkd.filter(k => k.ports.some(l => l.length == 1))))
+        console.log(linkd)
+        console.log(JSON.stringify(linkd))
 
         let old_cleared = null;
         while(linkd.some(k => k.ports.some(l => l.length > 1))) {
+
+            // Checking if stalled
             let cleared = linkd.filter(k => k.ports.some(l => l.length == 1))
-            if(_.isEqual(cleared, old_cleared)) break;
+            if(JSON.stringify(cleared) == JSON.stringify(old_cleared)) break;
             old_cleared = JSON.parse(JSON.stringify(cleared))
+
+
+            console.log(JSON.stringify(cleared))
+            console.log(JSON.stringify(linkd))
+
+            // Continuing reduction
             for(let i in linkd) {
                 if(!(cleared.some(k => k.dataRef == linkd[i].dataRef ))) {
                     for(let p in linkd[i].ports) {
                         if(linkd[i].ports[p] != undefined && linkd[i].ports[p].length > 1) {
+                            console.log("Switch " , i , " port ", p)
                             let keep = null;
+                            let ok = true
                             for(let j of linkd[i].ports[p]) {
-                                if(cleared.filter(q => q.dataRef == j).length == 1) keep = j;
+                                if(cleared.filter(q => q.dataRef == j).length == 1) {
+                                    let test = cleared.filter(q => q.dataRef == j)[0]
+                                    for(let pk of test.ports) {
+                                        if(pk && pk.length == 1 && pk[0] == i) {
+                                            if(keep == null) keep = j;
+                                            else ok = false
+                                        }
+                                    }
+                                }
                             }
-                            if(keep != null) {
+                            if(ok && keep != null) {
                                 linkd[i].ports[p] = [keep]
                             }
                         }
@@ -400,7 +422,7 @@ export = function(LocalOptions) {
             }
         }
 
-        //console.log(JSON.stringify(linkd.filter(k => k.ports.some(l => l.length == 1))))
+        console.log(JSON.stringify(linkd.filter(k => k.ports.some(l => l.length == 1))))
     }
 
 

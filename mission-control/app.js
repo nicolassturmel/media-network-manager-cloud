@@ -329,6 +329,12 @@ module.exports = function (LocalOptions) {
                                 if (!linkd[i_3].ports[l].some(function (k) { return k == j; }))
                                     linkd[i_3].ports[l].push(j);
                             }
+                            if (Nodes[j].Macs && Nodes[i_3].Ports[l].ConnectedMacs.includes(Nodes[j].Mac)) {
+                                if (!linkd[i_3].ports[l])
+                                    linkd[i_3].ports[l] = [];
+                                if (!linkd[i_3].ports[l].some(function (k) { return k == j; }))
+                                    linkd[i_3].ports[l].push(j);
+                            }
                         }
                     }
                 };
@@ -337,34 +343,50 @@ module.exports = function (LocalOptions) {
                 }
             }
         }
-        //console.log(linkd)
-        //console.log(JSON.stringify(linkd.filter(k => k.ports.some(l => l.length == 1))))
+        console.log(linkd);
+        console.log(JSON.stringify(linkd));
         var old_cleared = null;
         while (linkd.some(function (k) { return k.ports.some(function (l) { return l.length > 1; }); })) {
+            // Checking if stalled
             var cleared = linkd.filter(function (k) { return k.ports.some(function (l) { return l.length == 1; }); });
-            if (_.isEqual(cleared, old_cleared))
+            if (JSON.stringify(cleared) == JSON.stringify(old_cleared))
                 break;
             old_cleared = JSON.parse(JSON.stringify(cleared));
+            console.log(JSON.stringify(cleared));
+            console.log(JSON.stringify(linkd));
             var _loop_3 = function (i_4) {
                 if (!(cleared.some(function (k) { return k.dataRef == linkd[i_4].dataRef; }))) {
                     for (var p in linkd[i_4].ports) {
                         if (linkd[i_4].ports[p] != undefined && linkd[i_4].ports[p].length > 1) {
+                            console.log("Switch ", i_4, " port ", p);
                             var keep = null;
+                            var ok = true;
                             var _loop_5 = function (j) {
-                                if (cleared.filter(function (q) { return q.dataRef == j; }).length == 1)
-                                    keep = j;
+                                if (cleared.filter(function (q) { return q.dataRef == j; }).length == 1) {
+                                    var test = cleared.filter(function (q) { return q.dataRef == j; })[0];
+                                    for (var _i = 0, _a = test.ports; _i < _a.length; _i++) {
+                                        var pk = _a[_i];
+                                        if (pk && pk.length == 1 && pk[0] == i_4) {
+                                            if (keep == null)
+                                                keep = j;
+                                            else
+                                                ok = false;
+                                        }
+                                    }
+                                }
                             };
                             for (var _i = 0, _a = linkd[i_4].ports[p]; _i < _a.length; _i++) {
                                 var j = _a[_i];
                                 _loop_5(j);
                             }
-                            if (keep != null) {
+                            if (ok && keep != null) {
                                 linkd[i_4].ports[p] = [keep];
                             }
                         }
                     }
                 }
             };
+            // Continuing reduction
             for (var i_4 in linkd) {
                 _loop_3(i_4);
             }
@@ -394,7 +416,7 @@ module.exports = function (LocalOptions) {
         for (var i_5 in Nodes) {
             _loop_4(i_5);
         }
-        //console.log(JSON.stringify(linkd.filter(k => k.ports.some(l => l.length == 1))))
+        console.log(JSON.stringify(linkd.filter(function (k) { return k.ports.some(function (l) { return l.length == 1; }); })));
     }
     // User and GUI side
     //------------------

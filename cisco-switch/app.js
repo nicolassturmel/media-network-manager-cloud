@@ -180,6 +180,7 @@ function computeBandWidth() {
         });
     });
     NewData = true;
+    //console.log(Switch)
     try {
         client.send(JSON.stringify(Switch));
         console.log("OK! " + options.ip);
@@ -386,6 +387,36 @@ function getMulticastSources() {
         }
     });
 }
+function getLLDP() {
+    switchTelnet.exec("show lldp neig", function (err, response) {
+        var array;
+        try {
+            array = response.split("\n");
+        }
+        catch (error) {
+            console.log("Response error : can not split in array");
+            console.log(response);
+            setTimeout(function () { getPortConfig(); }, SwitchPollTime * 1000);
+            return;
+        }
+        for (var _i = 0, array_6 = array; _i < array_6.length; _i++) {
+            var line = array_6[_i];
+            var toks = line.split(/\s+/);
+            if (SwitchData[toks[0]]) {
+                if (SwitchData[toks[0]].ConnectedMacs.includes(toks[1])) {
+                    SwitchData[toks[0]].ConnectedMacs = [toks[1]];
+                }
+                else {
+                    //console.log("Error " + toks[0] +  ", not in array",toks[1],SwitchData[toks[0]].ConnectedMacs)
+                }
+            }
+            else {
+                //console.log("not found",toks[0])
+            }
+        }
+        setTimeout(getNextFct("getLLDP"), SwitchPollTime * 1000);
+    });
+}
 function getNextFct(current) {
     switch (current) {
         case "clear_count":
@@ -399,6 +430,8 @@ function getNextFct(current) {
         case "getBridgeIgmpStatus":
             return getMacAddressTable;
         case "getMacAddressTable":
+            return getLLDP;
+        case "getLLDP":
             return getMulticastSources;
         case "getMulticastSources":
             return get_count;
