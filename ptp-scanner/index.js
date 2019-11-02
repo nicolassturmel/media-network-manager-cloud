@@ -19,33 +19,59 @@ var MessageType;
 ;
 var PtPPacketHeader = /** @class */ (function () {
     function PtPPacketHeader(data) {
+        this.valid = true;
         this._data = data;
-    }
-    PtPPacketHeader.prototype.version = function () {
-        return 0x0F & this._data.readInt8(1);
-    };
-    PtPPacketHeader.prototype.messageType = function () {
-        return (0x0F & this._data.readInt8(0));
-    };
-    PtPPacketHeader.prototype.domain = function () {
+        this.version = 0x0F & this._data.readInt8(1);
+        this.messageType = (0x0F & this._data.readInt8(0));
         if (this._data.length < 34)
-            return -1;
-        return this._data.readInt8(4);
-    };
+            this.valid = false;
+        if (this.version != 1 && this.version != 2)
+            this.valid = false;
+        this.domain = this._data.readInt8(4);
+    }
     return PtPPacketHeader;
 }());
 var PtpDomain = /** @class */ (function () {
-    function PtpDomain(number) {
+    function PtpDomain(version, number) {
         this._number = number;
+        this._version = version;
     }
-    PtpDomain.prototype.rcvSync = function (message) {
+    PtpDomain.prototype.rcvSync = function (packet, rcvInfo) {
+        console.log("Version ", this._version, " - Sync for ", this._number);
         return { error: 0, message: "" };
     };
-    PtpDomain.prototype.rcvAnnounce = function (message) {
+    PtpDomain.prototype.rcvAnnounce = function (packet, rcvInfo) {
+        console.log("Version ", this._version, " - Announce for ", this._number);
+        return { error: 0, message: "" };
+    };
+    PtpDomain.prototype.rcvMessage = function (packet, rcvInfo, port) {
+        switch (packet.messageType) {
+            case MessageType.ANNOUNCE:
+                this.rcvAnnounce(packet, rcvInfo);
+                break;
+            case MessageType.SYNC:
+                this.rcvSync(packet, rcvInfo);
+                break;
+            default:
+                break;
+        }
         return { error: 0, message: "" };
     };
     return PtpDomain;
 }());
+var DomainsPerVersion = {
+    1: [],
+    2: []
+};
+var receivePtp2Packet = function (msg, rcvInfo, port) {
+    var pack = new PtPPacketHeader(msg);
+    if (!pack.valid) {
+        return;
+    }
+    if (!DomainsPerVersion[pack.version][pack.domain])
+        DomainsPerVersion[pack.version][pack.domain] = new PtpDomain(pack.version, pack.domain);
+    DomainsPerVersion[pack.version][pack.domain].rcvMessage(pack, rcvInfo, port);
+};
 var socket = dgram.createSocket({ type: "udp4", reuseAddr: true });
 var socket2 = dgram.createSocket({ type: "udp4", reuseAddr: true });
 var PORT = 319;
@@ -56,9 +82,7 @@ socket.on("listening", function () {
     var address = socket.address();
     socket.on("message", function (message, rinfo) {
         var pack = new PtPPacketHeader(message);
-        if (pack.messageType() == MessageType.SYNC) {
-            console.info("Sync from: " + rinfo.address + ":" + rinfo.port + ", domain " + pack.domain() + " for version " + pack.version());
-        }
+        receivePtp2Packet(message, rinfo, 319);
     });
 });
 socket2.bind(PORT + 1);
@@ -67,11 +91,6 @@ socket2.on("listening", function () {
     var address = socket2.address();
     socket2.on("message", function (message, rinfo) {
         var pack = new PtPPacketHeader(message);
-        if (pack.messageType() == MessageType.ANNOUNCE) {
-            console.info("Annouce from: " + rinfo.address + ":" + rinfo.port + ", domain " + pack.domain() + " for version " + pack.version());
-        }
-        if (pack.messageType() == MessageType.SYNC) {
-            console.info("Sync from: " + rinfo.address + ":" + rinfo.port + ", domain " + pack.domain() + " for version " + pack.version());
-        }
+        receivePtp2Packet(message, rinfo, 320);
     });
 });
