@@ -649,9 +649,16 @@ var buildNodeNav = (node,elem) => {
                 checkElem(subcontainer,"node-service-a-" + key,{type: "a", href: "http://" + node.IP + ":" + node.Services[key].port},"http",name)
             }
             else if(key.includes("_telnet")) {
+                flex_id -= 1;
                 let subcontainer = checkElem(services,"node-service-div-" + key,"div","","")
                 checkElem(subcontainer,"node-service-icon-" + key,"i","fas fa-tty","")
                 checkElem(subcontainer,"node-service-a-" + key,"span","",name)
+            }
+            else if(key.includes("_netaudio-arc")) {
+                flex_id -= 1;
+                let subcontainer = checkElem(services,"node-service-div-" + key,"div","","")
+                checkElem(subcontainer,"node-service-icon-" + key,"i","fab fa-dochub","")
+                checkElem(subcontainer,"node-service-a-" + key,"span",""," - " + name)
             }
         }
         Object.keys(node.Services).forEach(buildServices)

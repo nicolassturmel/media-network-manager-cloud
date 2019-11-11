@@ -406,7 +406,6 @@ export = function(LocalOptions) {
             //if(Nodes[i].Mac) console.log(Nodes[i].Mac)
             if(Nodes[i].Type == "switch" && Nodes[i].Ports.length > 0) {
                 let connlist = linkd.filter(k => k.dataRef == i)[0];
-            // console.log(connlist)
                 for(let p in Nodes[i].Ports) {
                     if(connlist.ports[p]) {
                         Nodes[i].Ports[p].Neighbour=Nodes[connlist.ports[p][0]].IP

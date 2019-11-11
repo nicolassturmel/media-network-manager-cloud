@@ -406,7 +406,6 @@ module.exports = function (LocalOptions) {
                             Nodes[i_5].Ports[p].Neighbour = d[0].IP;
                     }
                 };
-                // console.log(connlist)
                 for (var p in Nodes[i_5].Ports) {
                     _loop_6(p);
                 }

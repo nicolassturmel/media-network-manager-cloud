@@ -186,7 +186,10 @@ module.exports = function (cb, _mdns) {
                         next: {
                             serv: '_ravenna._sub._http._tcp.local',
                             next: {
-                                serv: '_ravenna_session._sub._rtsp._tcp.local'
+                                serv: '_ravenna_session._sub._rtsp._tcp.local',
+                                next: {
+                                    serv: '_netaudio-arc._udp.local'
+                                }
                             }
                         }
                     }
@@ -205,4 +208,15 @@ module.exports = function (cb, _mdns) {
         };
         qq(servToScan);
     }, 1000);
+    setTimeout(function () {
+        console.log("Scanning services");
+        var qq = function (stq) {
+            console.log(stq.serv);
+            mdns.query({ questions: [{ name: stq.serv, type: 'PTR' }] });
+            if (stq.next) {
+                setTimeout(qq, 1000, stq.next);
+            }
+        };
+        qq(servToScan);
+    }, 30000);
 };
