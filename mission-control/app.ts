@@ -410,8 +410,8 @@ export = function(LocalOptions) {
                     if(connlist.ports[p]) {
                         Nodes[i].Ports[p].Neighbour=Nodes[connlist.ports[p][0]].IP
                     }
-                    else if(Nodes[i].Ports[p].ConnectedMacs.length == 1){
-                        let d = Nodes.filter(k => k.Macs && k.Macs.some(l => l === Nodes[i].Ports[p].ConnectedMacs[0]))
+                    else if(Nodes[i].Ports[p].ConnectedMacs.length >= 1){
+                        let d = Nodes.filter(k => k.Macs && k.Macs.some(l => Nodes[i].Ports[p].ConnectedMacs.includes(l)))
                 //       console.log("size 1 : " + Nodes[i].Ports[p].ConnectedMacs[0] + " : d size " + d.length + " N->" + Nodes[i].Ports[p].Neighbour)
                         if(d.length >= 1)
                             Nodes[i].Ports[p].Neighbour=d[0].IP

@@ -399,8 +399,8 @@ module.exports = function (LocalOptions) {
                     if (connlist.ports[p]) {
                         Nodes[i_5].Ports[p].Neighbour = Nodes[connlist.ports[p][0]].IP;
                     }
-                    else if (Nodes[i_5].Ports[p].ConnectedMacs.length == 1) {
-                        var d = Nodes.filter(function (k) { return k.Macs && k.Macs.some(function (l) { return l === Nodes[i_5].Ports[p].ConnectedMacs[0]; }); });
+                    else if (Nodes[i_5].Ports[p].ConnectedMacs.length >= 1) {
+                        var d = Nodes.filter(function (k) { return k.Macs && k.Macs.some(function (l) { return Nodes[i_5].Ports[p].ConnectedMacs.includes(l); }); });
                         //       console.log("size 1 : " + Nodes[i].Ports[p].ConnectedMacs[0] + " : d size " + d.length + " N->" + Nodes[i].Ports[p].Neighbour)
                         if (d.length >= 1)
                             Nodes[i_5].Ports[p].Neighbour = d[0].IP;

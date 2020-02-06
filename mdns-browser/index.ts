@@ -36,6 +36,9 @@ export = (cb,_mdns) => {
                 getMacClear = false;
                 arp.getMAC(k.data, function(err, mac) {
                     if (!err && mac.length>12) {
+                        let macout = []
+                        mac.split(":").forEach((e,i,a) => {if(e.length < 2) macout[i] ="0" + e; else macout[i] = e});
+                        mac = macout.join(":")
                         Hosts[k.name].Macs.push(mac);
                         Hosts[k.name].Mac = mac
                         sendNode(Hosts[k.name])
