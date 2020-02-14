@@ -16,6 +16,13 @@ enum MessageType{
 	PTP_MAX_MESSAGE
 };
 
+enum Status {
+    NONE=0x0,
+    OK,
+    WARN,
+    ERROR
+}
+
 class PtPPacketHeader {
     _data: any;
     version: number
@@ -36,11 +43,20 @@ class PtPPacketHeader {
 
 class PtpDomain {
     _number: number;
-    _version: number
+    _version: number;
+    _masterAddress: string;
+    _lastSeenAnnonce: number;
+    _lastSeenSync: number;
+    status: number;
+    message: string
 
     constructor(version,number) {
         this._number = number;
         this._version = version
+        this._masterAddress = ""
+        this._lastSeenAnnonce = this._lastSeenSync = 0
+        this.status = Status.NONE
+        this.message = "Init..."
     }
 
     rcvSync(packet, rcvInfo) : object {
@@ -52,12 +68,28 @@ class PtpDomain {
         return {error: 0, message: ""}
     }
     rcvMessage(packet : PtPPacketHeader, rcvInfo, port) : object {
+        let suggestedMaster = rcvInfo.address
+        let rcvTime = Date.now()
         switch (packet.messageType) {
             case MessageType.ANNOUNCE:
-                this.rcvAnnounce(packet,rcvInfo)
+                //this.rcvAnnounce(packet,rcvInfo)
+                if(this._masterAddress != suggestedMaster) {
+                    if(rcvTime - this._lastSeenAnnonce > 6000) {
+                        this._masterAddress = suggestedMaster
+                        this._lastSeenAnnonce = rcvTime
+                        this._lastSeenSync = 0
+                        this.status = Status.OK
+                        this.message = "ok"
+                    }
+                    else {
+                        this.status = Status.ERROR
+                        this.message = "Conflicing master with " + suggestedMaster
+                    }
+                }
+                console.log(JSON.stringify(DomainsPerVersion))
                 break
             case MessageType.SYNC:
-                this.rcvSync(packet,rcvInfo)
+                //this.rcvSync(packet,rcvInfo)
                 break
             default:
                 break
@@ -67,8 +99,8 @@ class PtpDomain {
 }
 
 var DomainsPerVersion = {
-    1 : [],
-    2 : []
+    1 : {},
+    2 : {}
 }
 
 var receivePtp2Packet = (msg,rcvInfo,port) => {

@@ -17,6 +17,13 @@ var MessageType;
     MessageType[MessageType["PTP_MAX_MESSAGE"] = 14] = "PTP_MAX_MESSAGE";
 })(MessageType || (MessageType = {}));
 ;
+var Status;
+(function (Status) {
+    Status[Status["NONE"] = 0] = "NONE";
+    Status[Status["OK"] = 1] = "OK";
+    Status[Status["WARN"] = 2] = "WARN";
+    Status[Status["ERROR"] = 3] = "ERROR";
+})(Status || (Status = {}));
 var PtPPacketHeader = /** @class */ (function () {
     function PtPPacketHeader(data) {
         this.valid = true;
@@ -35,6 +42,10 @@ var PtpDomain = /** @class */ (function () {
     function PtpDomain(version, number) {
         this._number = number;
         this._version = version;
+        this._masterAddress = "";
+        this._lastSeenAnnonce = this._lastSeenSync = 0;
+        this.status = Status.NONE;
+        this.message = "Init...";
     }
     PtpDomain.prototype.rcvSync = function (packet, rcvInfo) {
         console.log("Version ", this._version, " - Sync for ", this._number);
@@ -45,12 +56,28 @@ var PtpDomain = /** @class */ (function () {
         return { error: 0, message: "" };
     };
     PtpDomain.prototype.rcvMessage = function (packet, rcvInfo, port) {
+        var suggestedMaster = rcvInfo.address;
+        var rcvTime = Date.now();
         switch (packet.messageType) {
             case MessageType.ANNOUNCE:
-                this.rcvAnnounce(packet, rcvInfo);
+                //this.rcvAnnounce(packet,rcvInfo)
+                if (this._masterAddress != suggestedMaster) {
+                    if (rcvTime - this._lastSeenAnnonce > 6000) {
+                        this._masterAddress = suggestedMaster;
+                        this._lastSeenAnnonce = rcvTime;
+                        this._lastSeenSync = 0;
+                        this.status = Status.OK;
+                        this.message = "ok";
+                    }
+                    else {
+                        this.status = Status.ERROR;
+                        this.message = "Conflicing master with " + suggestedMaster;
+                    }
+                }
+                console.log(JSON.stringify(DomainsPerVersion));
                 break;
             case MessageType.SYNC:
-                this.rcvSync(packet, rcvInfo);
+                //this.rcvSync(packet,rcvInfo)
                 break;
             default:
                 break;
@@ -60,8 +87,8 @@ var PtpDomain = /** @class */ (function () {
     return PtpDomain;
 }());
 var DomainsPerVersion = {
-    1: [],
-    2: []
+    1: {},
+    2: {}
 };
 var receivePtp2Packet = function (msg, rcvInfo, port) {
     var pack = new PtPPacketHeader(msg);

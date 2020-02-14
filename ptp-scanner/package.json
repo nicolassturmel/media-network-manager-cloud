@@ -9,6 +9,6 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "@types/node": "^12.12.3"
+    "@types/node": "^12.12.27"
   }
 }
