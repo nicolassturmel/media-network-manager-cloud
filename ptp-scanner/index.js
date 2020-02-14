@@ -38,6 +38,25 @@ var PtPPacketHeader = /** @class */ (function () {
     }
     return PtPPacketHeader;
 }());
+var makeSize = function (d, n, c) {
+    while (d.length < n)
+        d = c + d;
+    return d;
+};
+var PtPAnnoncePayload = /** @class */ (function () {
+    function PtPAnnoncePayload(data) {
+        this._GMID = makeSize(data.readUInt8(20).toString(16), 2, "0") + ":" +
+            makeSize(data.readUInt8(21).toString(16), 2, "0") + ":" +
+            makeSize(data.readUInt8(22).toString(16), 2, "0") + ":" +
+            makeSize(data.readUInt8(23).toString(16), 2, "0") + ":" +
+            makeSize(data.readUInt8(24).toString(16), 2, "0") + ":" +
+            makeSize(data.readUInt8(25).toString(16), 2, "0") + ":" +
+            makeSize(data.readUInt8(26).toString(16), 2, "0") + ":" +
+            makeSize(data.readUInt8(27).toString(16), 2, "0");
+        this.annonceInterval = Math.pow(2, data.readInt8(33));
+    }
+    return PtPAnnoncePayload;
+}());
 var PtpDomain = /** @class */ (function () {
     function PtpDomain(version, number) {
         this._number = number;
@@ -46,6 +65,7 @@ var PtpDomain = /** @class */ (function () {
         this._lastSeenAnnonce = this._lastSeenSync = 0;
         this.status = Status.NONE;
         this.message = "Init...";
+        this._annonceInterval = 1;
     }
     PtpDomain.prototype.rcvSync = function (packet, rcvInfo) {
         console.log("Version ", this._version, " - Sync for ", this._number);
@@ -60,14 +80,16 @@ var PtpDomain = /** @class */ (function () {
         var rcvTime = Date.now();
         switch (packet.messageType) {
             case MessageType.ANNOUNCE:
-                //this.rcvAnnounce(packet,rcvInfo)
+                var Payload = new PtPAnnoncePayload(packet._data);
                 if (this._masterAddress != suggestedMaster) {
-                    if (rcvTime - this._lastSeenAnnonce > 6000) {
+                    if (rcvTime - this._lastSeenAnnonce > 3 * this._annonceInterval) {
                         this._masterAddress = suggestedMaster;
                         this._lastSeenAnnonce = rcvTime;
                         this._lastSeenSync = 0;
                         this.status = Status.OK;
                         this.message = "ok";
+                        this._GMID = Payload._GMID;
+                        this._annonceInterval = Payload.annonceInterval;
                     }
                     else {
                         this.status = Status.ERROR;
@@ -93,7 +115,6 @@ var PtpDomain = /** @class */ (function () {
                 }
                 else
                     this._lastSeenSync = rcvTime;
-                //this.rcvSync(packet,rcvInfo)
                 break;
             default:
                 break;

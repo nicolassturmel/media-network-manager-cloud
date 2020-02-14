@@ -41,12 +41,36 @@ class PtPPacketHeader {
     }
 }
 
+var makeSize = (d,n,c) => {
+    while(d.length < n)
+        d = c + d
+    return d
+}
+class PtPAnnoncePayload {
+    _GMID: string;
+    annonceInterval: number
+    
+    constructor(data) {
+        this._GMID = makeSize(data.readUInt8(20).toString(16),2,"0") + ":" +
+                makeSize(data.readUInt8(21).toString(16),2,"0") + ":" +
+                makeSize(data.readUInt8(22).toString(16),2,"0") + ":" +
+                makeSize(data.readUInt8(23).toString(16),2,"0") + ":" +
+                makeSize(data.readUInt8(24).toString(16),2,"0") + ":" +
+                makeSize(data.readUInt8(25).toString(16),2,"0") + ":" +
+                makeSize(data.readUInt8(26).toString(16),2,"0") + ":" +
+                makeSize(data.readUInt8(27).toString(16),2,"0") 
+        this.annonceInterval = Math.pow(2,data.readInt8(33))
+    }
+}
+
 class PtpDomain {
     _number: number;
     _version: number;
     _masterAddress: string;
     _lastSeenAnnonce: number;
     _lastSeenSync: number;
+    _annonceInterval: number
+    _GMID: string
     status: number;
     message: string
 
@@ -57,6 +81,7 @@ class PtpDomain {
         this._lastSeenAnnonce = this._lastSeenSync = 0
         this.status = Status.NONE
         this.message = "Init..."
+        this._annonceInterval = 1
     }
 
     rcvSync(packet, rcvInfo) : object {
@@ -72,14 +97,16 @@ class PtpDomain {
         let rcvTime = Date.now()
         switch (packet.messageType) {
             case MessageType.ANNOUNCE:
-                //this.rcvAnnounce(packet,rcvInfo)
+                let Payload = new PtPAnnoncePayload(packet._data)
                 if(this._masterAddress != suggestedMaster) {
-                    if(rcvTime - this._lastSeenAnnonce > 6000) {
+                    if(rcvTime - this._lastSeenAnnonce > 3*this._annonceInterval) {
                         this._masterAddress = suggestedMaster
                         this._lastSeenAnnonce = rcvTime
                         this._lastSeenSync = 0
                         this.status = Status.OK
                         this.message = "ok"
+                        this._GMID = Payload._GMID
+                        this._annonceInterval = Payload.annonceInterval
                     }
                     else {
                         this.status = Status.ERROR
@@ -105,7 +132,6 @@ class PtpDomain {
                 }
                 else
                     this._lastSeenSync = rcvTime
-                //this.rcvSync(packet,rcvInfo)
                 break
             default:
                 break
