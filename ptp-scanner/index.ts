@@ -1,5 +1,35 @@
 import dgram = require ("dgram");
 import process = require  ("process")
+const commandLineArgs = require('command-line-args')
+
+import { MnMs_node } from "../types/types"
+
+// Command line arguments
+// ----------------------
+const optionDefinitions = [
+    { name: 'key', alias: 'k', type: String, defaultValue: 'nokey' },
+    { name: 'id', alias: 'y', type: String, defaultValue: undefined },
+    { name: "missioncontrol", alias: "m", type: String}
+  ]
+
+const options = commandLineArgs(optionDefinitions)
+console.log(options)
+
+// Connecting to MnMs
+//-------------------
+var client = require('../mnms-client-ws-interface')
+
+client.challenge(options.key)
+client.setCallback((data) => {console.log(data)})
+client.run(options.missioncontrol)
+client.info({
+    Info: "PTP scannner",
+    ServiceClass: "Analysers",
+    id: options.id
+})
+
+// PTP Code
+//---------
 
 enum MessageType{
 	SYNC=0x0,
