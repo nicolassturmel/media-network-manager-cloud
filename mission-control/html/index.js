@@ -3,6 +3,7 @@ let maddress = []
 let mselection = {}
 let _nodes
 let _data
+let MColors = ["#ff00ff","#ffff00"]
 
 let visnode = new vis.DataSet([])
 let visedge = new vis.DataSet([])
@@ -12,6 +13,8 @@ var missionControlWS
 /* init function */
 function run() {
     let switchInfo = document.getElementById("switch-info")
+    let ptpInfo = document.getElementById("ptp-info")
+    let mdnsInfo = document.getElementById("mdns-info")
     let container = document.getElementById("nodes_container")
     missionControlWS = new WebSocket("ws://" + window.location.host)
 
@@ -62,6 +65,16 @@ function run() {
         }
     }
 
+    var ptpMenu = () => {
+        console.error("PTP")
+        mselection.nodeIP = "0.0.0.0"
+        mselection.Type = "stream"
+        mselection.Name = "multicast registrations"
+        selectNew("",{Name:"PTP"})
+        maddress.push("224.0.1.129")
+        buildGraph(_nodes)
+    }
+
     var makeSwitchMenu = () => {
         let popUp = document.getElementById("popUp-menu") 
         if(popUp) {
@@ -101,7 +114,8 @@ function run() {
         }
     }
 
-    switchInfo.onclick = switchMenu
+    switchInfo.onclick = switchMenu 
+    ptpInfo.onclick = ptpMenu
 
     missionControlWS.onmessage = function (event) {
         data = JSON.parse(event.data)
@@ -111,7 +125,7 @@ function run() {
             let swInfoTxt = checkElem(switchInfo,"switchInfoText","span","switch-info-span",
                 "<i class=\"fas fa-network-wired\"></i> Switches (" + _data.OkSwitches + "/" + _data.Switches.length + ")");
             if(_data.OkSwitches != _data.Switches.length)  swInfoTxt.classList.add("warn")
-            if(_data.Mdns) checkElem(switchInfo,"mdns-info-txt","span","","MDNS (" + _data.Mdns.length + ")")
+            if(_data.Mdns) checkElem(mdnsInfo,"mdns-info-txt","span","","MDNS (" + _data.Mdns.length + ")")
             else swInfoTxt.classList.remove("warn")
             makeSwitchMenu()
             setTimeout(() => {missionControlWS.send("data")},4000)
@@ -784,6 +798,7 @@ function initGraph() {
 
 let oldNodes = []
 let oldEdges = []
+let macToFind = []
 
 function buildGraph(nodes) {
     let newNodes = [];
@@ -807,11 +822,20 @@ function buildGraph(nodes) {
                                 }
                             }
                         }
+                        
+                        let index = 0;
+                        for(let mac of p.ConnectedMacs) {
+                            if(mac == macToFind) {
+                                //console.error("Found mac " + mac + " in switch " + nodes[i].Name + ":" + p.Name)
+                            }
+                        }
                         for(let add of maddress) {
                             if(p.IGMP.Groups[add] == true) {
-                                color = "#ff00ff"
+                                color = MColors[index]
                                 isRouterForStream = true;
+                                console.error(add,color,index)
                             }
+                            index = (index + 1)%MColors.length
                         }
                         let bcolor = color;
                         if(mselection.nodeIP && mselection.nodeIP == nodes[n].IP)  bcolor = "#00ffff"

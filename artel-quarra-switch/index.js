@@ -117,12 +117,12 @@ var getMacs = function (body) {
         element.ConnectedMacs = [];
     });
     body.result.forEach(function (mac) {
-        //console.log(mac.key, mac.val)
         mac.val.PortList.forEach(function (p) {
             if (mac.val.CopyToCpu == 0)
                 Switch.Ports[Switch.Ports.findIndex(function (k) { return k.Name == p.split(" 1/").join(""); })].ConnectedMacs.push(mac.key[1].toLowerCase());
         });
-        if (mac.val.PortList.length == 0 && mac.val.CopyToCpu == 1) {
+        if (mac.val.PortList.length == 0 && mac.val.CopyToCpu == 1 && parseInt("0x" + mac.key[1].split(":")[0]) % 2 == 0) {
+            console.log(mac.key[1]);
             Switch.Mac = mac.key[1].toLowerCase();
             Switch.Macs = [mac.key[1].toLowerCase()];
             Switch.Name = "Artel " + mac.key[1].toLowerCase().substr(-8);
