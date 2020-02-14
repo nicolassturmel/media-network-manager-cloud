@@ -74,9 +74,25 @@ var PtpDomain = /** @class */ (function () {
                         this.message = "Conflicing master with " + suggestedMaster;
                     }
                 }
+                else
+                    this._lastSeenAnnonce = rcvTime;
                 console.log(JSON.stringify(DomainsPerVersion));
                 break;
             case MessageType.SYNC:
+                if (this._masterAddress != suggestedMaster) {
+                    if (rcvTime - this._lastSeenAnnonce > 6000 && this._version == 1) {
+                        this._masterAddress = suggestedMaster;
+                        this._lastSeenSync = rcvTime;
+                        this.status = Status.OK;
+                        this.message = "ok";
+                    }
+                    else {
+                        this.status = Status.ERROR;
+                        this.message = "Conflicing syncs emitted from " + suggestedMaster;
+                    }
+                }
+                else
+                    this._lastSeenSync = rcvTime;
                 //this.rcvSync(packet,rcvInfo)
                 break;
             default:
