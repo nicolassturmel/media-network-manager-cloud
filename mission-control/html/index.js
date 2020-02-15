@@ -67,6 +67,15 @@ function run() {
 
     var ptpMenu = () => {
         console.error("PTP")
+        let popUp = document.getElementById("popUp-menu") 
+        if(popUp) {
+            popUp.outerHTML = ""
+        }
+        else {
+            let popUp = checkElem(ptpInfo,"popUp-menu","div","popUp-menu","")
+            makePtpMenu()
+        }
+
         mselection.nodeIP = "0.0.0.0"
         mselection.Type = "stream"
         mselection.Name = "multicast registrations"
@@ -78,6 +87,7 @@ function run() {
     var makeSwitchMenu = () => {
         let popUp = document.getElementById("popUp-menu") 
         if(popUp) {
+            popUp._data = {type : "switch"}
             for(let n of _nodes) {
                 if(!_data.Switches.some(k => k.IP == n.IP)) {
                     if(n.Services) Object.keys(n.Services).forEach(key => {
@@ -114,6 +124,14 @@ function run() {
         }
     }
 
+    var makePtpMenu = () => {
+        let popUp = document.getElementById("popUp-menu") 
+        if(popUp) {
+            popUp._data = {type : "ptp"}
+            checkElem(popUp,"pop-up-ptp","span","","To have more ptp info launch the PTP service with administrator permissions.")
+        }
+    }
+
     switchInfo.onclick = switchMenu 
     ptpInfo.onclick = ptpMenu
 
@@ -127,7 +145,9 @@ function run() {
             if(_data.OkSwitches != _data.Switches.length)  swInfoTxt.classList.add("warn")
             if(_data.Mdns) checkElem(mdnsInfo,"mdns-info-txt","span","","MDNS (" + _data.Mdns.length + ")")
             else swInfoTxt.classList.remove("warn")
-            makeSwitchMenu()
+            let popUp = document.getElementById("popUp-menu") 
+            if(popUp && popUp._data.type == "switch")
+                    makeSwitchMenu()
             setTimeout(() => {missionControlWS.send("data")},4000)
         }
         else {
