@@ -183,6 +183,7 @@ export = function(LocalOptions) {
                         sw[0].UID = ws._data.UID
                         sw[0].Ws = ws
                         sw[0].node = node
+                        sw[0].delete = true
                     }
                 }
                 else {
@@ -510,7 +511,7 @@ export = function(LocalOptions) {
                                 }
                                 idx++
                             }
-                            while(found == false || idx >= obj.length)
+                            while(found == false && idx < obj.length)
                             
                             if(found) db.update({Type: "MnmsData"},blankMnmsData(MnmsData), {upsert: true},(err, newDoc) => { })
                         }
