@@ -128,7 +128,30 @@ function run() {
         let popUp = document.getElementById("popUp-menu") 
         if(popUp) {
             popUp._data = {type : "ptp"}
-            checkElem(popUp,"pop-up-ptp","span","","To have more ptp info launch the PTP service with administrator permissions.")
+            let PtPScanners = []
+            if(_data.Analysers)
+                PtPScanners = _data.Analysers.filter(k => k.Info == "PTP scannner" && k.node)
+            if(PtPScanners.length > 0) {
+                for(item of PtPScanners) {
+                    console.error(item)
+                    // V2 subdomains
+                    Object.keys(item.node["2"]).forEach(k => {
+                        let Mas = checkElem(popUp,"master-" + item.node["2"][k]._masterAddress,"div","","")
+                        checkElem(Mas,"master-name" + item.node["2"][k]._masterAddress,"div","",item.node["2"][k]._masterAddress)
+                        checkElem(Mas,"master-v2-dom-" + k + "-" + item.node["2"][k]._masterAddress,"div","","Version 2 - Domain " + k + " : master")
+                            checkElem(Mas,"error-v2-dom-" + k + "-" + item.node["2"][k]._masterAddress,"div","",item.node["2"][k].message)
+                        
+                    })
+                    Object.keys(item.node["1"]).forEach(k => {
+                        let Mas = checkElem(popUp,"master-" + item.node["1"][k]._masterAddress,"div","","")
+                        checkElem(Mas,"master-name" + item.node["1"][k]._masterAddress,"div","",item.node["1"][k]._masterAddress)
+                        checkElem(Mas,"master-v1-dom-" + k + "-" + item.node["1"][k]._masterAddress,"div","","Version 1 - Domain " + k + " : master")
+                            checkElem(Mas,"error-v1-dom-" + k + "-" + item.node["1"][k]._masterAddress,"div","",item.node["1"][k].message)
+                    })
+                }
+                    
+            } 
+            else checkElem(popUp,"pop-up-ptp","span","","To have more ptp info launch the PTP service with administrator permissions.")
         }
     }
 
@@ -146,8 +169,12 @@ function run() {
             if(_data.Mdns) checkElem(mdnsInfo,"mdns-info-txt","span","","MDNS (" + _data.Mdns.length + ")")
             else swInfoTxt.classList.remove("warn")
             let popUp = document.getElementById("popUp-menu") 
-            if(popUp && popUp._data.type == "switch")
+            if(popUp) {
+                if(popUp._data.type == "switch")
                     makeSwitchMenu()
+                if(popUp._data.type == "ptp")
+                    makePtpMenu()
+            }
             setTimeout(() => {missionControlWS.send("data")},4000)
         }
         else {

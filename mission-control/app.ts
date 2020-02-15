@@ -103,7 +103,7 @@ export = function(LocalOptions) {
                 db.update({Type: "MnmsData"},blankMnmsData(MnmsData), {upsert: true},(err, newDoc) => { })
             }
             else {
-                console.log("WTF !!!! not found")
+                console.log("WTF !!!! not found service to stop")
             }       
             ws._data = {
                 auth: false
@@ -498,13 +498,15 @@ export = function(LocalOptions) {
                             let obj = ["Switches","External","Analysers"]
                             let idx = 0, found = false
                             do {
-                                let l = MnmsData[obj[idx]].filter(k => k.UID == D.UID)
-                                if(l.length == 1) {
-                                    console.log("Found in " + obj[idx])
-                                    l[0].delete = true;
-                                    let Ws = l[0].Ws
-                                    Ws.close()
-                                    found = true;
+                                if(MnmsData[obj[idx]]) {
+                                    let l = MnmsData[obj[idx]].filter(k => k.UID == D.UID)
+                                    if(l.length == 1) {
+                                        console.log("Found in " + obj[idx])
+                                        l[0].delete = true;
+                                        let Ws = l[0].Ws
+                                        Ws.close()
+                                        found = true;
+                                    }
                                 }
                                 idx++
                             }

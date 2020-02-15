@@ -93,7 +93,7 @@ module.exports = function (LocalOptions) {
                 db.update({ Type: "MnmsData" }, blankMnmsData(MnmsData), { upsert: true }, function (err, newDoc) { });
             }
             else {
-                console.log("WTF !!!! not found");
+                console.log("WTF !!!! not found service to stop");
             }
             ws._data = {
                 auth: false
@@ -481,13 +481,15 @@ module.exports = function (LocalOptions) {
                             var obj = ["Switches", "External", "Analysers"];
                             var idx = 0, found = false;
                             do {
-                                var l = MnmsData[obj[idx]].filter(function (k) { return k.UID == D_1.UID; });
-                                if (l.length == 1) {
-                                    console.log("Found in " + obj[idx]);
-                                    l[0]["delete"] = true;
-                                    var Ws = l[0].Ws;
-                                    Ws.close();
-                                    found = true;
+                                if (MnmsData[obj[idx]]) {
+                                    var l = MnmsData[obj[idx]].filter(function (k) { return k.UID == D_1.UID; });
+                                    if (l.length == 1) {
+                                        console.log("Found in " + obj[idx]);
+                                        l[0]["delete"] = true;
+                                        var Ws = l[0].Ws;
+                                        Ws.close();
+                                        found = true;
+                                    }
                                 }
                                 idx++;
                             } while (found == false || idx >= obj.length);
