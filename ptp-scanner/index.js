@@ -1,6 +1,29 @@
 "use strict";
 exports.__esModule = true;
 var dgram = require("dgram");
+var commandLineArgs = require('command-line-args');
+// Command line arguments
+// ----------------------
+var optionDefinitions = [
+    { name: 'key', alias: 'k', type: String, defaultValue: 'nokey' },
+    { name: 'id', alias: 'y', type: String, defaultValue: undefined },
+    { name: "missioncontrol", alias: "m", type: String }
+];
+var options = commandLineArgs(optionDefinitions);
+console.log(options);
+// Connecting to MnMs
+//-------------------
+var client = require('../mnms-client-ws-interface');
+client.challenge(options.key);
+client.setCallback(function (data) { console.log(data); });
+client.run(options.missioncontrol);
+client.info({
+    Info: "PTP scannner",
+    ServiceClass: "Analysers",
+    id: options.id
+});
+// PTP Code
+//---------
 var MessageType;
 (function (MessageType) {
     MessageType[MessageType["SYNC"] = 0] = "SYNC";
