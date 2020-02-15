@@ -92,6 +92,9 @@ module.exports = function (LocalOptions) {
                 MnmsData[ws._data.Info.ServiceClass].splice(sw, 1);
                 db.update({ Type: "MnmsData" }, blankMnmsData(MnmsData), { upsert: true }, function (err, newDoc) { });
             }
+            else {
+                console.log("WTF !!!! not found");
+            }
             ws._data = {
                 auth: false
             };
@@ -161,6 +164,7 @@ module.exports = function (LocalOptions) {
                     console.log("Copying");
                     var sw = MnmsData[ws._data.Info.ServiceClass].filter(function (k) { return k.UID == ws._data.Info.id; });
                     if (sw.length == 1) {
+                        sw[0].UID = ws._data.UID;
                         sw[0].Ws = ws;
                         sw[0].node = node;
                     }
@@ -465,7 +469,7 @@ module.exports = function (LocalOptions) {
                                 Child: null,
                                 Timer: null,
                                 StartTime: null,
-                                UID: "ddjt" + Date.now() + ((encodeURIComponent(D_1.IP)))
+                                UID: "manual:switch" + Date.now() + ((encodeURIComponent(D_1.IP)))
                             });
                             db.update({ Type: "MnmsData" }, blankMnmsData(MnmsData), { upsert: true }, function (err, newDoc) { });
                             console.log(MnmsData);
@@ -474,15 +478,21 @@ module.exports = function (LocalOptions) {
                     else if (D_1.UserAction) {
                         if (D_1.UserAction == "remove_service" && D_1.UID) {
                             console.log("Asked to remove service of UID " + D_1.UID);
-                            var l = MnmsData.Switches.filter(function (k) { return k.UID == D_1.UID; });
-                            if (l.length == 0)
-                                l = MnmsData.External.filter(function (k) { return k.UID == D_1.UID; });
-                            if (l.length == 1) {
-                                l[0]["delete"] = true;
-                                var Ws = l[0].Ws;
-                                Ws.close();
-                            }
-                            db.update({ Type: "MnmsData" }, blankMnmsData(MnmsData), { upsert: true }, function (err, newDoc) { });
+                            var obj = ["Switches", "External", "Analysers"];
+                            var idx = 0, found = false;
+                            do {
+                                var l = MnmsData[obj[idx]].filter(function (k) { return k.UID == D_1.UID; });
+                                if (l.length == 1) {
+                                    console.log("Found in " + obj[idx]);
+                                    l[0]["delete"] = true;
+                                    var Ws = l[0].Ws;
+                                    Ws.close();
+                                    found = true;
+                                }
+                                idx++;
+                            } while (found == false || idx >= obj.length);
+                            if (found)
+                                db.update({ Type: "MnmsData" }, blankMnmsData(MnmsData), { upsert: true }, function (err, newDoc) { });
                         }
                     }
                     else {

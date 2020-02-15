@@ -101,6 +101,9 @@ export = function(LocalOptions) {
                 MnmsData[ws._data.Info.ServiceClass].splice(sw,1)
 
                 db.update({Type: "MnmsData"},blankMnmsData(MnmsData), {upsert: true},(err, newDoc) => { })
+            }
+            else {
+                console.log("WTF !!!! not found")
             }       
             ws._data = {
                 auth: false
@@ -177,6 +180,7 @@ export = function(LocalOptions) {
                     console.log("Copying")
                     let sw = MnmsData[ws._data.Info.ServiceClass].filter(k => k.UID == ws._data.Info.id)
                     if(sw.length == 1) {
+                        sw[0].UID = ws._data.UID
                         sw[0].Ws = ws
                         sw[0].node = node
                     }
@@ -482,7 +486,7 @@ export = function(LocalOptions) {
                                 Child: null,
                                 Timer: null,
                                 StartTime: null,
-                                UID: "ddjt" + Date.now() + ((encodeURIComponent(D.IP)))
+                                UID: "manual:switch" + Date.now() + ((encodeURIComponent(D.IP)))
                             })
                             db.update({Type: "MnmsData"},blankMnmsData(MnmsData), {upsert: true},(err, newDoc) => { })
                             console.log(MnmsData)
@@ -491,15 +495,22 @@ export = function(LocalOptions) {
                     else if(D.UserAction) {
                         if(D.UserAction == "remove_service" && D.UID) {
                             console.log("Asked to remove service of UID " + D.UID)
-                            let l = MnmsData.Switches.filter(k => k.UID == D.UID)
-                            if(l.length == 0)
-                                l = MnmsData.External.filter(k => k.UID == D.UID)
-                            if(l.length == 1) {
-                                l[0].delete = true;
-                                let Ws = l[0].Ws
-                                Ws.close()
+                            let obj = ["Switches","External","Analysers"]
+                            let idx = 0, found = false
+                            do {
+                                let l = MnmsData[obj[idx]].filter(k => k.UID == D.UID)
+                                if(l.length == 1) {
+                                    console.log("Found in " + obj[idx])
+                                    l[0].delete = true;
+                                    let Ws = l[0].Ws
+                                    Ws.close()
+                                    found = true;
+                                }
+                                idx++
                             }
-                            db.update({Type: "MnmsData"},blankMnmsData(MnmsData), {upsert: true},(err, newDoc) => { })
+                            while(found == false || idx >= obj.length)
+                            
+                            if(found) db.update({Type: "MnmsData"},blankMnmsData(MnmsData), {upsert: true},(err, newDoc) => { })
                         }
                     }
                     else {
