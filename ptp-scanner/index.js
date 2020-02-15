@@ -6,7 +6,7 @@ var commandLineArgs = require('command-line-args');
 // ----------------------
 var optionDefinitions = [
     { name: 'key', alias: 'k', type: String, defaultValue: 'nokey' },
-    { name: 'id', alias: 'y', type: String, defaultValue: undefined },
+    { name: 'id', alias: 'y', type: String, defaultValue: "PTP-" + Date.now().toString(32) },
     { name: "missioncontrol", alias: "m", type: String }
 ];
 var options = commandLineArgs(optionDefinitions);
@@ -122,6 +122,7 @@ var PtpDomain = /** @class */ (function () {
                 else
                     this._lastSeenAnnonce = rcvTime;
                 console.log(JSON.stringify(DomainsPerVersion));
+                client.send(JSON.stringify(DomainsPerVersion));
                 break;
             case MessageType.SYNC:
                 if (this._masterAddress != suggestedMaster) {

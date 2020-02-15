@@ -80,7 +80,7 @@ module.exports = function (LocalOptions) {
     httpsServer.listen(Options.services_port);
     var wss = new sock.Server({ server: httpsServer });
     wss.on('connection', function connection(ws) {
-        console.log("new client connected");
+        console.log(">>>>> new client connected");
         ws._data = {
             auth: false
         };
@@ -98,6 +98,7 @@ module.exports = function (LocalOptions) {
         });
         ws.on('message', function incoming(message) {
             var node = JSON.parse(message);
+            //console.log(message)
             if (node.Type == "auth") {
                 if (node.Challenge == MnmsData.Challenge) {
                     ws._data.auth = true;
@@ -121,38 +122,52 @@ module.exports = function (LocalOptions) {
                     }
                     ws._data.UID = node.Info.id;
                     ws._data.Info = node.Info;
+                    ws._data.ServiceClass = node.Info.ServiceClass;
                 }
                 else {
                     console.log(node.Challemge, MnmsData.Challenge);
                 }
             }
             else if (ws._data.auth) {
-                console.log("Got a message");
-                var i_1 = Nodes.findIndex(function (k) { return k.IP == node.IP; });
-                var sw = MnmsData[ws._data.Info.ServiceClass].filter(function (k) { return k.UID == ws._data.Info.id; });
-                if (sw.length == 1) {
-                    var t = new Date;
-                    sw[0].Timer = t.getTime();
-                    //console.log(node.id,MnmsData.Switches.filter(k => k.UID == node.id)[0].Timer)
+                //console.log("Got a message")
+                if (ws._data.ServiceClass == "Switches") {
+                    var i_1 = Nodes.findIndex(function (k) { return k.IP == node.IP; });
+                    var sw = MnmsData[ws._data.Info.ServiceClass].filter(function (k) { return k.UID == ws._data.Info.id; });
+                    if (sw.length == 1) {
+                        var t = new Date;
+                        sw[0].Timer = t.getTime();
+                        //console.log(node.id,MnmsData.Switches.filter(k => k.UID == node.id)[0].Timer)
+                    }
+                    if (i_1 == -1) {
+                        Nodes.push({
+                            Type: "null",
+                            IP: node.IP,
+                            id: "0",
+                            Schema: 1,
+                            Ports: [],
+                            Services: {},
+                            Multicast: null,
+                            Neighbour: "",
+                            Mac: "",
+                            OtherIPs: []
+                        });
+                        i_1 = Nodes.findIndex(function (k) { return k.IP == node.IP; });
+                    }
+                    //console.log("Merge now...")
+                    mergeNodes(i_1, node, "");
+                    calculateInterConnect();
                 }
-                if (i_1 == -1) {
-                    Nodes.push({
-                        Type: "null",
-                        IP: node.IP,
-                        id: "0",
-                        Schema: 1,
-                        Ports: [],
-                        Services: {},
-                        Multicast: null,
-                        Neighbour: "",
-                        Mac: "",
-                        OtherIPs: []
-                    });
-                    i_1 = Nodes.findIndex(function (k) { return k.IP == node.IP; });
+                else if (ws._data.ServiceClass == "Analysers") {
+                    console.log("Copying");
+                    var sw = MnmsData[ws._data.Info.ServiceClass].filter(function (k) { return k.UID == ws._data.Info.id; });
+                    if (sw.length == 1) {
+                        sw[0].Ws = ws;
+                        sw[0].node = node;
+                    }
                 }
-                console.log("Merge now...");
-                mergeNodes(i_1, node, "");
-                calculateInterConnect();
+                else {
+                    console.error("Unknown class " + ws._data.ServiceClass);
+                }
             }
             else {
                 console.log("Forbiden", ws._data, node);
@@ -273,7 +288,7 @@ module.exports = function (LocalOptions) {
                 if (true) {
                     Object.keys(newValue.Services).forEach(function (key) {
                         if (!(Nodes[index].Services[key]) || !(Nodes[index].Services[key].SDP || _.isEqual(Nodes[index].Services[key], newValue.Services[key]))) {
-                            console.log("Creating", key);
+                            //console.log("Creating",key)
                             Nodes[index].Services[key] = newValue.Services[key];
                             if (key.includes("_rtsp._tcp")) {
                                 sdpgetter("rtsp://" + newValue.IP + ":" + newValue.Services[key].port + "/by-name/" + encodeURIComponent(key.split("._")[0]), function (sdp) { if (Nodes[index].Services[key])
@@ -284,7 +299,7 @@ module.exports = function (LocalOptions) {
                     if (1) {
                         Object.keys(Nodes[index].Services).forEach(function (key) {
                             if (!(newValue.Services[key])) {
-                                console.log("Deleting", key);
+                                // console.log("Deleting",key)
                                 delete Nodes[index].Services[key];
                                 if (Object.keys(Nodes[index].Services).length == 0) {
                                     if (Nodes[index].Type && Nodes[index].Type != "switch")
@@ -343,8 +358,8 @@ module.exports = function (LocalOptions) {
                 }
             }
         }
-        console.log(linkd);
-        console.log(JSON.stringify(linkd));
+        //console.log(linkd)
+        //console.log(JSON.stringify(linkd))
         var old_cleared = null;
         while (linkd.some(function (k) { return k.ports.some(function (l) { return l.length > 1; }); })) {
             // Checking if stalled
@@ -352,13 +367,11 @@ module.exports = function (LocalOptions) {
             if (JSON.stringify(cleared) == JSON.stringify(old_cleared))
                 break;
             old_cleared = JSON.parse(JSON.stringify(cleared));
-            console.log(JSON.stringify(cleared));
-            console.log(JSON.stringify(linkd));
             var _loop_3 = function (i_4) {
                 if (!(cleared.some(function (k) { return k.dataRef == linkd[i_4].dataRef; }))) {
                     for (var p in linkd[i_4].ports) {
                         if (linkd[i_4].ports[p] != undefined && linkd[i_4].ports[p].length > 1) {
-                            console.log("Switch ", i_4, " port ", p);
+                            //console.log("Switch " , i , " port ", p)
                             var keep = null;
                             var ok = true;
                             var _loop_5 = function (j) {
@@ -386,6 +399,8 @@ module.exports = function (LocalOptions) {
                     }
                 }
             };
+            //console.log(JSON.stringify(cleared))
+            //console.log(JSON.stringify(linkd))
             // Continuing reduction
             for (var i_4 in linkd) {
                 _loop_3(i_4);
@@ -415,7 +430,7 @@ module.exports = function (LocalOptions) {
         for (var i_5 in Nodes) {
             _loop_4(i_5);
         }
-        console.log(JSON.stringify(linkd.filter(function (k) { return k.ports.some(function (l) { return l.length == 1; }); })));
+        //console.log(JSON.stringify(linkd.filter(k => k.ports.some(l => l.length == 1))))
     }
     // User and GUI side
     //------------------

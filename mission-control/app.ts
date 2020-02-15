@@ -89,7 +89,7 @@ export = function(LocalOptions) {
 
     const wss = new sock.Server({ server: httpsServer })
     wss.on('connection', function connection(ws) {
-        console.log("new client connected")
+        console.log(">>>>> new client connected")
         ws._data = {
             auth : false
         }
@@ -109,6 +109,7 @@ export = function(LocalOptions) {
         })
         ws.on('message', function incoming(message) {
             let node = JSON.parse(message)
+            //console.log(message)
             if(node.Type == "auth") {
                 if(node.Challenge == MnmsData.Challenge) {
                     ws._data.auth = true
@@ -133,40 +134,56 @@ export = function(LocalOptions) {
 
                     ws._data.UID = node.Info.id
                     ws._data.Info = node.Info
+                    ws._data.ServiceClass = node.Info.ServiceClass
                 }
                 else {
                     console.log(node.Challemge,MnmsData.Challenge)
                 }
             } 
             else if(ws._data.auth) {
-                console.log("Got a message")
-                let i = Nodes.findIndex(k => k.IP == node.IP);
-                let sw = MnmsData[ws._data.Info.ServiceClass].filter(k => k.UID == ws._data.Info.id)
-                    if(sw.length == 1) {
-                        let t = new Date
-                        sw[0].Timer = t.getTime()
-                        //console.log(node.id,MnmsData.Switches.filter(k => k.UID == node.id)[0].Timer)
-                    }
-                if(i == -1) {
-                    Nodes.push(
-                        {
-                            Type: "null",
-                            IP: node.IP,
-                            id: "0",
-                            Schema: 1,
-                            Ports: [],
-                            Services: {},
-                            Multicast: null,
-                            Neighbour: "",
-                            Mac: "",
-                            OtherIPs: []
+                //console.log("Got a message")
+                if(ws._data.ServiceClass == "Switches")
+                {
+                    let i = Nodes.findIndex(k => k.IP == node.IP);
+                    let sw = MnmsData[ws._data.Info.ServiceClass].filter(k => k.UID == ws._data.Info.id)
+                        if(sw.length == 1) {
+                            let t = new Date
+                            sw[0].Timer = t.getTime()
+                            //console.log(node.id,MnmsData.Switches.filter(k => k.UID == node.id)[0].Timer)
                         }
-                    )
-                    i = Nodes.findIndex(k => k.IP == node.IP);
+                    if(i == -1) {
+                        Nodes.push(
+                            {
+                                Type: "null",
+                                IP: node.IP,
+                                id: "0",
+                                Schema: 1,
+                                Ports: [],
+                                Services: {},
+                                Multicast: null,
+                                Neighbour: "",
+                                Mac: "",
+                                OtherIPs: []
+                            }
+                        )
+                        i = Nodes.findIndex(k => k.IP == node.IP);
+                    }
+                    //console.log("Merge now...")
+                    mergeNodes(i,node,"")
+                    calculateInterConnect()
                 }
-                console.log("Merge now...")
-                mergeNodes(i,node,"")
-                calculateInterConnect()
+                else if(ws._data.ServiceClass == "Analysers") 
+                {
+                    console.log("Copying")
+                    let sw = MnmsData[ws._data.Info.ServiceClass].filter(k => k.UID == ws._data.Info.id)
+                    if(sw.length == 1) {
+                        sw[0].Ws = ws
+                        sw[0].node = node
+                    }
+                }
+                else {
+                    console.error("Unknown class " + ws._data.ServiceClass)
+                }
             }
             else {
                 console.log("Forbiden",ws._data,node)
@@ -296,7 +313,7 @@ export = function(LocalOptions) {
                 if(true) {
                     Object.keys(newValue.Services).forEach((key) => {
                         if(!(Nodes[index].Services[key]) || !(Nodes[index].Services[key].SDP || _.isEqual(Nodes[index].Services[key],newValue.Services[key]))) {
-                            console.log("Creating",key)
+                            //console.log("Creating",key)
                             Nodes[index].Services[key] = newValue.Services[key]
                             if(key.includes("_rtsp._tcp")) {
                                 sdpgetter("rtsp://" + newValue.IP + ":" + newValue.Services[key].port + "/by-name/" +  encodeURIComponent(key.split("._")[0]),(sdp) => {  if(Nodes[index].Services[key]) Nodes[index].Services[key].SDP = sdp})
@@ -306,7 +323,7 @@ export = function(LocalOptions) {
                     if(1) {
                         Object.keys(Nodes[index].Services).forEach((key) => {
                             if(!(newValue.Services[key])) {
-                                console.log("Deleting",key)
+                                // console.log("Deleting",key)
                                 delete Nodes[index].Services[key]
                                 if(Object.keys(Nodes[index].Services).length == 0) {
                                     if(Nodes[index].Type && Nodes[index].Type != "switch") Nodes[index].Type = "disconnected"
@@ -358,8 +375,8 @@ export = function(LocalOptions) {
                 }
             }
         }
-        console.log(linkd)
-        console.log(JSON.stringify(linkd))
+        //console.log(linkd)
+        //console.log(JSON.stringify(linkd))
 
         let old_cleared = null;
         while(linkd.some(k => k.ports.some(l => l.length > 1))) {
@@ -370,15 +387,15 @@ export = function(LocalOptions) {
             old_cleared = JSON.parse(JSON.stringify(cleared))
 
 
-            console.log(JSON.stringify(cleared))
-            console.log(JSON.stringify(linkd))
+            //console.log(JSON.stringify(cleared))
+            //console.log(JSON.stringify(linkd))
 
             // Continuing reduction
             for(let i in linkd) {
                 if(!(cleared.some(k => k.dataRef == linkd[i].dataRef ))) {
                     for(let p in linkd[i].ports) {
                         if(linkd[i].ports[p] != undefined && linkd[i].ports[p].length > 1) {
-                            console.log("Switch " , i , " port ", p)
+                            //console.log("Switch " , i , " port ", p)
                             let keep = null;
                             let ok = true
                             for(let j of linkd[i].ports[p]) {
@@ -421,7 +438,7 @@ export = function(LocalOptions) {
             }
         }
 
-        console.log(JSON.stringify(linkd.filter(k => k.ports.some(l => l.length == 1))))
+        //console.log(JSON.stringify(linkd.filter(k => k.ports.some(l => l.length == 1))))
     }
 
 

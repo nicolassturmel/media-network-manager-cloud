@@ -29,7 +29,7 @@ module.exports = function (cb, _mdns) {
                 arp.getMAC(k.data, function (err, mac) {
                     if (!err && mac.length > 12) {
                         var macout_1 = [];
-                        mac.split(":").forEach(function (e, i, a) { console.log(e); if (e.length < 2)
+                        mac.split(":").forEach(function (e, i, a) { if (e.length < 2)
                             macout_1[i] = "0" + e;
                         else
                             macout_1[i] = e; });
