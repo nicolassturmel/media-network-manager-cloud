@@ -10,5 +10,8 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^12.12.27"
+  },
+  "dependencies": {
+    "command-line-args": "^5.1.1"
   }
 }
