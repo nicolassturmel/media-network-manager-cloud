@@ -1,7 +1,7 @@
 "use strict";
 exports.__esModule = true;
 var dgram = require("dgram");
-var RESET_INTERVAL = 512;
+var RESET_INTERVAL = 2;
 var RTPReceiver = /** @class */ (function () {
     function RTPReceiver(maddress, port, PT) {
         var _this_1 = this;
@@ -11,6 +11,18 @@ var RTPReceiver = /** @class */ (function () {
         this.SSRC = -1;
         this.expectedPayloadType = PT;
         this.maxInterval = 0;
+        this.meanInterval = BigInt(0);
+        this.meanCount = 0;
+        this.errors = [];
+        this.errorDesc = [
+            "ok",
+            "init",
+            "bad SSRC",
+            "bad Payload Type",
+            "out of order packets",
+            "late packets",
+            'too much droped packets'
+        ];
         console.log("Listening to stream: " + maddress + ":" + port);
         this._socket = dgram.createSocket({ type: "udp4", reuseAddr: true });
         this._socket.bind(port);
@@ -29,14 +41,43 @@ var RTPReceiver = /** @class */ (function () {
                     RcvTime: t,
                     payloadType: message.readUInt8(1) & 0x7f
                 };
-                _this.newPacket(data);
+                _this.update(_this.newPacket(data));
                 //console.log("Pack : " + _this.maxInterval/1000000000) 
             });
         });
-        setInterval(function () { return console.log("Pack : " + _this.maxInterval / 1000000000); }, 20000);
     }
     RTPReceiver.prototype.reset = function () {
         this.SSRC = -1;
+    };
+    RTPReceiver.prototype.getInfos = function () {
+        var data = {
+            expectedPayloadType: this.expectedPayloadType,
+            maddress: this._maddress,
+            port: this._port,
+            maxIntervalS: this.maxInterval / 1000000000,
+            meanInterval: Number(this.meanInterval) / this.meanCount / 1000000000,
+            lastSeen: Number(this.lastRcvTime - process.hrtime.bigint()) / 1000000000,
+            errors: this.errors,
+            SSRC: this.SSRC.toString(16).padStart(8, "0"),
+            now: Date.now()
+        };
+        this.meanInterval = BigInt(0);
+        this.maxInterval *= 0.9;
+        this.meanCount = 0;
+        return data;
+    };
+    RTPReceiver.prototype.update = function (num) {
+        if (num == 1) {
+        }
+        else if (num > 1) {
+            if (!this.errors[num]) {
+                this.errors[num] = {
+                    last: Date.now(),
+                    info: this.errorDesc[num]
+                };
+            }
+            this.errors[num].last = Date.now();
+        }
     };
     /*
     * Data is
@@ -58,11 +99,11 @@ var RTPReceiver = /** @class */ (function () {
         }
         else {
             if (this.SSRC != data.SSRC) {
-                console.log("Seen wrong SSRC");
+                //console.log("Seen wrong SSRC")
                 return 2;
             }
             if (this.expectedPayloadType != data.payloadType) {
-                console.log("Wrong payload type " + data.payloadType + " should be " + this.expectedPayloadType);
+                //console.log("Wrong payload type " + data.payloadType + " should be " +  this.expectedPayloadType)
                 return 3;
             }
             var nextSeq = (this.lastSeenSeq + 1) % 65536;
@@ -72,6 +113,8 @@ var RTPReceiver = /** @class */ (function () {
                 this.lastRcvTime = data.RcvTime;
                 if (interval > this.maxInterval)
                     this.maxInterval = Number(interval);
+                this.meanInterval += BigInt(interval);
+                this.meanCount++;
                 this.lastSeenTS = data.TS;
                 this.lastSeenSeq = nextSeq;
                 return 0;
@@ -80,7 +123,7 @@ var RTPReceiver = /** @class */ (function () {
                 if (data.Seqnum - nextSeq > RESET_INTERVAL) {
                     console.log("Too many dropped packets, reseting");
                     this.reset();
-                    return this.newPacket(data);
+                    return 6 * this.newPacket(data);
                 }
                 console.log("Out of order packet");
                 this.lastRcvTime = data.RcvTime;

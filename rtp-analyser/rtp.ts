@@ -1,5 +1,5 @@
 import dgram = require ("dgram");
-var RESET_INTERVAL = 512
+var RESET_INTERVAL = 2
 
 export class RTPReceiver {
     _socket : any
@@ -11,6 +11,10 @@ export class RTPReceiver {
     lastSeenTS: number
     lastRcvTime: bigint
     maxInterval: number
+    errors: any[]
+    errorDesc: string[]
+    meanInterval: bigint
+    meanCount: number
 
     constructor(maddress,port,PT) {
         let _this = this
@@ -19,6 +23,19 @@ export class RTPReceiver {
         this.SSRC = -1
         this.expectedPayloadType = PT
         this.maxInterval = 0
+        this.meanInterval = BigInt(0)
+        this.meanCount = 0
+        this.errors = []
+        this.errorDesc = [
+            "ok",
+            "init",
+            "bad SSRC",
+            "bad Payload Type",
+            "out of order packets",
+            "late packets",
+            'too much droped packets'
+        ]
+
         console.log("Listening to stream: " + maddress + ":" + port)
         this._socket = dgram.createSocket({ type: "udp4", reuseAddr: true });
 
@@ -41,17 +58,46 @@ export class RTPReceiver {
                     RcvTime:t,
                     payloadType: message.readUInt8(1) & 0x7f
                 }   
-                _this.newPacket(data)
+                _this.update(_this.newPacket(data))
                 //console.log("Pack : " + _this.maxInterval/1000000000) 
             });
         })
 
-        setInterval(() => console.log("Pack : " + _this.maxInterval/1000000000), 20000 )
-
     }
 
     reset() {
-        this.SSRC = -1
+        this.SSRC = -1 
+    }
+
+    getInfos() {
+        let data = {
+            expectedPayloadType: this.expectedPayloadType,
+            maddress: this._maddress,
+            port: this._port,
+            maxIntervalS: this.maxInterval/1000000000,
+            meanInterval:Number(this.meanInterval)/this.meanCount/1000000000,
+            lastSeen: Number(this.lastRcvTime-process.hrtime.bigint())/1000000000,
+            errors: this.errors,
+            SSRC: this.SSRC.toString(16).padStart(8,"0"),
+            now:Date.now()
+        }
+        this.meanInterval = BigInt(0)
+        this.maxInterval *= 0.9
+        this.meanCount = 0
+        return data
+    }
+    update(num) {
+        if(num == 1) {
+        }
+        else if(num > 1) {
+            if(!this.errors[num]) {
+                this.errors[num] = {
+                    last: Date.now(),
+                    info: this.errorDesc[num]
+                }
+            }
+            this.errors[num].last = Date.now()
+        }
     }
 
     
@@ -75,11 +121,11 @@ export class RTPReceiver {
         }
         else {
             if(this.SSRC != data.SSRC) {
-                console.log("Seen wrong SSRC")
+                //console.log("Seen wrong SSRC")
                 return 2
             }
             if(this.expectedPayloadType != data.payloadType) {
-                console.log("Wrong payload type " + data.payloadType + " should be " +  this.expectedPayloadType)
+                //console.log("Wrong payload type " + data.payloadType + " should be " +  this.expectedPayloadType)
                 return 3
             }
             let nextSeq = (this.lastSeenSeq + 1) % 65536
@@ -88,6 +134,8 @@ export class RTPReceiver {
                 let interval = data.RcvTime - this.lastRcvTime
                 this.lastRcvTime = data.RcvTime
                 if(interval > this.maxInterval) this.maxInterval = Number(interval)
+                this.meanInterval += BigInt(interval)
+                this.meanCount++
                 this.lastSeenTS = data.TS
                 this.lastSeenSeq = nextSeq
                 return 0
@@ -96,7 +144,7 @@ export class RTPReceiver {
                 if(data.Seqnum - nextSeq > RESET_INTERVAL) {
                     console.log("Too many dropped packets, reseting")
                     this.reset()
-                    return this.newPacket(data)
+                    return 6 * this.newPacket(data)
                 }
                 console.log("Out of order packet")
                 this.lastRcvTime = data.RcvTime
