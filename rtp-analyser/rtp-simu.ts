@@ -73,9 +73,9 @@ export class RTPReceiver {
                 my_this.update(my_this.newPacket(data))
 
                 if(((parseInt('0000000011000000', 2) & data.Seqnum) ^ parseInt('0000000000000000', 2)))
-                    this._sender1.send(message, 0, message.length, 5004, '239.67.67.1');
+                    my_this._sender1.send(message, 0, message.length, 5004, '239.67.67.1');
                 if(((parseInt('0000000011000000', 2) & data.Seqnum) ^ parseInt('0000000011000000', 2)))
-                    this._sender2.send(message, 0, message.length, 5004, '239.67.67.2');
+                    my_this._sender2.send(message, 0, message.length, 5004, '239.67.67.2');
                 //console.log("Pack : " + _this.maxInterval/1000000000) 
             });
         })
