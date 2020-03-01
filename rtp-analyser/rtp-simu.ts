@@ -28,6 +28,7 @@ export class RTPReceiver {
         this.maxInterval = 0
         this.meanInterval = BigInt(0)
         this.meanCount = 0
+        this.lastRcvTime = BigInt(0)
         this.errors = []
         this.errorDesc = [
             "ok",
@@ -40,26 +41,22 @@ export class RTPReceiver {
         ]
 
         console.log("Listening to stream: " + maddress + ":" + port)
+
+        this._sender1 = dgram.createSocket({ type: "udp4", reuseAddr: true }); 
+        this._sender1.bind();
+
+        this._sender2 = dgram.createSocket({ type: "udp4", reuseAddr: true }); 
+        this._sender2.bind();
+
         this._socket = dgram.createSocket({ type: "udp4", reuseAddr: true });
         this._socket.bind(port);
-
-
-        this._sender1 = dgram.createSocket("udp4"); 
-        this._sender1.bind();
-        this._sender1.setBroadcast(true)
-        this._sender1.setMulticastTTL(128);
-        this._sender1.addMembership('239.67.67.1'); 
-
-        this._sender2 = dgram.createSocket("udp4"); 
-        this._sender2.bind();
-        this._sender2.setBroadcast(true)
-        this._sender2.setMulticastTTL(128);
-        this._sender2.addMembership('239.67.67.2'); 
 
         
         console.log("Sock is listening")
         this._socket.on("listening",() => {
             this._socket.addMembership(maddress);
+            this._sender1.addMembership('239.67.67.1'); 
+            this._sender2.addMembership('239.67.67.2'); 
             const address = this._socket.address();
             console.log("Sock is listening : " + JSON.stringify(address))
     
