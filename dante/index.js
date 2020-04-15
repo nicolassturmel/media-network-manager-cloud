@@ -108,12 +108,7 @@ const parsePacketSendingStreams = (msg,p,streams) => {
 }
 
 
-module.exports = (dstIp,localMac) => {
+module.exports = (mac,dstIp) => {
     danteIntroduction(mac,"192.168.1.149")
     return danteAskStreamers("192.168.1.149")
-}
-// Testing
-
-var mac=[0x6c, 0x40, 0x08, 0xaa, 0xb5, 0x04]
-danteIntroduction(mac,"192.168.1.149")
-danteAskStreamers("192.168.1.149").then((streams) => console.log("Ok",streams), 200)
+    }
