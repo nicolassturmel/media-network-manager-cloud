@@ -1,4 +1,5 @@
 const udp = require('dgram')
+const os = require('os');
 
 const danteAskStreamers = (dstIp) => {
     return new Promise((resolve,reject) => {
@@ -108,7 +109,25 @@ const parsePacketSendingStreams = (msg,p,streams) => {
 }
 
 
-module.exports = (mac,dstIp) => {
+module.exports = (dstIp) => {
+    let interfaces = os.networkInterfaces()
+    let len = 0
+    let mac = [0, 0, 0, 0, 0, 0]
+    Object.keys(interfaces).forEach(k => {
+        if(!interfaces[k]) return
+        let IP4 = interfaces[k].filter(l => l.family == "IPv4")
+        for(i of IP4) {
+            let dd = i.address
+            let s = 0
+            while(s < dd.length && s < dstIp.length && dd[0,s] == dstIp[0,s]) {
+                if(s > len) {
+                    len = s
+                    mac = i.mac
+                }
+                s++
+            }
+        }
+    })
     danteIntroduction(mac,"192.168.1.149")
     return danteAskStreamers("192.168.1.149")
-    }
+}
