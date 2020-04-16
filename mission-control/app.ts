@@ -12,6 +12,7 @@ var exp = require('express')
 var fs = require('fs');
 var path = require('path')
 var _ = require('lodash');
+const dante = require('../dante/index.js') 
 const sdpgetter = require("../rtsp-sdp-query")
 const { spawn } = require('child_process');
 
@@ -317,11 +318,25 @@ export = function(LocalOptions) {
                 if(!Nodes[index].Services) Nodes[index].Services = {} 
                 if(true) {
                     Object.keys(newValue.Services).forEach((key) => {
-                        if(!(Nodes[index].Services[key]) || !(Nodes[index].Services[key].SDP || _.isEqual(Nodes[index].Services[key],newValue.Services[key]))) {
-                            //console.log("Creating",key)
+                        if(!(Nodes[index].Services[key]) 
+                        || !(Nodes[index].Services[key].SDP 
+                        || _.isEqual(Nodes[index].Services[key],newValue.Services[key]))) 
+                        {
                             Nodes[index].Services[key] = newValue.Services[key]
                             if(key.includes("_rtsp._tcp")) {
                                 sdpgetter("rtsp://" + newValue.IP + ":" + newValue.Services[key].port + "/by-name/" +  encodeURIComponent(key.split("._")[0]),(sdp) => {  if(Nodes[index].Services[key]) Nodes[index].Services[key].SDP = sdp})
+                            }
+                            if(key.includes('_netaudio-a')) {
+                                Nodes[index].Services[key].Streams = []
+                                let poll = () => {
+                                    if(Nodes[index] && Nodes[index].Services[key] && Nodes[index].Services[key].Streams) {
+                                        dante(newValue.IP).then( k => {  Nodes[index].Services[key].Streams = k; })
+                                        setTimeout(() => {
+                                            poll()
+                                        }, 15000);
+                                    }
+                                }
+                                poll()
                             }
                         }
                     })

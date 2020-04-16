@@ -588,6 +588,23 @@ var makeDeviceInfo = (elem) => {
                     checkElem(SDPinfo,"","div","","SDP not available")
                 }
             }
+            else if(key.includes("netaudio-a")) {
+                let contain = checkElem(streams,"","div","","")
+                if(node.Services[key].Streams) for(let str of node.Services[key].Streams) {
+                    if(str) {
+                        let X = checkElem(contain,str.Id,"div","dante_streams"
+                        ,str.Id  +": " + str.Type+" - "+str.numChan+"ch <br>=> "+str.Address+"<br>"+(()=>{let zz="" ;str.Channels.forEach(ch => zz += " " + ch); return zz})())
+                        X.onclick = () => {
+                            mselection.nodeIP = elem._data.node.IP
+                            mselection.Type = "stream"
+                            mselection.Name = str.Type + " " + str.Address   
+                            selectNew("node-unit-" + node.Name,elem._data.node) 
+                            maddress = [ str.Address ]   
+                            buildGraph(_nodes)               
+                        }
+                    }
+                }
+            }
         })
     }
     if(node.Multicast) {

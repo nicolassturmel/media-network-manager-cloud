@@ -8,6 +8,7 @@ var exp = require('express');
 var fs = require('fs');
 var path = require('path');
 var _ = require('lodash');
+var dante = require('../dante/index.js');
 var sdpgetter = require("../rtsp-sdp-query");
 var spawn = require('child_process').spawn;
 // Utils
@@ -292,12 +293,25 @@ module.exports = function (LocalOptions) {
                     Nodes[index].Services = {};
                 if (true) {
                     Object.keys(newValue.Services).forEach(function (key) {
-                        if (!(Nodes[index].Services[key]) || !(Nodes[index].Services[key].SDP || _.isEqual(Nodes[index].Services[key], newValue.Services[key]))) {
-                            //console.log("Creating",key)
+                        if (!(Nodes[index].Services[key])
+                            || !(Nodes[index].Services[key].SDP
+                                || _.isEqual(Nodes[index].Services[key], newValue.Services[key]))) {
                             Nodes[index].Services[key] = newValue.Services[key];
                             if (key.includes("_rtsp._tcp")) {
                                 sdpgetter("rtsp://" + newValue.IP + ":" + newValue.Services[key].port + "/by-name/" + encodeURIComponent(key.split("._")[0]), function (sdp) { if (Nodes[index].Services[key])
                                     Nodes[index].Services[key].SDP = sdp; });
+                            }
+                            if (key.includes('_netaudio-a')) {
+                                Nodes[index].Services[key].Streams = [];
+                                var poll_1 = function () {
+                                    if (Nodes[index] && Nodes[index].Services[key] && Nodes[index].Services[key].Streams) {
+                                        dante(newValue.IP).then(function (k) { Nodes[index].Services[key].Streams = k; });
+                                        setTimeout(function () {
+                                            poll_1();
+                                        }, 10000);
+                                    }
+                                };
+                                poll_1();
                             }
                         }
                     });
