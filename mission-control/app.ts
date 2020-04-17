@@ -330,10 +330,12 @@ export = function(LocalOptions) {
                                 Nodes[index].Services[key].Streams = []
                                 let poll = () => {
                                     if(Nodes[index] && Nodes[index].Services[key] && Nodes[index].Services[key].Streams) {
-                                        dante(newValue.IP).then( k => {  Nodes[index].Services[key].Streams = k; })
-                                        setTimeout(() => {
-                                            poll()
-                                        }, 15000);
+                                        dante(newValue.IP).then( k => {  
+                                            Nodes[index].Services[key].Streams = k; 
+                                            setTimeout(() => {
+                                                poll()
+                                             }, 15000);
+                                        })
                                     }
                                 }
                                 poll()

@@ -56,7 +56,7 @@ const danteIntroduction = (localMac,dstIp) => {
           }else{
             //console.log('Init sent !!!');
           }
-        server.close()
+        setTimeout(() => server.close(), 100)
         })
 }
 
@@ -110,6 +110,7 @@ const parsePacketSendingStreams = (msg,p,streams) => {
 
 
 module.exports = (dstIp) => {
+    console.log("Looking or net")
     let interfaces = os.networkInterfaces()
     let len = 0
     let mac = [0, 0, 0, 0, 0, 0]
@@ -128,6 +129,8 @@ module.exports = (dstIp) => {
             }
         }
     })
+    console.log("Handshake")
     danteIntroduction(mac,"192.168.1.149")
+    console.log("Parsing Streams")
     return danteAskStreamers("192.168.1.149")
 }

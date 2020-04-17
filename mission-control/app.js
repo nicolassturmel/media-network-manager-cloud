@@ -305,10 +305,12 @@ module.exports = function (LocalOptions) {
                                 Nodes[index].Services[key].Streams = [];
                                 var poll_1 = function () {
                                     if (Nodes[index] && Nodes[index].Services[key] && Nodes[index].Services[key].Streams) {
-                                        dante(newValue.IP).then(function (k) { Nodes[index].Services[key].Streams = k; });
-                                        setTimeout(function () {
-                                            poll_1();
-                                        }, 10000);
+                                        dante(newValue.IP).then(function (k) {
+                                            Nodes[index].Services[key].Streams = k;
+                                            setTimeout(function () {
+                                                poll_1();
+                                            }, 15000);
+                                        });
                                     }
                                 };
                                 poll_1();
