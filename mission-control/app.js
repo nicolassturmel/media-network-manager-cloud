@@ -301,7 +301,8 @@ module.exports = function (LocalOptions) {
                                 sdpgetter("rtsp://" + newValue.IP + ":" + newValue.Services[key].port + "/by-name/" + encodeURIComponent(key.split("._")[0]), function (sdp) { if (Nodes[index].Services[key])
                                     Nodes[index].Services[key].SDP = sdp; });
                             }
-                            if (key.includes('_netaudio-a')) {
+                            if (key.includes('_netaudio-a') && Nodes[index].Services[key] && Nodes[index].Services[key].Polling != true) {
+                                Nodes[index].Services[key].Polling = true;
                                 Nodes[index].Services[key].Streams = [];
                                 var poll_1 = function () {
                                     if (Nodes[index] && Nodes[index].Services[key] && Nodes[index].Services[key].Streams) {

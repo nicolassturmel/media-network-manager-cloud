@@ -326,7 +326,8 @@ export = function(LocalOptions) {
                             if(key.includes("_rtsp._tcp")) {
                                 sdpgetter("rtsp://" + newValue.IP + ":" + newValue.Services[key].port + "/by-name/" +  encodeURIComponent(key.split("._")[0]),(sdp) => {  if(Nodes[index].Services[key]) Nodes[index].Services[key].SDP = sdp})
                             }
-                            if(key.includes('_netaudio-a')) {
+                            if(key.includes('_netaudio-a') && Nodes[index].Services[key] && Nodes[index].Services[key].Polling != true) {
+                                Nodes[index].Services[key].Polling = true
                                 Nodes[index].Services[key].Streams = []
                                 let poll = () => {
                                     if(Nodes[index] && Nodes[index].Services[key] && Nodes[index].Services[key].Streams) {

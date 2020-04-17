@@ -129,8 +129,8 @@ module.exports = (dstIp) => {
             }
         }
     })
-    console.log("Handshake")
-    danteIntroduction(mac,"192.168.1.149")
+    console.log("Handshake " + dstIp)
+    danteIntroduction(mac,dstIp)
     console.log("Parsing Streams")
-    return danteAskStreamers("192.168.1.149")
+    return danteAskStreamers(dstIp)
 }
