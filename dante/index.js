@@ -47,11 +47,11 @@ server.on('close',function(){
 
 });
 
-console.log("Bind 8800")
-server.bind({
-    port: 8800,
-    exclusive: false
-});
+// console.log("Bind 8800")
+// server.bind({
+//     port: 8800,
+//     exclusive: false
+// });
 
 const danteIntroduction = (localMac,dstIp) => {
     return new Promise((resolve,reject) => {
