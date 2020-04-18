@@ -9,7 +9,7 @@ const danteAskStreamers = (dstIp) => {
         client.on('message',function(msg,info){
             //console.log('Data received from server : ' , msg);
             //console.log('Received %d bytes from %s:%d\n',msg.length, info.address, info.port);
-            let p = 44
+            let p = 0
             do {
                 p = parsePacketSendingStreams(msg,p,streams)
             } while(p > 0);
@@ -73,6 +73,7 @@ const danteIntroduction = (localMac,dstIp) => {
 
 const parsePacketSendingStreams = (msg,p,streams) => {
     let ret = -1;
+    if(p == 0)  p = msg.readUInt16BE(12)
     if(p + 55 > msg.length) {
         //console.log(p,msg.length)
         return ret
@@ -84,7 +85,7 @@ const parsePacketSendingStreams = (msg,p,streams) => {
     let numChan = msg.readUInt16BE(i)
     let Chans = []
     i+=4
-    for(let c = 0; c < numChan; c++) {
+    for(let c = 0; c < Math.min(numChan,8) ; c++) {
         Chans[c] = msg.readUInt16BE(i)
         i+=2
     }
@@ -103,10 +104,18 @@ const parsePacketSendingStreams = (msg,p,streams) => {
         strType = "AES67"
         ret = i + 2 + 42
     }
-    else
+    else if(Type == 0x10)
     {
         //console.log("Dante stream " + numChan + " channels to " + dstIp + ":" + dstPort)
         ret = i + 2 + 14
+    }
+    else if(Type == 0x3c)
+    {
+        ret = i + 2 + 38
+        strType = "DanteUni"
+    }
+    else {
+
     }
     streams[sndId] = {
         "Id": sndId,
