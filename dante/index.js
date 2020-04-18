@@ -38,26 +38,37 @@ const danteAskStreamers = (dstIp) => {
     })
 }
 
+// creating a udp server
+let server = udp.createSocket('udp4');
+
+//emits after the socket is closed using socket.close();
+server.on('close',function(){
+    console.log('CMC Socket is closed !');
+
+});
+
+console.log("Bind 8800")
+server.bind({
+    port: 8800,
+    exclusive: false
+});
 
 const danteIntroduction = (localMac,dstIp) => {
-    // creating a udp server
-    let server = udp.createSocket('udp4');
+    return new Promise((resolve,reject) => {
+ 
 
-    //emits after the socket is closed using socket.close();
-    server.on('close',function(){
-        //console.log('Socket is closed !');
-    });
-
-    server.bind(8800);
-    let init2 = new Uint8Array([0x12, 0x00, 0x00, 0x14, 0x64, 0xb3, 0x10, 0x01, 0x00, 0x00, 0x00, 0x00, localMac[0], localMac[1], localMac[2], localMac[3], localMac[4], localMac[5], 00,00])
-
-    server.send(init2,8800,dstIp,(error) => { 
-        if(error){
-          }else{
-            //console.log('Init sent !!!');
-          }
-        setTimeout(() => server.close(), 100)
-        })
+        let init2 = new Uint8Array([0x12, 0x00, 0x00, 0x14, 0x64, 0xb3, 0x10, 0x01, 0x00, 0x00, 0x00, 0x00, localMac[0], localMac[1], localMac[2], localMac[3], localMac[4], localMac[5], 00,00])
+        console.log("Ready 8800")
+            server.send(init2,8800,dstIp,(error) => { 
+                if(error){
+                }else{
+                    console.log('Init sent !!!');
+                }
+                setTimeout(() => {
+                    resolve()
+                }, 100)
+            })
+    })
 }
 
 const parsePacketSendingStreams = (msg,p,streams) => {
@@ -130,7 +141,5 @@ module.exports = (dstIp) => {
         }
     })
     console.log("Handshake " + dstIp)
-    danteIntroduction(mac,dstIp)
-    console.log("Parsing Streams")
-    return danteAskStreamers(dstIp)
+    return danteIntroduction(mac,dstIp).then(() => danteAskStreamers(dstIp))
 }

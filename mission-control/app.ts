@@ -326,17 +326,22 @@ export = function(LocalOptions) {
                             if(key.includes("_rtsp._tcp")) {
                                 sdpgetter("rtsp://" + newValue.IP + ":" + newValue.Services[key].port + "/by-name/" +  encodeURIComponent(key.split("._")[0]),(sdp) => {  if(Nodes[index].Services[key]) Nodes[index].Services[key].SDP = sdp})
                             }
-                            if(key.includes('_netaudio-a') && Nodes[index].Services[key] && Nodes[index].Services[key].Polling != true) {
-                                Nodes[index].Services[key].Polling = true
-                                Nodes[index].Services[key].Streams = []
+                            if(key.includes('_netaudio-arc') && Nodes[index].Services[key] && Nodes[index].Services[key].Polling != true) {
+                                if(!Nodes[index].Services[key].lastPoll) Nodes[index].Services[key].lastPoll = 0
+                                if(!Nodes[index].Services[key].Polling) Nodes[index].Services[key].Polling = true
+                                if(!Nodes[index].Services[key].Streams) Nodes[index].Services[key].Streams = []
                                 let poll = () => {
-                                    if(Nodes[index] && Nodes[index].Services[key] && Nodes[index].Services[key].Streams) {
-                                        dante(newValue.IP).then( k => {  
-                                            Nodes[index].Services[key].Streams = k; 
-                                            setTimeout(() => {
-                                                poll()
-                                             }, 15000);
-                                        })
+                                    console.log("Polling for " + Nodes[index].Name)
+                                    if(Nodes[index] && Nodes[index].Services[key] 
+                                        && Nodes[index].Services[key].Streams
+                                        && Date.now() - Nodes[index].Services[key].lastPoll > 10000) {
+                                            Nodes[index].Services[key].lastPoll = Date.now()
+                                            dante(newValue.IP).then( k => {  
+                                                Nodes[index].Services[key].Streams = k; 
+                                                setTimeout(() => {
+                                                    poll()
+                                                }, 15000);
+                                            })
                                     }
                                 }
                                 poll()
