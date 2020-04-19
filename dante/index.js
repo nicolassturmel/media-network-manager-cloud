@@ -81,21 +81,38 @@ const parsePacketSendingStreams = (msg,p,streams) => {
     let sndId = msg.readUInt16BE(p)
     let i = p+2
     if(sndId < 0 || sndId > 128) return ret;
-    i+=12
+    i+=10
+    let numStreams = msg.readUInt16BE(i)
+    i+=2
     let numChan = msg.readUInt16BE(i)
     let Chans = []
-    i+=4
+    i+=(2+2*numStreams)
     for(let c = 0; c < Math.min(numChan,8) ; c++) {
         Chans[c] = msg.readUInt16BE(i)
         i+=2
     }
-    i+=2
-    let format = msg.readUInt16BE(i)
-    i+=2
-    let dstPort = msg.readUInt16BE(i)
-    i+=2
-    let dstIp = msg[i] + "." + msg[i+1] + "." + msg[i+2] + "." + msg[i+3]
-    i+=12
+    i+=(2*numStreams)
+    let streamsAddr = {}
+    for(let s = 0; s < numStreams; s++) {
+        if(s == 0) {
+            streamsAddr.format = msg.readUInt16BE(i)
+            i+=2
+            streamsAddr.dstPort = msg.readUInt16BE(i)
+            i+=2
+            streamsAddr.dstIp = msg[i] + "." + msg[i+1] + "." + msg[i+2] + "." + msg[i+3]
+            i+=4
+        }
+        else if(s == 1) {
+            i+=4
+            streamsAddr.dstIp2 = msg[i] + "." + msg[i+1] + "." + msg[i+2] + "." + msg[i+3]
+            i+=4
+        }
+        else {
+            i+=8
+        }
+    }
+
+    i+=8
     let Type = msg.readUInt16BE(i)
     let strType = "Dante"
     if(Type == 0x30)
@@ -115,16 +132,20 @@ const parsePacketSendingStreams = (msg,p,streams) => {
         strType = "DanteUni"
     }
     else {
-
+        console.log(p,sndId)
+        throw "Dante unknown stream type: " + Type 
     }
     streams[sndId] = {
         "Id": sndId,
-        "Address": dstIp,
-        "Port": dstPort,
+        "Address": streamsAddr.dstIp,
+        "Port": streamsAddr.dstPort,
         "Type": strType,
         "numChan": numChan,
-        "Channels": Chans
+        "Channels": Chans,
+        "numStreams": numStreams
     }
+    if(numStreams > 1)
+        streama[sndId].Address2 = streamsAddr.dstIp2
     return ret
 }
 
