@@ -145,7 +145,7 @@ const parsePacketSendingStreams = (msg,p,streams) => {
         "numStreams": numStreams
     }
     if(numStreams > 1)
-        streama[sndId].Address2 = streamsAddr.dstIp2
+        streams[sndId].Address2 = streamsAddr.dstIp2
     return ret
 }
 
