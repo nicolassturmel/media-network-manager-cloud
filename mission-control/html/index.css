@@ -254,6 +254,7 @@ nav {
 
 #mynetwork {
     grid-area: net;
+    height: 100%;
     border-top: 1px solid var(--main-color-light);
     border-left: 1px solid var(--main-color-light);
 }
