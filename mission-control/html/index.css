@@ -38,7 +38,7 @@ body {
     margin: auto;
     display: grid;
     grid-template-columns: 200px 1fr ;
-    grid-template-rows: 20px 250px 20px 1fr 20px;
+    grid-template-rows: 20px 250px 20px calc(100% - 310px) 20px;
     grid-template-areas: 
       "top top"
       "header header  "
@@ -53,7 +53,7 @@ body {
 
 #port.menu-expanded {
     grid-template-columns: auto 200px 1fr ;
-    grid-template-rows: 20px 250px 20px 1fr 20px;
+    grid-template-rows: 20px 250px 20px calc(100% - 310px) 20px;
     grid-template-areas: 
       "leftmenu top top"
       "leftmenu header header  "
