@@ -593,13 +593,15 @@ var makeDeviceInfo = (elem) => {
                 if(node.Services[key].Streams) for(let str of node.Services[key].Streams) {
                     if(str) {
                         let X = checkElem(contain,str.Id,"div","dante_streams"
-                        ,str.Id  +": " + str.Type+" - "+str.numChan+"ch <br>=> "+str.Address+"<br>"+(()=>{let zz="" ;str.Channels.forEach(ch => zz += " " + ch); return zz})())
+                        ,str.Id  +": " + str.Type+" - "+str.numChan+"ch <br>=> "+str.Address+"<br>"+((str.Address2)? "<br>=> "+str.Address2: "") +(()=>{let zz="" ;str.Channels.forEach(ch => zz += " " + ch); return zz})())
                         X.onclick = () => {
                             mselection.nodeIP = elem._data.node.IP
                             mselection.Type = "stream"
                             mselection.Name = str.Type + " " + str.Address   
                             selectNew("node-unit-" + node.Name,elem._data.node) 
                             maddress = [ str.Address ]   
+                            if(str.Address2)
+                                maddress.push(str.Address2)
                             buildGraph(_nodes)               
                         }
                     }
