@@ -9,7 +9,7 @@
   "author": "Nicolas Sturmel",
   "license": "MIT",
   "dependencies": {
-    "sdp-transform": "^2.12.0",
+    "sdp-transform": "^2.14.0",
     "util": "^0.12.1"
   },
   "devDependencies": {

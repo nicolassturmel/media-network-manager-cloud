@@ -469,7 +469,23 @@ var getSDPdata = (SDP) => {
                 let frcount = M.invalid.filter(k => k.value.startsWith("framecount"))
                 if(frcount.length > 0) Out.packetTime = (frcount[0].value.split(":")[1]*1000/Out.sr + "").substr(0,4)
             } 
+            if(M.tsRefClocks) {
+                for(let clk of M.tsRefClocks) {
+                    if(clk.clksrc == "ptp" && clk.clksrcExt) {
+                        Out.PTPid = clk.clksrcExt.split(":")[1]
+                        Out.PTPdom = clk.clksrcExt.split(":")[2]
+                    }
+                }
+            }
             m_index++   
+        }
+    }
+    if(SDP.tsRefClocks) {
+        for(let clk of SDP.tsRefClocks) {
+            if(clk.clksrc == "ptp" && clk.clksrcExt) {
+                Out.PTPid = clk.clksrcExt.split(":")[1]
+                Out.PTPdom = clk.clksrcExt.split(":")[2]
+            }
         }
     }
     if(SDP.invalid) {
