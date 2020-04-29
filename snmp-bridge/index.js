@@ -1,0 +1,63 @@
+"use strict";
+exports.__esModule = true;
+var commandLineArgs = require('command-line-args');
+// Command line arguments
+var optionDefinitions = [
+    { name: 'ip', alias: 'i', type: String, defaultValue: '192.168.1.201' },
+    { name: 'community', alias: 'c', type: String, defaultValue: 'public' },
+    { name: 'key', alias: 'k', type: String, defaultValue: 'nokey' },
+    { name: 'id', alias: 'y', type: String, defaultValue: undefined },
+    { name: "missioncontrol", alias: "m", type: String }
+];
+var options = commandLineArgs(optionDefinitions);
+console.log(options);
+var client = require('../mnms-client-ws-interface');
+client.challenge(options.key);
+client.setCallback(function (data) { console.log(data); });
+client.run(options.missioncontrol);
+client.info({
+    Info: "SNMP switch client",
+    ServiceClass: "Switches",
+    id: options.id
+});
+// Connecting to switch
+var SwitchData = {
+    oldT: 0
+};
+var Switch = {
+    Name: "SNMP",
+    Type: "switch",
+    IP: options.ip,
+    Schema: 1,
+    Ports: [],
+    Multicast: "off",
+    Neighbour: "",
+    Mac: "",
+    id: options.id
+};
+
+var snmp = require ("net-snmp");
+
+var session = snmp.createSession (options.ip, options.community);
+
+var oids = ["1.3.6.1.2.1.1", "1.3.6.1.2.1.1.3.0"];
+
+var maxRepetitions = 5;
+
+function doneCb (error) {
+	if (error) {
+		console.error (error.toString ());
+	}
+}
+
+function feedCb (varbinds) {
+	for (var i = 0; i < varbinds.length; i++) {
+		if (snmp.isVarbindError (varbinds[i])) {
+			console.error (snmp.varbindError (varbinds[i]));
+		} else {
+			console.log (varbinds[i].oid + "|" + varbinds[i].value);
+		}
+	}
+}
+
+session.walk (oids[0], maxRepetitions, feedCb, doneCb);
