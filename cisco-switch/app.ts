@@ -438,6 +438,23 @@ function getLLDP() {
     })
 }
 
+function systemInfo() {
+    switchTelnet.exec("show system", function (err, response) {
+        let array 
+        try {
+            array = response.split("\n")
+        } catch (error) {
+            console.log("Response error : can not split in array")
+            console.log(response)
+            setTimeout(function() {getPortConfig()}, SwitchPollTime*1000);
+            return
+        }
+        Switch.Name = array[3].split(/\s+/)[2]
+
+        setTimeout(getNextFct("getLLDP"), SwitchPollTime*1000);
+    })
+}
+
 function getNextFct(current)
 {
     switch(current) {
@@ -446,6 +463,8 @@ function getNextFct(current)
         case "get_count" :
             return getPortStatus
         case "getPortStatus" :
+            return systemInfo
+        case "systemInfo":
             return getPortConfig
         case "getPortConfig" :
             return getBridgeIgmpStatus
