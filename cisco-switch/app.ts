@@ -451,7 +451,7 @@ function systemInfo() {
         }
         Switch.Name = array[3].split(/\s+/)[2]
 
-        setTimeout(getNextFct("getLLDP"), SwitchPollTime*1000);
+        setTimeout(getNextFct("systemInfo"), SwitchPollTime*1000);
     })
 }
 
