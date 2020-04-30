@@ -40,24 +40,43 @@ var snmp = require ("net-snmp");
 
 var session = snmp.createSession (options.ip, options.community);
 
-var oids = ["1.3.6.1.2.1.1", "1.3.6.1.2.1.1.3.0"];
-
-var maxRepetitions = 5;
-
-function doneCb (error) {
-	if (error) {
-		console.error (error.toString ());
-	}
+var getNext = (oid) => {
+    return new Promise((resolve, reject) => {
+        session.getNext ([oid], function (error, varbinds) {
+            if (error) {
+                console.error (error.toString ());
+            } else {
+                for (var i = 0; i < varbinds.length; i++) {
+                    if (snmp.isVarbindError (varbinds[i]))
+                        console.error (snmp.varbindError (varbinds[i]));
+                    else
+                    {
+                        resolve(varbinds[i]);
+                    }
+                }
+            }
+        });
+    })
+}
+var compareOIDs = (in_,new_) => {
+    if(new_.length < in_.length)
+        return false
+    if(in_ == new_.substr(0,in_.length))
+        return true;
+    //console.log(in_," ",in_.length," ",new_.substr(0,in_.length))
+    return false
 }
 
-function feedCb (varbinds) {
-	for (var i = 0; i < varbinds.length; i++) {
-		if (snmp.isVarbindError (varbinds[i])) {
-			console.error (snmp.varbindError (varbinds[i]));
-		} else {
-			console.log (varbinds[i].oid + "|" + varbinds[i].value);
-		}
-	}
+var name_oid = "1.3.6.1.2.1.1"
+
+async function run(oid) {
+    let nn = oid
+    while(compareOIDs(oid,nn)) {
+        let e = await getNext(nn)
+        console.log(e.oid + " -> " + e.value + " ")
+        nn = e.oid
+    }
+    console.log("STOP")
 }
 
-session.walk (oids[0], maxRepetitions, feedCb, doneCb);
+run(name_oid)
