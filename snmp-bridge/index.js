@@ -58,6 +58,24 @@ var getNext = (oid) => {
         });
     })
 }
+
+var justGet = (oid) => {
+    return new Promise((resolve, reject) => {
+        session.get ([oid], function (error, varbinds) {
+            if (error) {
+                console.error (error.toString ());
+            } else {
+                for (var i = 0; i < varbinds.length; i++) {
+                    if (snmp.isVarbindError (varbinds[i]))
+                        console.error (snmp.varbindError (varbinds[i]));
+                    else
+                        resolve(varbinds[i]);
+                }
+            }
+        });
+    })
+}
+
 var compareOIDs = (in_,new_) => {
     if(new_.length < in_.length)
         return false
@@ -68,6 +86,7 @@ var compareOIDs = (in_,new_) => {
 }
 
 var name_oid = "1.3.6.1.2.1.1"
+var portsName_oid = "1.3.6.1.2.1.2.2.1.2"
 
 async function run(oid) {
     let nn = oid
@@ -79,4 +98,39 @@ async function run(oid) {
     console.log("STOP")
 }
 
-run(name_oid)
+
+async function getName() {
+    Switch.Name = "SNMP " + (await justGet("1.3.6.1.2.1.1.5.0")).value.toString()
+    console.log(Switch)
+}
+
+async function getPorts() {
+    let oid = portsName_oid
+    let nn = oid
+    while(compareOIDs(oid,nn)) {
+        let e = await getNext(nn)
+        let idx = e.oid.split('.')
+        console.log(idx[idx.length-1] + " -> " + e.value + " ")
+        Switch.Ports[idx[idx.length-1]] = {
+            Name: e.value.toString().replace("Gigabit","G").replace("Ethernet","E"),
+            ConnectedMacs: [],
+            IGMP: {
+                ForwardAll: "off",
+                Groups: {}
+            },
+            AdminState: "up",
+            Speed: 1000,
+            In: 0,
+            Out: 0
+        }
+        nn = e.oid
+    }
+    Switch.Ports = Switch.Ports.filter(function (el) {
+        return el != null;
+      });
+      console.log(Switch)
+    client.send(JSON.stringify(Switch))
+}
+
+ getName()
+ getPorts()
