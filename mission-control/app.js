@@ -87,6 +87,12 @@ module.exports = function (LocalOptions) {
         };
         ws.on("close", function () {
             console.log("Connection close: ", ws._data);
+            if (!ws._data.Info) {
+                ws._data = {
+                    auth: false
+                };
+                return;
+            }
             var sw = MnmsData[ws._data.Info.ServiceClass].findIndex(function (k) { return k.UID == ws._data.UID; });
             if (sw != -1 && MnmsData[ws._data.Info.ServiceClass][sw]["delete"]) {
                 console.log("Found at " + sw + " deleting");

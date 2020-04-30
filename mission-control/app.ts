@@ -96,6 +96,12 @@ export = function(LocalOptions) {
         }
         ws.on("close", () => {
             console.log("Connection close: ",ws._data)
+            if(!ws._data.Info) {   
+                ws._data = {
+                    auth: false
+                }
+                return
+            }
             let sw = MnmsData[ws._data.Info.ServiceClass].findIndex(k => k.UID == ws._data.UID)
             if(sw != -1 && MnmsData[ws._data.Info.ServiceClass][sw].delete) {
                 console.log("Found at " + sw + " deleting")
