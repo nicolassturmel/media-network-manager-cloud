@@ -395,12 +395,15 @@ export = function(LocalOptions) {
                 conns[i] = []
                 for(let j : number =0 ; j < Nodes.length ; j++) {
                     if(Nodes[j].Type == "switch" && Nodes[j].Ports.length > 0) {
+                        //console.log("Testing ",j)
                         for(let l in Nodes[i].Ports) {
+                            //console.log("Testing ",i," port ",l)
+                            //console.log(Nodes[j].Macs,Nodes[j].Mac,Nodes[i].Ports[l].ConnectedMacs)
                             if(Nodes[j].Macs && Nodes[i].Ports[l].ConnectedMacs.some(k => Nodes[j].Macs.some(l => l === k))) {
                                 if(!linkd[i].ports[l] ) linkd[i].ports[l] = []
                                 if(!linkd[i].ports[l].some(k => k == j)) linkd[i].ports[l].push(j);
                             }
-                            if(Nodes[j].Macs && Nodes[i].Ports[l].ConnectedMacs.includes(Nodes[j].Mac)) {
+                            if(Nodes[j].Mac && Nodes[i].Ports[l].ConnectedMacs.includes(Nodes[j].Mac)) {
                                 if(!linkd[i].ports[l] ) linkd[i].ports[l] = []
                                 if(!linkd[i].ports[l].some(k => k == j)) linkd[i].ports[l].push(j);
                             }

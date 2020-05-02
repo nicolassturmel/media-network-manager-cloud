@@ -373,14 +373,17 @@ module.exports = function (LocalOptions) {
                 conns[i_3] = [];
                 var _loop_2 = function (j) {
                     if (Nodes[j].Type == "switch" && Nodes[j].Ports.length > 0) {
+                        //console.log("Testing ",j)
                         for (var l in Nodes[i_3].Ports) {
+                            //console.log("Testing ",i," port ",l)
+                            //console.log(Nodes[j].Macs,Nodes[j].Mac,Nodes[i].Ports[l].ConnectedMacs)
                             if (Nodes[j].Macs && Nodes[i_3].Ports[l].ConnectedMacs.some(function (k) { return Nodes[j].Macs.some(function (l) { return l === k; }); })) {
                                 if (!linkd[i_3].ports[l])
                                     linkd[i_3].ports[l] = [];
                                 if (!linkd[i_3].ports[l].some(function (k) { return k == j; }))
                                     linkd[i_3].ports[l].push(j);
                             }
-                            if (Nodes[j].Macs && Nodes[i_3].Ports[l].ConnectedMacs.includes(Nodes[j].Mac)) {
+                            if (Nodes[j].Mac && Nodes[i_3].Ports[l].ConnectedMacs.includes(Nodes[j].Mac)) {
                                 if (!linkd[i_3].ports[l])
                                     linkd[i_3].ports[l] = [];
                                 if (!linkd[i_3].ports[l].some(function (k) { return k == j; }))
