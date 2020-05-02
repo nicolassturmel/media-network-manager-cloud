@@ -36,6 +36,8 @@ var Switch = {
     id: options.id
 };
 
+var BW_Data = []
+
 var snmp = require ("net-snmp");
 
 var session = snmp.createSession (options.ip, options.community);
@@ -87,50 +89,205 @@ var compareOIDs = (in_,new_) => {
 
 var name_oid = "1.3.6.1.2.1.1"
 var portsName_oid = "1.3.6.1.2.1.2.2.1.2"
+var portsType_oid = "1.3.6.1.2.1.2.2.1.3"
+var portsSpeed_oid = "1.3.6.1.2.1.2.2.1.5"
+var portsAdmin_oid = "1.3.6.1.2.1.2.2.1.7"
+var portsOper_oid = "1.3.6.1.2.1.2.2.1.8"
+var portsInb_oid = "1.3.6.1.2.1.2.2.1.10"
+var portsInE_oid = "1.3.6.1.2.1.2.2.1.14"
+var portsOutb_oid = "1.3.6.1.2.1.2.2.1.16"
+var portsOutE_oid = "1.3.6.1.2.1.2.2.1.20"
+var fwdmac = "1.3.6.1.2.1.17.4.3.1.2"
+var portindex = "1.3.6.1.2.1.17.1.4.1.2"
 
 async function run(oid) {
-    let nn = oid
-    while(compareOIDs(oid,nn)) {
-        let e = await getNext(nn)
-        console.log(e.oid + " -> " + e.value + " ")
-        nn = e.oid
-    }
-    console.log("STOP")
 }
 
 
 async function getName() {
-    Switch.Name = "SNMP " + (await justGet("1.3.6.1.2.1.1.5.0")).value.toString()
+    Switch.Name = (await justGet("1.3.6.1.2.1.1.5.0")).value.toString()
     console.log(Switch)
 }
 
 async function getPorts() {
-    let oid = portsName_oid
+    let oid = portsType_oid
     let nn = oid
+    while(1) {
+        let e = await getNext(nn)
+        nn = e.oid
+        if(!compareOIDs(oid,nn)) break
+        let idx = e.oid.split('.')
+        //console.log(e.oid," ",idx[idx.length-1] + " -> " + e.value + " ")
+        if(Number(e.value) == 6)
+        {
+            if(!BW_Data[idx[idx.length-1]])
+                BW_Data[idx[idx.length-1]] = {
+                    InTime: 0,
+                    Inb: 0,
+                    OutTime: 0,
+                    Outb: 0
+                }
+            Switch.Ports[idx[idx.length-1]] = {
+                Name: "To fill",
+                ConnectedMacs: [],
+                IGMP: {
+                    ForwardAll: "off",
+                    Groups: {}
+                },
+                AdminState: "Up",
+                Speed: 0,
+                In: 0,
+                Out: 0
+            }
+        }
+
+    }
+
+    oid = portsName_oid
+    nn = oid
+    while(1) {
+        let e = await getNext(nn)
+        nn = e.oid
+        if(!compareOIDs(oid,nn)) break
+        let idx = e.oid.split('.')
+        //console.log(idx[idx.length-1] + " -> " + e.value + " ")
+        if(Switch.Ports[idx[idx.length-1]])
+            Switch.Ports[idx[idx.length-1]].Name = e.value.toString().replace("Gigabit","G").replace("Ethernet","E")
+
+    }
+    oid = portsSpeed_oid
+    nn = oid
+
+    while(1) {
+        let e = await getNext(nn)
+        nn = e.oid
+        if(!compareOIDs(oid,nn)) break
+        let idx = e.oid.split('.')
+        //console.log(idx[idx.length-1] + " -> " + e.value + " ")
+        if(Switch.Ports[idx[idx.length-1]])
+            Switch.Ports[idx[idx.length-1]].Speed = Number(e.value)
+
+    }
+    oid = portsOper_oid
+    nn = oid
+
+    while(1) {
+        let e = await getNext(nn)
+        nn = e.oid
+        if(!compareOIDs(oid,nn)) break
+        let idx = e.oid.split('.')
+        //console.log(idx[idx.length-1] + " -> " + e.value + " ")
+        if(Number(e.value) != 1 && Switch.Ports[idx[idx.length-1]])
+            Switch.Ports[idx[idx.length-1]].Speed = 0
+
+    }
+    oid = portsAdmin_oid
+    nn = oid
+
+    while(1) {
+        let e = await getNext(nn)
+        nn = e.oid
+        if(!compareOIDs(oid,nn)) break
+        let idx = e.oid.split('.')
+        //console.log(idx[idx.length-1] + " -> " + e.value + " ")
+        if(Switch.Ports[idx[idx.length-1]])
+            Switch.Ports[idx[idx.length-1]].AdminState = Number(e.value) != 1 ? "down" : "Up"
+
+    }
+
+    oid = portsInb_oid
+    nn = oid
+
+    while(1) {
+        let e = await getNext(nn)
+        nn = e.oid
+        if(!compareOIDs(oid,nn)) break
+        let idx = e.oid.split('.')
+        //console.log(idx[idx.length-1] + " -> " + e.value + " ")
+        if(Switch.Ports[idx[idx.length-1]]) {
+            let x = idx[idx.length-1]
+            let i = Number(e.value)
+            let t = Date.now()
+            Switch.Ports[x].In = Number(i - BW_Data[x].Inb )/(t - BW_Data[x].InTime)*8/1000
+            Switch.Ports[x].In = Math.floor(Switch.Ports[x].In*10)/10
+            BW_Data[x].Inb = i
+            BW_Data[x].InTime = t
+        }
+
+    }
+
+    oid = portsOutb_oid
+    nn = oid
+
+    while(1) {
+        let e = await getNext(nn)
+        nn = e.oid
+        if(!compareOIDs(oid,nn)) break
+        let idx = e.oid.split('.')
+        console.log(idx[idx.length-1] + " -> " + e.value + " ")
+        if(Switch.Ports[idx[idx.length-1]]) {
+            let x = idx[idx.length-1]
+            let i = Number(e.value)
+            let t = Date.now()
+            Switch.Ports[x].Out = Number(i - BW_Data[x].Outb)/(t - BW_Data[x].OutTime)*8/1000
+            Switch.Ports[x].Out = Math.floor(Switch.Ports[x].Out*10)/10
+            BW_Data[x].Outb = i
+            BW_Data[x].OutTime = t
+            
+        }
+
+    }
+
+
+    /*Switch.Ports = Switch.Ports.filter(function (el) {
+        return el != null;
+      });*/
+    //console.log(Switch)
+    //console.log(BW_Data)
+    //client.send(JSON.stringify(Switch))
+}
+
+async function getMacs() {
+
+    let pindex= []
+    let oid = portindex
+    let nn = oid
+    while(1) {
+        let e = await getNext(nn)
+        nn = e.oid
+        if(!compareOIDs(oid,nn)) break
+        let idx = e.oid.split('.')
+        pindex[idx[idx.length-1]] = Number(e.value)
+    }
+
+    console.log(pindex)
+
+    oid = fwdmac
+    nn = oid
     while(compareOIDs(oid,nn)) {
         let e = await getNext(nn)
         let idx = e.oid.split('.')
-        console.log(idx[idx.length-1] + " -> " + e.value + " ")
-        Switch.Ports[idx[idx.length-1]] = {
-            Name: e.value.toString().replace("Gigabit","G").replace("Ethernet","E"),
-            ConnectedMacs: [],
-            IGMP: {
-                ForwardAll: "off",
-                Groups: {}
-            },
-            AdminState: "up",
-            Speed: 1000,
-            In: 0,
-            Out: 0
+        if(pindex[Number(e.value)] && Switch.Ports[pindex[Number(e.value)]]) {
+            Switch.Ports[pindex[Number(e.value)]].ConnectedMacs.push(parseInt(idx[(idx.length-6)]).toString(16) + ":" +
+            parseInt(idx[(idx.length-5)]).toString(16)+  ":" +
+            parseInt(idx[(idx.length-4)]).toString(16)+  ":" +
+            parseInt(idx[(idx.length-3)]).toString(16) +  ":" +
+            parseInt(idx[(idx.length-2)]).toString(16) +  ":" +
+            parseInt(idx[(idx.length-1)]).toString(16))
         }
         nn = e.oid
     }
-    Switch.Ports = Switch.Ports.filter(function (el) {
-        return el != null;
-      });
-      console.log(Switch)
-    client.send(JSON.stringify(Switch))
 }
 
- getName()
- getPorts()
+async function run() {
+ await getName()
+ await getPorts()
+ await getMacs()
+ Switch.Ports = Switch.Ports.filter(function (el) {
+    return el != null;
+  });
+ client.send(JSON.stringify(Switch))
+ Switch.Ports = []
+ setTimeout(run, 2000)
+}
+run()
