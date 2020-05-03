@@ -216,6 +216,7 @@ module.exports = function (LocalOptions) {
         });
     }
     var mdnsBrowser_cb = function (node) {
+        node.Name = node.Name.split(".")[0];
         if (node.Name != null) {
             var i_2 = Nodes.findIndex(function (k) { return k.IP == node.IP; });
             if (i_2 == -1) {
@@ -289,6 +290,7 @@ module.exports = function (LocalOptions) {
                 Nodes[index].Multicast = newValue.Multicast;
                 Nodes[index].id = newValue.id;
                 Nodes[index].Type = newValue.Type;
+                Nodes[index].Capabilities = newValue.Capabilities;
             }
         }
         else if (newValue.Type == "MdnsNode") {
@@ -510,6 +512,21 @@ module.exports = function (LocalOptions) {
                             console.log(MnmsData);
                         }
                     }
+                    else if (D_1.Type && (D_1.Type == "snmpB")) {
+                        if (!MnmsData.Switches.some(function (k) { return k.IP == D_1.IP; })) {
+                            MnmsData.Switches.push({
+                                Type: D_1.Type,
+                                IP: D_1.IP,
+                                Community: D_1.Community,
+                                Child: null,
+                                Timer: null,
+                                StartTime: null,
+                                UID: "manual:switch" + Date.now() + ((encodeURIComponent(D_1.IP)))
+                            });
+                            db.update({ Type: "MnmsData" }, blankMnmsData(MnmsData), { upsert: true }, function (err, newDoc) { });
+                            console.log(MnmsData);
+                        }
+                    }
                     else if (D_1.UserAction) {
                         if (D_1.UserAction == "remove_service" && D_1.UID) {
                             console.log("Asked to remove service of UID " + D_1.UID);
@@ -549,7 +566,7 @@ module.exports = function (LocalOptions) {
     //------------------
     var MnmsData = {
         Type: "MnmsData",
-        Schema: 2,
+        Schema: 3,
         Workspace: "Mnms - Network Name",
         CurrentTime: 0,
         Challenge: makeid(20),
@@ -570,6 +587,11 @@ module.exports = function (LocalOptions) {
                 User: "",
                 Password: "",
                 IP: ""
+            },
+            snmp_switch: {
+                Type: "snmpB",
+                Community: "",
+                IP: ""
             }
         }
     };
@@ -585,7 +607,8 @@ module.exports = function (LocalOptions) {
     });
     var ServicesDirectory = {
         cisco_switch: "../cisco-switch/app.js",
-        artel_switch: "../artel-quarra-switch/index.js"
+        artel_switch: "../artel-quarra-switch/index.js",
+        snmp_switch: "../snmp-bridge/index.js"
     };
     var serviceLauncher = function (ServiceOptions) {
         var child_info;
@@ -625,12 +648,27 @@ module.exports = function (LocalOptions) {
                     child_info = null;
                 }
             }
+            else if (type == "snmp_switch") {
+                if (action == "start") {
+                    console.log([ServicesDirectory[type], "-c", ServiceOptions.Params.Community, "-i", ServiceOptions.Params.IP, "-k", MnmsData.Challenge, "-y", ServiceOptions.UID]);
+                    child_info = spawn("node", [ServicesDirectory[type], "-c", ServiceOptions.Params.Community, "-i", ServiceOptions.Params.IP, "-k", MnmsData.Challenge, "-y", ServiceOptions.UID]);
+                    child_info.on("error", function () {
+                        child_info.kill();
+                    });
+                }
+                else if (action == "stop") {
+                    if (ServiceOptions.Params.Child.kill)
+                        ServiceOptions.Params.Child.kill();
+                    child_info = null;
+                }
+            }
         }
         return child_info;
     };
     var switchShort = {
         "ciscoSG": "cisco_switch",
-        "artelQ": "artel_switch"
+        "artelQ": "artel_switch",
+        "snmpB": "snmp_switch"
     };
     var watchDog = function () {
         console.log("Waf waf");
@@ -658,7 +696,8 @@ module.exports = function (LocalOptions) {
                     Params: {
                         IP: MnmsData.Switches[s].IP,
                         User: MnmsData.Switches[s].User,
-                        Password: MnmsData.Switches[s].Password
+                        Password: MnmsData.Switches[s].Password,
+                        Community: MnmsData.Switches[s].Community
                     },
                     Challenge: MnmsData.Challenge,
                     UID: MnmsData.Switches[s].UID

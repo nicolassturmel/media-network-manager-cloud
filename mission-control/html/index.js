@@ -825,7 +825,8 @@ var buildNodeNav = (node,elem) => {
 
 
 /* Graph handling */
-function colorOfType(type,highlight) {
+function colorOfType(type,highlight,cannot) {
+    if(cannot) return "#777777"
     if(!highlight) return "#ff00ff"
     switch(type) {
         case "switch":
@@ -925,9 +926,11 @@ function buildGraph(nodes) {
                         newEdges.push({id: i + "_" + p.Name, from: i, to: n, label: "port " + p.Name, color: {color : color}, font: { strokeWidth: 0, color: "white"}})
                     }
                 }
+                let cannot = false;
                 let bcolor_sw = null;
+                if(maddress.length > 0 && nodes[i].Capabilities && nodes[i].Capabilities.MulticastRoute == "no") cannot = true
                 if(mselection.nodeIP && mselection.nodeIP == nodes[i].IP)  bcolor_sw = "#00ffff"
-                newNodes.push({id: i , label: nodes[i].Name.split(".")[0], widthConstraint : { minimum : 350, maximum : 350}, color: {border: bcolor_sw? bcolor_sw : colorOfType(nodes[i].Type,!isRouterForStream), background: colorOfType(nodes[i].Type,true)}, shape: "box", font: { color: "#ffffff"}})                
+                newNodes.push({id: i , label: nodes[i].Name.split(".")[0], widthConstraint : { minimum : 350, maximum : 350}, color: {border: bcolor_sw? bcolor_sw : colorOfType(nodes[i].Type,!isRouterForStream), background: colorOfType(nodes[i].Type,true,cannot)}, shape: "box", font: { color: "#ffffff"}})                
             }
         }
     }

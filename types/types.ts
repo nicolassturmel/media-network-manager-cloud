@@ -29,4 +29,5 @@ export interface MnMs_node {
     Mac: string;
     Macs?: string[];
     id: string;
+    Capabilities?: object;
 }

@@ -33,7 +33,14 @@ var Switch = {
     Multicast: "off",
     Neighbour: "",
     Mac: "",
-    id: options.id
+    id: options.id,
+    Capabilities : {
+        Name: "yes",
+        System: "no",
+        MacFwdTable: "yes",
+        MulticastRoute: "no",
+        PortStats: "yes"
+    }
 };
 
 var BW_Data = []

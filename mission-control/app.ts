@@ -240,6 +240,7 @@ export = function(LocalOptions) {
     }
 
     var mdnsBrowser_cb = (node) => {
+        node.Name = node.Name.split(".")[0]
         if(node.Name != null) {
             let i = Nodes.findIndex(k => k.IP == node.IP);
             if(i == -1) {
@@ -316,6 +317,7 @@ export = function(LocalOptions) {
                 Nodes[index].Multicast = newValue.Multicast
                 Nodes[index].id = newValue.id 
                 Nodes[index].Type = newValue.Type 
+                Nodes[index].Capabilities = newValue.Capabilities 
             }
         }
         else if(newValue.Type == "MdnsNode") {
@@ -525,6 +527,21 @@ export = function(LocalOptions) {
                             console.log(MnmsData)
                         }
                     }
+                    else if(D.Type && (D.Type == "snmpB")) {
+                        if(!MnmsData.Switches.some(k => k.IP == D.IP)) {
+                            MnmsData.Switches.push({
+                                Type: D.Type,
+                                IP: D.IP,
+                                Community: D.Community,
+                                Child: null,
+                                Timer: null,
+                                StartTime: null,
+                                UID: "manual:switch" + Date.now() + ((encodeURIComponent(D.IP)))
+                            })
+                            db.update({Type: "MnmsData"},blankMnmsData(MnmsData), {upsert: true},(err, newDoc) => { })
+                            console.log(MnmsData)
+                        }
+                    }
                     else if(D.UserAction) {
                         if(D.UserAction == "remove_service" && D.UID) {
                             console.log("Asked to remove service of UID " + D.UID)
@@ -567,7 +584,7 @@ export = function(LocalOptions) {
     //------------------
     var MnmsData = {
         Type: "MnmsData",
-        Schema: 2,
+        Schema: 3,
         Workspace: "Mnms - Network Name",
         CurrentTime: 0,
         Challenge: makeid(20),
@@ -588,6 +605,11 @@ export = function(LocalOptions) {
                 User: "",
                 Password: "",
                 IP: ""
+            },
+            snmp_switch: {
+                Type: "snmpB",
+                Community: "",
+                IP: ""
             }
         }
     }
@@ -605,7 +627,8 @@ export = function(LocalOptions) {
     
     var ServicesDirectory = {
         cisco_switch: "../cisco-switch/app.js",
-        artel_switch: "../artel-quarra-switch/index.js"
+        artel_switch: "../artel-quarra-switch/index.js",
+        snmp_switch: "../snmp-bridge/index.js"
     }
 
     var serviceLauncher = (ServiceOptions) => {
@@ -645,13 +668,29 @@ export = function(LocalOptions) {
                     child_info = null;
                 }
             }
+            else if(type == "snmp_switch") {
+                if(action == "start") {
+                    console.log([ServicesDirectory[type],"-c",ServiceOptions.Params.Community,"-i",ServiceOptions.Params.IP,"-k",MnmsData.Challenge,"-y",ServiceOptions.UID ])
+                    
+                    child_info = spawn("node",[ServicesDirectory[type],"-c",ServiceOptions.Params.Community,"-i",ServiceOptions.Params.IP,"-k",MnmsData.Challenge,"-y",ServiceOptions.UID ])
+                    
+                    child_info.on("error",() => {
+                        child_info.kill()
+                    })
+                }
+                else if(action == "stop") {
+                    if(ServiceOptions.Params.Child.kill) ServiceOptions.Params.Child.kill()
+                    child_info = null;
+                }
+            }
         }
         return child_info
     }
 
     let switchShort = {
         "ciscoSG":"cisco_switch",
-        "artelQ":"artel_switch"
+        "artelQ":"artel_switch",
+        "snmpB":"snmp_switch"
     }
 
     var watchDog = () => {
@@ -680,7 +719,8 @@ export = function(LocalOptions) {
                     Params:{
                         IP : MnmsData.Switches[s].IP,
                         User: MnmsData.Switches[s].User,
-                        Password: MnmsData.Switches[s].Password
+                        Password: MnmsData.Switches[s].Password,
+                        Community: MnmsData.Switches[s].Community
                     },
                     Challenge: MnmsData.Challenge, 
                     UID: MnmsData.Switches[s].UID

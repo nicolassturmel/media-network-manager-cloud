@@ -108,6 +108,21 @@ var missionControl = require(("media-network-manager-cloud/mission-control"))({
       options.Params.Child.kill()
       return null
     }
+    else if(type == "snmp_switch") {
+        if(action == "start") {
+            console.log([ServicesDirectory[type],"-c",ServiceOptions.Params.Community,"-i",ServiceOptions.Params.IP,"-k",MnmsData.Challenge,"-y",ServiceOptions.UID ])
+            
+            child_info = spawn("node",[ServicesDirectory[type],"-c",ServiceOptions.Params.Community,"-i",ServiceOptions.Params.IP,"-k",MnmsData.Challenge,"-y",ServiceOptions.UID ])
+            
+            child_info.on("error",() => {
+                child_info.kill()
+            })
+        }
+        else if(action == "stop") {
+            if(ServiceOptions.Params.Child.kill) ServiceOptions.Params.Child.kill()
+            child_info = null;
+        }
+    }
   }
   }
 });
