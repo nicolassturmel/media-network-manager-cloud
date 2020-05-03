@@ -98,6 +98,7 @@ var portsInE_oid = "1.3.6.1.2.1.2.2.1.14"
 var portsOutb_oid = "1.3.6.1.2.1.2.2.1.16"
 var portsOutE_oid = "1.3.6.1.2.1.2.2.1.20"
 var fwdmac = "1.3.6.1.2.1.17.4.3.1.2"
+var fwdtype = "1.3.6.1.2.1.17.4.3.1.3"
 var portindex = "1.3.6.1.2.1.17.1.4.1.2"
 
 async function run(oid) {
@@ -106,7 +107,6 @@ async function run(oid) {
 
 async function getName() {
     Switch.Name = (await justGet("1.3.6.1.2.1.1.5.0")).value.toString()
-    console.log(Switch)
 }
 
 async function getPorts() {
@@ -224,7 +224,7 @@ async function getPorts() {
         nn = e.oid
         if(!compareOIDs(oid,nn)) break
         let idx = e.oid.split('.')
-        console.log(idx[idx.length-1] + " -> " + e.value + " ")
+        //console.log(idx[idx.length-1] + " -> " + e.value + " ")
         if(Switch.Ports[idx[idx.length-1]]) {
             let x = idx[idx.length-1]
             let i = Number(e.value)
@@ -247,6 +247,17 @@ async function getPorts() {
     //client.send(JSON.stringify(Switch))
 }
 
+var oidToMac = (oid) => {
+    let idx = oid.split('.')
+    function toHex(id) {
+        let N = parseInt(idx[idx.length-id-1]).toString(16)
+        if(N.length == 1)
+            N = "0" +N
+        return N
+    }
+    return toHex(5) + ":" +toHex(4) + ":" +toHex(3) + ":" +toHex(2) + ":" +toHex(1) + ":" +toHex(0)
+}
+
 async function getMacs() {
 
     let pindex= []
@@ -260,20 +271,31 @@ async function getMacs() {
         pindex[idx[idx.length-1]] = Number(e.value)
     }
 
-    console.log(pindex)
+    //console.log(pindex)
 
     oid = fwdmac
     nn = oid
-    while(compareOIDs(oid,nn)) {
+    while(1) {
         let e = await getNext(nn)
-        let idx = e.oid.split('.')
+        nn = e.oid
+        if(!compareOIDs(oid,nn)) break
         if(pindex[Number(e.value)] && Switch.Ports[pindex[Number(e.value)]]) {
-            Switch.Ports[pindex[Number(e.value)]].ConnectedMacs.push(parseInt(idx[(idx.length-6)]).toString(16) + ":" +
-            parseInt(idx[(idx.length-5)]).toString(16)+  ":" +
-            parseInt(idx[(idx.length-4)]).toString(16)+  ":" +
-            parseInt(idx[(idx.length-3)]).toString(16) +  ":" +
-            parseInt(idx[(idx.length-2)]).toString(16) +  ":" +
-            parseInt(idx[(idx.length-1)]).toString(16))
+            Switch.Ports[pindex[Number(e.value)]].ConnectedMacs.push(oidToMac(e.oid))
+        }
+        nn = e.oid
+    }
+    oid = fwdtype
+    nn = oid
+    while(1) {
+        let e = await getNext(nn)
+        nn = e.oid
+        if(!compareOIDs(oid,nn)) break
+        if(e.value == 4 ) {
+            Switch.Mac = oidToMac(e.oid)
+            break;
+        }
+        if(e.value == 5 && !Switch.Mac ) {
+            Switch.Mac = oidToMac(e.oid)
         }
         nn = e.oid
     }
@@ -287,6 +309,8 @@ async function run() {
     return el != null;
   });
  client.send(JSON.stringify(Switch))
+ //console.log(Switch)
+ console.log("Sent SNMP from " + options.ip)
  Switch.Ports = []
  setTimeout(run, 2000)
 }
