@@ -120,7 +120,7 @@ var missionControl = require(("media-network-manager-cloud/mission-control"))({
             return child_info
         }
         else if (action == "stop") {
-            if (ServiceOptions.Params.Child.kill) ServiceOptions.Params.Child.kill()
+            if (options.Params.Child.kill) options.Params.Child.kill()
             return null;
         }
     }
