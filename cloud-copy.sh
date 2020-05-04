@@ -6,3 +6,4 @@ cp -r ../mnms-client-ws-interface node_modules/media-network-manager-cloud/
 cp -r ../multicast-dns node_modules/media-network-manager-cloud/
 cp -r ../rtsp-sdp-query node_modules/media-network-manager-cloud/
 cp -r ../dante node_modules/media-network-manager-cloud/
+cp -r ../snmp-bridge node_modules/media-network-manager-cloud/
