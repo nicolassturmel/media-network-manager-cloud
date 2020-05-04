@@ -91,39 +91,39 @@ var missionControl = require(("media-network-manager-cloud/mission-control"))({
       }
     }
     else if(type == "artel_switch") {
-      if(action == "start") {
-      let child_info
-      if(options.Params.Password == "")
-        child_info = fork(require.resolve('media-network-manager-cloud/artel-quarra-switch/index.js'),["-u",options.Params.User,"-i",options.Params.IP,"-k",options.Challenge,"-y",options.UID,"-m","localhost" ]
-        )
-      else
-        child_info = fork(require.resolve('media-network-manager-cloud/artel-quarra-switch/index.js'),["-p",options.Params.Password,"-u",options.Params.User,"-i",options.Params.IP,"-k",options.Challenge,"-y",options.UID,"-m","localhost" ]
-        )
-      child_info.on("error",() => {
-                  child_info.kill()
-      })
-      return child_info
-    }
-    else if(action == "stop") {
-      options.Params.Child.kill()
-      return null
-    }
-    else if(type == "snmp_switch") {
         if(action == "start") {
-            console.log([ServicesDirectory[type],"-c",ServiceOptions.Params.Community,"-i",ServiceOptions.Params.IP,"-k",MnmsData.Challenge,"-y",ServiceOptions.UID ])
-            
-            child_info = spawn("node",[ServicesDirectory[type],"-c",ServiceOptions.Params.Community,"-i",ServiceOptions.Params.IP,"-k",MnmsData.Challenge,"-y",ServiceOptions.UID ])
-            
-            child_info.on("error",() => {
+        let child_info
+        if(options.Params.Password == "")
+          child_info = fork(require.resolve('media-network-manager-cloud/artel-quarra-switch/index.js'),["-u",options.Params.User,"-i",options.Params.IP,"-k",options.Challenge,"-y",options.UID,"-m","localhost" ]
+          )
+        else
+          child_info = fork(require.resolve('media-network-manager-cloud/artel-quarra-switch/index.js'),["-p",options.Params.Password,"-u",options.Params.User,"-i",options.Params.IP,"-k",options.Challenge,"-y",options.UID,"-m","localhost" ]
+          )
+        child_info.on("error",() => {
+                    child_info.kill()
+        })
+        return child_info
+      }
+      else if(action == "stop") {
+        options.Params.Child.kill()
+        return null
+      }
+      
+    }
+    else if (type == "snmp_switch") {
+        if (action == "start") {
+            let child_info
+            child_info = fork(require.resolve('media-network-manager-cloud/snmp-bridge/index.js'), ["-c", options.Params.Community, "-i", options.Params.IP, "-k", options.Challenge, "-y", options.UID])
+            child_info.on("error", () => {
                 child_info.kill()
             })
+            return child_info
         }
-        else if(action == "stop") {
-            if(ServiceOptions.Params.Child.kill) ServiceOptions.Params.Child.kill()
-            child_info = null;
+        else if (action == "stop") {
+            if (ServiceOptions.Params.Child.kill) ServiceOptions.Params.Child.kill()
+            return null;
         }
     }
-  }
   }
 });
 
