@@ -924,8 +924,7 @@ function initGraph() {
     var container = document.getElementById('mynetwork');
    network = new vis.Network(container, data, options);
    network.on('click',(e) => {
-       console.error(e.nodes)
-       if(e.nodes && document.getElementById("node-" + _nodes[e.nodes[0]].Name)) {
+       if(e.nodes && e.nodes.length > 0 && document.getElementById("node-" + _nodes[e.nodes[0]].Name)) {
             makeDeviceInfo(document.getElementById("node-" + _nodes[e.nodes[0]].Name))
             let Node = document.getElementById("node-" + _nodes[e.nodes[0]].Name)
             let Container = document.getElementById("node_container")
