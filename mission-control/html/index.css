@@ -507,3 +507,8 @@ nav {
     vertical-align: middle;
     font-weight:900;
  }
+
+ .settingsToggle {
+    margin-left: -15px;
+    padding-left: 15px;
+ }
