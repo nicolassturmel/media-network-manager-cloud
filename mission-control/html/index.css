@@ -6,6 +6,17 @@
     --tri-color-light: #ff00ff;
 }
 
+.button {
+    border: solid var(--main-color-dim) 1px;
+    padding : 2;
+    margin-left: 10px;
+    margin-bottom: 10px;
+}
+
+.button.highlight {
+    border: solid var(--tri-color-light) 1px
+}
+
 body {
     font-family: Verdana, sans-serif;
     font-size: 15;
@@ -305,6 +316,7 @@ nav {
 }
 
 .services {
+    width: 100%;
     margin-top: 10px;
     text-align: left;
 }

@@ -1,7 +1,7 @@
 
 let maddress = []
 let mselection = {}
-let _nodes
+let _nodes = []
 let _data
 let MColors = ["#ff00ff","#ffff00"]
 
@@ -178,6 +178,13 @@ function run() {
             setTimeout(() => {missionControlWS.send("data")},4000)
         }
         else {
+            // copy UI params
+            for(let node of _nodes) {
+                let f = data.findIndex(k => k.Name == node.Name)
+                if(f >= 0) {
+                    data[f].UIParams = node.UIParams
+                }
+            }
             _nodes = data
             for(let node of _nodes) {
                 if(node.Type != "null" && node.Name) {
@@ -197,6 +204,7 @@ function run() {
 
             setTimeout(() => {missionControlWS.send("nodes")},1500)
             buildGraph(_nodes)
+            selectNew(lastSelected,lastNode)
         }
     }
     missionControlWS.onerror =  () => {
@@ -365,9 +373,15 @@ var makeSettingsMenu = () => {
 
 /* Selection manipulation */
 let lastSelected = null;
+let lastNode = null;
 
 var selectNew = (newSelected,node) => {
-    maddress = []
+    if(!newSelected) return
+    if(!node) node = lastNode
+    else {
+        lastNode = node
+        maddress = []
+    }
 
     let elem = document.getElementById(lastSelected)
     if(elem) elem.classList.remove("selected")
@@ -398,7 +412,7 @@ var selectNew = (newSelected,node) => {
     prim.onclick = () => {
         prim.className = "prim-off"
         sec.className = "prim-off"
-
+        lastNode = null
         maddress = []
         mselection = {} 
         win = document.getElementById("win").innerHTML = ""
@@ -630,6 +644,25 @@ var makeDeviceInfo = (elem) => {
     }  
     if(node.Ports && node.Ports.length > 0) {
         let subcontainer = checkElem(win,"portssub" ,"div","services","")
+        let buttons = checkElem(subcontainer,"buttonsSwitch" ,"div","services","")
+        let unplugged = checkElem(buttons,"buttonsSwitchUP" ,"span",(!node.UIParams.Ports.showUnplugged)? "button" : "button highlight","D.C.")
+        let plugged = checkElem(buttons,"buttonsSwitchP" ,"span",(!node.UIParams.Ports.showPlugged)? "button" : "button highlight","Plugged")
+        let off = checkElem(buttons,"buttonsSwitchOff" ,"span",(!node.UIParams.Ports.showOff)? "button" : "button highlight","Off")
+        unplugged.onclick = () => { 
+            node.UIParams.Ports.showUnplugged = !node.UIParams.Ports.showUnplugged
+            console.error("Click")
+            makeDeviceInfo(elem)
+        }
+        plugged.onclick = () => { 
+            node.UIParams.Ports.showPlugged = !node.UIParams.Ports.showPlugged
+            console.error("Click")
+            makeDeviceInfo(elem)
+        }
+        off.onclick = () => { 
+            node.UIParams.Ports.showOff = !node.UIParams.Ports.showOff
+            console.error("Click")
+            makeDeviceInfo(elem)
+        }
         checkElem(subcontainer,"","div","switch_port_win_text","Port - I/O Mbps - (multi)")
         for(let p of node.Ports) {
             let classP = ""
@@ -641,13 +674,16 @@ var makeDeviceInfo = (elem) => {
                     else {
                         classP += "warn"
                     }
+                    if(!node.UIParams.Ports.showPlugged) continue
                 }
                 else {
                     classP += "dc"
+                    if(!node.UIParams.Ports.showUnplugged) continue
                 }
             }
             else {
                 classP += "off"
+                if(!node.UIParams.Ports.showOff) continue
             }
             let port = checkElem(subcontainer,"","div","switch-port-container","")
             let mport = checkElem(port,"","span","switch_port_win port",p.Name)
@@ -912,18 +948,22 @@ function buildGraph(nodes) {
                                 //console.error("Found mac " + mac + " in switch " + nodes[i].Name + ":" + p.Name)
                             }
                         }
+                        let bcolor = color;
+                        let edge_width = 1;
                         for(let add of maddress) {
                             if(p.IGMP.Groups[add] == true) {
                                 color = MColors[index]
                                 isRouterForStream = true;
+                                edge_width = 3
                                 console.error(add,color,index)
                             }
                             index = (index + 1)%MColors.length
                         }
-                        let bcolor = color;
-                        if(mselection.nodeIP && mselection.nodeIP == nodes[n].IP)  bcolor = "#00ffff"
+                        if(mselection.nodeIP && mselection.nodeIP == nodes[n].IP)  {
+                            bcolor = "#00ffff"
+                        }
                         if(nodes[n].Type != "switch") newNodes.push({id: n , label: nodes[n].Name.split(".")[0], borderWidth: 2, color: {border: bcolor, background: colorOfType(nodes[n].Type,color == "#0077bb")}, font: { color: "#00ffff"}})
-                        newEdges.push({id: i + "_" + p.Name, from: i, to: n, label: "port " + p.Name, color: {color : color}, font: { strokeWidth: 0, color: "white"}})
+                        newEdges.push({id: i + "_" + p.Name, from: i, to: n, label: "port " + p.Name, color: {color : color}, width: edge_width, font: { strokeWidth: 0, color: "white"}})
                     }
                 }
                 let cannot = false;

@@ -277,6 +277,16 @@ module.exports = function (LocalOptions) {
     function mergeNodes(index, newValue, Name) {
         if (_.isEqual(Nodes[index], newValue))
             return;
+        if (!Nodes[index].UIParams) {
+            console.error("Built new params");
+            Nodes[index].UIParams = {
+                Ports: {
+                    showUnplugged: true,
+                    showPlugged: true,
+                    showOff: true
+                }
+            };
+        }
         if (newValue.Type == "switch") {
             if (newValue.Schema == 1) {
                 if (newValue.Name)
