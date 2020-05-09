@@ -204,7 +204,7 @@ function run() {
 
             setTimeout(() => {missionControlWS.send("nodes")},1500)
             buildGraph(_nodes)
-            selectNew(lastSelected,lastNode)
+            selectNew(lastSelected,null)
         }
     }
     missionControlWS.onerror =  () => {
@@ -884,7 +884,8 @@ function initGraph() {
           direction: "UD",
           //sortMethod: "directed",
           nodeSpacing: 400,
-          parentCentralization: true,
+          parentCentralization: false,
+          edgeMinimization: true,
           blockShifting: false
         }
       },
@@ -913,6 +914,14 @@ function initGraph() {
     // create a network
     var container = document.getElementById('mynetwork');
    network = new vis.Network(container, data, options);
+   network.on('click',(e) => {
+       console.error(e.nodes)
+       if(e.nodes && document.getElementById("node-" + _nodes[e.nodes[0]].Name)) {
+            makeDeviceInfo(document.getElementById("node-" + _nodes[e.nodes[0]].Name))
+            let Node = document.getElementById("node-" + _nodes[e.nodes[0]].Name)
+            let Container = document.getElementById("node_container")
+       }
+    })
 }
 
 let oldNodes = []
@@ -955,14 +964,13 @@ function buildGraph(nodes) {
                                 color = MColors[index]
                                 isRouterForStream = true;
                                 edge_width = 3
-                                console.error(add,color,index)
                             }
                             index = (index + 1)%MColors.length
                         }
                         if(mselection.nodeIP && mselection.nodeIP == nodes[n].IP)  {
                             bcolor = "#00ffff"
                         }
-                        if(nodes[n].Type != "switch") newNodes.push({id: n , label: nodes[n].Name.split(".")[0], borderWidth: 2, color: {border: bcolor, background: colorOfType(nodes[n].Type,color == "#0077bb")}, font: { color: "#00ffff"}})
+                        if(nodes[n].Type != "switch") newNodes.push({id: n , mass:20, label: nodes[n].Name.split(".")[0], borderWidth: 2, color: {border: bcolor, background: colorOfType(nodes[n].Type,color == "#0077bb")}, font: { color: "#00ffff"}})
                         newEdges.push({id: i + "_" + p.Name, from: i, to: n, label: "port " + p.Name, color: {color : color}, width: edge_width, font: { strokeWidth: 0, color: "white"}})
                     }
                 }
@@ -970,7 +978,7 @@ function buildGraph(nodes) {
                 let bcolor_sw = null;
                 if(maddress.length > 0 && nodes[i].Capabilities && nodes[i].Capabilities.MulticastRoute == "no") cannot = true
                 if(mselection.nodeIP && mselection.nodeIP == nodes[i].IP)  bcolor_sw = "#00ffff"
-                newNodes.push({id: i , label: nodes[i].Name.split(".")[0], widthConstraint : { minimum : 350, maximum : 350}, color: {border: bcolor_sw? bcolor_sw : colorOfType(nodes[i].Type,!isRouterForStream), background: colorOfType(nodes[i].Type,true,cannot)}, shape: "box", font: { color: "#ffffff"}})                
+                newNodes.push({id: i , label: nodes[i].Name.split(".")[0], mass: 2000, widthConstraint : { minimum : 350, maximum : 350}, color: {border: bcolor_sw? bcolor_sw : colorOfType(nodes[i].Type,!isRouterForStream), background: colorOfType(nodes[i].Type,true,cannot)}, shape: "box", font: { color: "#ffffff"}})                
             }
         }
     }

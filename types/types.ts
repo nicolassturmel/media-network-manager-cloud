@@ -16,6 +16,14 @@ export interface MnMs_node_port {
     Neighbour?: string; 
 }
 
+export interface UI_parameters {
+    Ports : {
+                showUnplugged: boolean;
+                showPlugged: boolean;
+                showOff: boolean;
+            }
+}
+
 export interface MnMs_node {
     Type: "switch" | "MDNS_node" | "disconnected" | "null"; 
     IP: string;
@@ -30,4 +38,5 @@ export interface MnMs_node {
     Macs?: string[];
     id: string;
     Capabilities?: object;
+    UIParams?: UI_parameters;
 }
