@@ -295,26 +295,31 @@ var makeSettingsMenu = () => {
           });
     }
 
-    var buildSettingsItem = (root,k,val,previd) => {
+    var buildSettingsItem = (root,field,val,previd) => {
 
         if(val["Type"] && val["Type"] == "ServiceLaunch") {
-            if(k == "Type") {
+            if(field == "Type") {
                 return
             }
             else {
-                let act = checkElem(root,previd + k,"div","settingsValue",k)
-                act.onclick = () => { onscreenPopup({Type: val["Type"], Name: k},val[k])}
+                let act = checkElem(root,previd + field,"div","settingsValue",field)
+                act.onclick = () => { onscreenPopup({Type: val["Type"], Name: field},val[field])}
                 return
             }
         }
-        else if(val[k] == null || k=="MnmsData")
+        else if(val[field] == null || field=="MnmsData")
             return;
-        else if(k === "UID" || k == "_id") { return }
+        else if(field === "UID" 
+            || field == "_id"
+            || field == "Schema"
+            || field == "CurrentTime"
+            ) 
+            { return }
 
-        let Id = previd + k
+        let Id = previd + field
         let elem = checkElem(root,Id,"div","settingsItem"," ")
 
-        if(k === "Ws")
+        if(field === "Ws")
         {
             let act = checkElem(elem,"","span","settingsValue","disconnect and remove")
             act.onclick = () => {
@@ -327,42 +332,46 @@ var makeSettingsMenu = () => {
                 close.onclick()
             }
         }
-        else if(k === "Child") {
-            if(val[k])
+        else if(field === "Child") {
+            if(val[field])
             checkElem(elem,"","span","settingsTitle","pause")
             else
             checkElem(elem,"","span","settingsTitle","remove")
         }
-        else if(k === "Type") {
-            checkElem(elem,"","span","settingsValue",val[k] + "")
+        else if(field === "Type") {
+            checkElem(elem,"","span","settingsValue",val[field] + "")
             elem.classList.add("alone")
         }
-        else if(Array.isArray(val[k])) {
-            let toggle = checkElem(elem,"","span","settingsToggle",k)
+        else if(Array.isArray(val[field])) {
+            let toggle = checkElem(elem,"","span","settingsToggle",field)
             toggle.onclick = () => {
                 clickElem(elem)
-                for(let l in val[k]) {
-                    buildSettingsItem(elem,l,val[k],Id)
+                for(let l in val[field]) {
+                    buildSettingsItem(elem,l,val[field],Id)
                 }
             }
 
             //checkElem(elem,"","div","settingsTitle",k + " : Array")
             
         }
-        else if(typeof val[k] === "object") {
-            let toggle = checkElem(elem,"","span","settingsToggle",k)
-            if(val[k].Name) toggle.innerHTML = val[k].Name
+        else if(typeof val[field] === "object") {
+            let toggle = checkElem(elem,"","span","settingsToggle",field)
+            if(val[field].Name) toggle.innerHTML = val[field].Name
+            else if(val[field].Type) {
+                toggle.innerHTML = val[field].Type
+                if(val[field].IP) toggle.innerHTML += ":" + val[field].IP
+            }
 
             toggle.onclick = () => {
                 clickElem(elem)
-                Object.keys(val[k]).forEach(l => buildSettingsItem(elem,l,val[k],Id))
+                Object.keys(val[field]).forEach(l => buildSettingsItem(elem,l,val[field],Id))
             }
         }
         else {
-            let toggle = checkElem(elem,"","span","settingsToggle",k)
+            let toggle = checkElem(elem,"","span","settingsToggle",field)
             elem.classList.add("expanded")
             toggle.onclick = () => clickElem(elem)
-            checkElem(elem,"","div","settingsValue",val[k] + "")
+            checkElem(elem,"","div","settingsValue",val[field] + "")
         }
     } 
 
