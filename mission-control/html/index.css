@@ -11,10 +11,12 @@
     padding : 2;
     margin-left: 10px;
     margin-bottom: 10px;
+    color: gray;
 }
 
 .button.highlight {
-    border: solid var(--tri-color-light) 1px
+    border: solid var(--tri-color-light) 1px;
+    color: white;
 }
 
 body {

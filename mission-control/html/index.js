@@ -204,7 +204,10 @@ function run() {
 
             setTimeout(() => {missionControlWS.send("nodes")},1500)
             buildGraph(_nodes)
-            selectNew(lastSelected,null)
+            if(mselection.Type != "stream")
+                if(lastNode) makeDeviceInfo(document.getElementById("node-" + lastNode.Name),update)
+            else
+                selectNew(lastSelected,null)
         }
     }
     missionControlWS.onerror =  () => {
@@ -567,13 +570,14 @@ var makeStreamInfo = (elem,streamname) => {
     buildGraph(_nodes)
 }
 
-var makeDeviceInfo = (elem) => {
+var makeDeviceInfo = (elem,update) => {
+    console.error("make device info")
     mselection = {}
     let node = elem._data.node
     selectNew("node-unit-" + node.Name,elem._data.node)
     
     let win = document.getElementById("win")
-    win.innerHTML = ""
+    if(!update) win.innerHTML = ""
     mselection.nodeIP = node.IP
 
     console.log(node)
@@ -652,6 +656,7 @@ var makeDeviceInfo = (elem) => {
         checkElem(win,"multisub" ,"div","streams","Multicast : " + node.Multicast)
     }  
     if(node.Ports && node.Ports.length > 0) {
+        console.error("Building ports")
         let subcontainer = checkElem(win,"portssub" ,"div","services","")
         let buttons = checkElem(subcontainer,"buttonsSwitch" ,"div","services","")
         let unplugged = checkElem(buttons,"buttonsSwitchUP" ,"span",(!node.UIParams.Ports.showUnplugged)? "button" : "button highlight","D.C.")
