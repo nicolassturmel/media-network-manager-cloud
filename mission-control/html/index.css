@@ -6,6 +6,19 @@
     --tri-color-light: #ff00ff;
 }
 
+.button {
+    border: solid var(--main-color-dim) 1px;
+    padding : 2;
+    margin-left: 10px;
+    margin-bottom: 10px;
+    color: gray;
+}
+
+.button.highlight {
+    border: solid var(--tri-color-light) 1px;
+    color: white;
+}
+
 body {
     font-family: Verdana, sans-serif;
     font-size: 15;
@@ -38,7 +51,7 @@ body {
     margin: auto;
     display: grid;
     grid-template-columns: 200px 1fr ;
-    grid-template-rows: 20px 250px 20px auto 20px;
+    grid-template-rows: 20px 250px 20px calc(100% - 310px) 20px;
     grid-template-areas: 
       "top top"
       "header header  "
@@ -53,7 +66,7 @@ body {
 
 #port.menu-expanded {
     grid-template-columns: auto 200px 1fr ;
-    grid-template-rows: 20px 250px 20px auto 20px;
+    grid-template-rows: 20px 250px 20px calc(100% - 310px) 20px;
     grid-template-areas: 
       "leftmenu top top"
       "leftmenu header header  "
@@ -206,7 +219,7 @@ li {
 }
 nav {
     grid-area: header;
-    width: 100vw;
+    width: auto;
 }
 
 #nodes_container {
@@ -253,8 +266,8 @@ nav {
 }
 
 #mynetwork {
-    height: 100%;
     grid-area: net;
+    height: 100%;
     border-top: 1px solid var(--main-color-light);
     border-left: 1px solid var(--main-color-light);
 }
@@ -305,6 +318,7 @@ nav {
 }
 
 .services {
+    width: 100%;
     margin-top: 10px;
     text-align: left;
 }
@@ -314,6 +328,12 @@ nav {
 }
 .ports {
     margin-top: 10px;
+}
+
+.dante_streams {
+    margin-top: 10px;
+    text-align: center;
+    
 }
 
 /* Windos information */
@@ -488,4 +508,9 @@ nav {
     padding-right: 3px;
     vertical-align: middle;
     font-weight:900;
+ }
+
+ .settingsToggle {
+    margin-left: -15px;
+    padding-left: 15px;
  }

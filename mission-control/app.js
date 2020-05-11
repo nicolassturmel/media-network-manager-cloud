@@ -8,6 +8,7 @@ var exp = require('express');
 var fs = require('fs');
 var path = require('path');
 var _ = require('lodash');
+var dante = require('../dante/index.js');
 var sdpgetter = require("../rtsp-sdp-query");
 var spawn = require('child_process').spawn;
 // Utils
@@ -86,6 +87,12 @@ module.exports = function (LocalOptions) {
         };
         ws.on("close", function () {
             console.log("Connection close: ", ws._data);
+            if (!ws._data.Info) {
+                ws._data = {
+                    auth: false
+                };
+                return;
+            }
             var sw = MnmsData[ws._data.Info.ServiceClass].findIndex(function (k) { return k.UID == ws._data.UID; });
             if (sw != -1 && MnmsData[ws._data.Info.ServiceClass][sw]["delete"]) {
                 console.log("Found at " + sw + " deleting");
@@ -209,6 +216,7 @@ module.exports = function (LocalOptions) {
         });
     }
     var mdnsBrowser_cb = function (node) {
+        node.Name = node.Name.split(".")[0];
         if (node.Name != null) {
             var i_2 = Nodes.findIndex(function (k) { return k.IP == node.IP; });
             if (i_2 == -1) {
@@ -269,6 +277,16 @@ module.exports = function (LocalOptions) {
     function mergeNodes(index, newValue, Name) {
         if (_.isEqual(Nodes[index], newValue))
             return;
+        if (!Nodes[index].UIParams) {
+            console.error("Built new params");
+            Nodes[index].UIParams = {
+                Ports: {
+                    showUnplugged: true,
+                    showPlugged: true,
+                    showOff: true
+                }
+            };
+        }
         if (newValue.Type == "switch") {
             if (newValue.Schema == 1) {
                 if (newValue.Name)
@@ -282,6 +300,7 @@ module.exports = function (LocalOptions) {
                 Nodes[index].Multicast = newValue.Multicast;
                 Nodes[index].id = newValue.id;
                 Nodes[index].Type = newValue.Type;
+                Nodes[index].Capabilities = newValue.Capabilities;
             }
         }
         else if (newValue.Type == "MdnsNode") {
@@ -292,12 +311,36 @@ module.exports = function (LocalOptions) {
                     Nodes[index].Services = {};
                 if (true) {
                     Object.keys(newValue.Services).forEach(function (key) {
-                        if (!(Nodes[index].Services[key]) || !(Nodes[index].Services[key].SDP || _.isEqual(Nodes[index].Services[key], newValue.Services[key]))) {
-                            //console.log("Creating",key)
+                        if (!(Nodes[index].Services[key])
+                            || !(Nodes[index].Services[key].SDP
+                                || _.isEqual(Nodes[index].Services[key], newValue.Services[key]))) {
                             Nodes[index].Services[key] = newValue.Services[key];
                             if (key.includes("_rtsp._tcp")) {
                                 sdpgetter("rtsp://" + newValue.IP + ":" + newValue.Services[key].port + "/by-name/" + encodeURIComponent(key.split("._")[0]), function (sdp) { if (Nodes[index].Services[key])
                                     Nodes[index].Services[key].SDP = sdp; });
+                            }
+                            if (key.includes('_netaudio-arc') && Nodes[index].Services[key] && Nodes[index].Services[key].Polling != true) {
+                                if (!Nodes[index].Services[key].lastPoll)
+                                    Nodes[index].Services[key].lastPoll = 0;
+                                if (!Nodes[index].Services[key].Polling)
+                                    Nodes[index].Services[key].Polling = true;
+                                if (!Nodes[index].Services[key].Streams)
+                                    Nodes[index].Services[key].Streams = [];
+                                var poll_1 = function () {
+                                    console.log("Polling for " + Nodes[index].Name);
+                                    if (Nodes[index] && Nodes[index].Services[key]
+                                        && Nodes[index].Services[key].Streams
+                                        && Date.now() - Nodes[index].Services[key].lastPoll > 10000) {
+                                        Nodes[index].Services[key].lastPoll = Date.now();
+                                        dante(newValue.IP).then(function (k) {
+                                            Nodes[index].Services[key].Streams = k;
+                                            setTimeout(function () {
+                                                poll_1();
+                                            }, 15000);
+                                        });
+                                    }
+                                };
+                                poll_1();
                             }
                         }
                     });
@@ -342,14 +385,17 @@ module.exports = function (LocalOptions) {
                 conns[i_3] = [];
                 var _loop_2 = function (j) {
                     if (Nodes[j].Type == "switch" && Nodes[j].Ports.length > 0) {
+                        //console.log("Testing ",j)
                         for (var l in Nodes[i_3].Ports) {
+                            //console.log("Testing ",i," port ",l)
+                            //console.log(Nodes[j].Macs,Nodes[j].Mac,Nodes[i].Ports[l].ConnectedMacs)
                             if (Nodes[j].Macs && Nodes[i_3].Ports[l].ConnectedMacs.some(function (k) { return Nodes[j].Macs.some(function (l) { return l === k; }); })) {
                                 if (!linkd[i_3].ports[l])
                                     linkd[i_3].ports[l] = [];
                                 if (!linkd[i_3].ports[l].some(function (k) { return k == j; }))
                                     linkd[i_3].ports[l].push(j);
                             }
-                            if (Nodes[j].Macs && Nodes[i_3].Ports[l].ConnectedMacs.includes(Nodes[j].Mac)) {
+                            if (Nodes[j].Mac && Nodes[i_3].Ports[l].ConnectedMacs.includes(Nodes[j].Mac)) {
                                 if (!linkd[i_3].ports[l])
                                     linkd[i_3].ports[l] = [];
                                 if (!linkd[i_3].ports[l].some(function (k) { return k == j; }))
@@ -476,6 +522,21 @@ module.exports = function (LocalOptions) {
                             console.log(MnmsData);
                         }
                     }
+                    else if (D_1.Type && (D_1.Type == "snmpB")) {
+                        if (!MnmsData.Switches.some(function (k) { return k.IP == D_1.IP; })) {
+                            MnmsData.Switches.push({
+                                Type: D_1.Type,
+                                IP: D_1.IP,
+                                Community: D_1.Community,
+                                Child: null,
+                                Timer: null,
+                                StartTime: null,
+                                UID: "manual:switch" + Date.now() + ((encodeURIComponent(D_1.IP)))
+                            });
+                            db.update({ Type: "MnmsData" }, blankMnmsData(MnmsData), { upsert: true }, function (err, newDoc) { });
+                            console.log(MnmsData);
+                        }
+                    }
                     else if (D_1.UserAction) {
                         if (D_1.UserAction == "remove_service" && D_1.UID) {
                             console.log("Asked to remove service of UID " + D_1.UID);
@@ -515,7 +576,7 @@ module.exports = function (LocalOptions) {
     //------------------
     var MnmsData = {
         Type: "MnmsData",
-        Schema: 2,
+        Schema: 3,
         Workspace: "Mnms - Network Name",
         CurrentTime: 0,
         Challenge: makeid(20),
@@ -536,6 +597,11 @@ module.exports = function (LocalOptions) {
                 User: "",
                 Password: "",
                 IP: ""
+            },
+            snmp_switch: {
+                Type: "snmpB",
+                Community: "",
+                IP: ""
             }
         }
     };
@@ -551,7 +617,8 @@ module.exports = function (LocalOptions) {
     });
     var ServicesDirectory = {
         cisco_switch: "../cisco-switch/app.js",
-        artel_switch: "../artel-quarra-switch/index.js"
+        artel_switch: "../artel-quarra-switch/index.js",
+        snmp_switch: "../snmp-bridge/index.js"
     };
     var serviceLauncher = function (ServiceOptions) {
         var child_info;
@@ -591,12 +658,27 @@ module.exports = function (LocalOptions) {
                     child_info = null;
                 }
             }
+            else if (type == "snmp_switch") {
+                if (action == "start") {
+                    console.log([ServicesDirectory[type], "-c", ServiceOptions.Params.Community, "-i", ServiceOptions.Params.IP, "-k", MnmsData.Challenge, "-y", ServiceOptions.UID]);
+                    child_info = spawn("node", [ServicesDirectory[type], "-c", ServiceOptions.Params.Community, "-i", ServiceOptions.Params.IP, "-k", MnmsData.Challenge, "-y", ServiceOptions.UID]);
+                    child_info.on("error", function () {
+                        child_info.kill();
+                    });
+                }
+                else if (action == "stop") {
+                    if (ServiceOptions.Params.Child.kill)
+                        ServiceOptions.Params.Child.kill();
+                    child_info = null;
+                }
+            }
         }
         return child_info;
     };
     var switchShort = {
         "ciscoSG": "cisco_switch",
-        "artelQ": "artel_switch"
+        "artelQ": "artel_switch",
+        "snmpB": "snmp_switch"
     };
     var watchDog = function () {
         console.log("Waf waf");
@@ -624,7 +706,8 @@ module.exports = function (LocalOptions) {
                     Params: {
                         IP: MnmsData.Switches[s].IP,
                         User: MnmsData.Switches[s].User,
-                        Password: MnmsData.Switches[s].Password
+                        Password: MnmsData.Switches[s].Password,
+                        Community: MnmsData.Switches[s].Community
                     },
                     Challenge: MnmsData.Challenge,
                     UID: MnmsData.Switches[s].UID

@@ -12,6 +12,7 @@ var exp = require('express')
 var fs = require('fs');
 var path = require('path')
 var _ = require('lodash');
+const dante = require('../dante/index.js') 
 const sdpgetter = require("../rtsp-sdp-query")
 const { spawn } = require('child_process');
 
@@ -95,6 +96,12 @@ export = function(LocalOptions) {
         }
         ws.on("close", () => {
             console.log("Connection close: ",ws._data)
+            if(!ws._data.Info) {   
+                ws._data = {
+                    auth: false
+                }
+                return
+            }
             let sw = MnmsData[ws._data.Info.ServiceClass].findIndex(k => k.UID == ws._data.UID)
             if(sw != -1 && MnmsData[ws._data.Info.ServiceClass][sw].delete) {
                 console.log("Found at " + sw + " deleting")
@@ -233,6 +240,7 @@ export = function(LocalOptions) {
     }
 
     var mdnsBrowser_cb = (node) => {
+        node.Name = node.Name.split(".")[0]
         if(node.Name != null) {
             let i = Nodes.findIndex(k => k.IP == node.IP);
             if(i == -1) {
@@ -299,6 +307,17 @@ export = function(LocalOptions) {
     function mergeNodes(index: number,newValue ,Name: string)
     {
         if(_.isEqual(Nodes[index] , newValue)) return
+
+        if(!Nodes[index].UIParams) {
+            console.error("Built new params")
+            Nodes[index].UIParams = {
+                Ports : {
+                    showUnplugged: true,
+                    showPlugged: true,
+                    showOff: true
+                }
+            }
+        }
         if(newValue.Type == "switch") {
             if(newValue.Schema == 1) {
                 if(newValue.Name) Nodes[index].Name = newValue.Name
@@ -309,6 +328,7 @@ export = function(LocalOptions) {
                 Nodes[index].Multicast = newValue.Multicast
                 Nodes[index].id = newValue.id 
                 Nodes[index].Type = newValue.Type 
+                Nodes[index].Capabilities = newValue.Capabilities 
             }
         }
         else if(newValue.Type == "MdnsNode") {
@@ -317,11 +337,33 @@ export = function(LocalOptions) {
                 if(!Nodes[index].Services) Nodes[index].Services = {} 
                 if(true) {
                     Object.keys(newValue.Services).forEach((key) => {
-                        if(!(Nodes[index].Services[key]) || !(Nodes[index].Services[key].SDP || _.isEqual(Nodes[index].Services[key],newValue.Services[key]))) {
-                            //console.log("Creating",key)
+                        if(!(Nodes[index].Services[key]) 
+                        || !(Nodes[index].Services[key].SDP 
+                        || _.isEqual(Nodes[index].Services[key],newValue.Services[key]))) 
+                        {
                             Nodes[index].Services[key] = newValue.Services[key]
                             if(key.includes("_rtsp._tcp")) {
                                 sdpgetter("rtsp://" + newValue.IP + ":" + newValue.Services[key].port + "/by-name/" +  encodeURIComponent(key.split("._")[0]),(sdp) => {  if(Nodes[index].Services[key]) Nodes[index].Services[key].SDP = sdp})
+                            }
+                            if(key.includes('_netaudio-arc') && Nodes[index].Services[key] && Nodes[index].Services[key].Polling != true) {
+                                if(!Nodes[index].Services[key].lastPoll) Nodes[index].Services[key].lastPoll = 0
+                                if(!Nodes[index].Services[key].Polling) Nodes[index].Services[key].Polling = true
+                                if(!Nodes[index].Services[key].Streams) Nodes[index].Services[key].Streams = []
+                                let poll = () => {
+                                    console.log("Polling for " + Nodes[index].Name)
+                                    if(Nodes[index] && Nodes[index].Services[key] 
+                                        && Nodes[index].Services[key].Streams
+                                        && Date.now() - Nodes[index].Services[key].lastPoll > 10000) {
+                                            Nodes[index].Services[key].lastPoll = Date.now()
+                                            dante(newValue.IP).then( k => {  
+                                                Nodes[index].Services[key].Streams = k; 
+                                                setTimeout(() => {
+                                                    poll()
+                                                }, 15000);
+                                            })
+                                    }
+                                }
+                                poll()
                             }
                         }
                     })
@@ -366,12 +408,15 @@ export = function(LocalOptions) {
                 conns[i] = []
                 for(let j : number =0 ; j < Nodes.length ; j++) {
                     if(Nodes[j].Type == "switch" && Nodes[j].Ports.length > 0) {
+                        //console.log("Testing ",j)
                         for(let l in Nodes[i].Ports) {
+                            //console.log("Testing ",i," port ",l)
+                            //console.log(Nodes[j].Macs,Nodes[j].Mac,Nodes[i].Ports[l].ConnectedMacs)
                             if(Nodes[j].Macs && Nodes[i].Ports[l].ConnectedMacs.some(k => Nodes[j].Macs.some(l => l === k))) {
                                 if(!linkd[i].ports[l] ) linkd[i].ports[l] = []
                                 if(!linkd[i].ports[l].some(k => k == j)) linkd[i].ports[l].push(j);
                             }
-                            if(Nodes[j].Macs && Nodes[i].Ports[l].ConnectedMacs.includes(Nodes[j].Mac)) {
+                            if(Nodes[j].Mac && Nodes[i].Ports[l].ConnectedMacs.includes(Nodes[j].Mac)) {
                                 if(!linkd[i].ports[l] ) linkd[i].ports[l] = []
                                 if(!linkd[i].ports[l].some(k => k == j)) linkd[i].ports[l].push(j);
                             }
@@ -493,6 +538,21 @@ export = function(LocalOptions) {
                             console.log(MnmsData)
                         }
                     }
+                    else if(D.Type && (D.Type == "snmpB")) {
+                        if(!MnmsData.Switches.some(k => k.IP == D.IP)) {
+                            MnmsData.Switches.push({
+                                Type: D.Type,
+                                IP: D.IP,
+                                Community: D.Community,
+                                Child: null,
+                                Timer: null,
+                                StartTime: null,
+                                UID: "manual:switch" + Date.now() + ((encodeURIComponent(D.IP)))
+                            })
+                            db.update({Type: "MnmsData"},blankMnmsData(MnmsData), {upsert: true},(err, newDoc) => { })
+                            console.log(MnmsData)
+                        }
+                    }
                     else if(D.UserAction) {
                         if(D.UserAction == "remove_service" && D.UID) {
                             console.log("Asked to remove service of UID " + D.UID)
@@ -535,7 +595,7 @@ export = function(LocalOptions) {
     //------------------
     var MnmsData = {
         Type: "MnmsData",
-        Schema: 2,
+        Schema: 3,
         Workspace: "Mnms - Network Name",
         CurrentTime: 0,
         Challenge: makeid(20),
@@ -556,6 +616,11 @@ export = function(LocalOptions) {
                 User: "",
                 Password: "",
                 IP: ""
+            },
+            snmp_switch: {
+                Type: "snmpB",
+                Community: "",
+                IP: ""
             }
         }
     }
@@ -573,7 +638,8 @@ export = function(LocalOptions) {
     
     var ServicesDirectory = {
         cisco_switch: "../cisco-switch/app.js",
-        artel_switch: "../artel-quarra-switch/index.js"
+        artel_switch: "../artel-quarra-switch/index.js",
+        snmp_switch: "../snmp-bridge/index.js"
     }
 
     var serviceLauncher = (ServiceOptions) => {
@@ -613,13 +679,29 @@ export = function(LocalOptions) {
                     child_info = null;
                 }
             }
+            else if(type == "snmp_switch") {
+                if(action == "start") {
+                    console.log([ServicesDirectory[type],"-c",ServiceOptions.Params.Community,"-i",ServiceOptions.Params.IP,"-k",MnmsData.Challenge,"-y",ServiceOptions.UID ])
+                    
+                    child_info = spawn("node",[ServicesDirectory[type],"-c",ServiceOptions.Params.Community,"-i",ServiceOptions.Params.IP,"-k",MnmsData.Challenge,"-y",ServiceOptions.UID ])
+                    
+                    child_info.on("error",() => {
+                        child_info.kill()
+                    })
+                }
+                else if(action == "stop") {
+                    if(ServiceOptions.Params.Child.kill) ServiceOptions.Params.Child.kill()
+                    child_info = null;
+                }
+            }
         }
         return child_info
     }
 
     let switchShort = {
         "ciscoSG":"cisco_switch",
-        "artelQ":"artel_switch"
+        "artelQ":"artel_switch",
+        "snmpB":"snmp_switch"
     }
 
     var watchDog = () => {
@@ -648,7 +730,8 @@ export = function(LocalOptions) {
                     Params:{
                         IP : MnmsData.Switches[s].IP,
                         User: MnmsData.Switches[s].User,
-                        Password: MnmsData.Switches[s].Password
+                        Password: MnmsData.Switches[s].Password,
+                        Community: MnmsData.Switches[s].Community
                     },
                     Challenge: MnmsData.Challenge, 
                     UID: MnmsData.Switches[s].UID

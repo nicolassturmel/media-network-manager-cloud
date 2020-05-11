@@ -13,6 +13,7 @@ var RTPReceiver = /** @class */ (function () {
         this.maxInterval = 0;
         this.meanInterval = BigInt(0);
         this.meanCount = 0;
+        this.lastRcvTime = BigInt(0);
         this.errors = [];
         this.errorDesc = [
             "ok",
@@ -24,21 +25,17 @@ var RTPReceiver = /** @class */ (function () {
             'too much droped packets'
         ];
         console.log("Listening to stream: " + maddress + ":" + port);
+        this._sender1 = dgram.createSocket({ type: "udp4", reuseAddr: true });
+        this._sender1.bind();
+        this._sender2 = dgram.createSocket({ type: "udp4", reuseAddr: true });
+        this._sender2.bind();
         this._socket = dgram.createSocket({ type: "udp4", reuseAddr: true });
         this._socket.bind(port);
-        this._sender1 = dgram.createSocket("udp4");
-        this._sender1.bind();
-        this._sender1.setBroadcast(true);
-        this._sender1.setMulticastTTL(128);
-        this._sender1.addMembership('239.67.67.1');
-        this._sender2 = dgram.createSocket("udp4");
-        this._sender2.bind();
-        this._sender2.setBroadcast(true);
-        this._sender2.setMulticastTTL(128);
-        this._sender2.addMembership('239.67.67.2');
         console.log("Sock is listening");
         this._socket.on("listening", function () {
             _this._socket.addMembership(maddress);
+            _this._sender1.addMembership('239.67.67.1');
+            _this._sender2.addMembership('239.67.67.2');
             var address = _this._socket.address();
             console.log("Sock is listening : " + JSON.stringify(address));
             _this._socket.on("message", function (message, rinfo) {
@@ -53,9 +50,9 @@ var RTPReceiver = /** @class */ (function () {
                 };
                 my_this.update(my_this.newPacket(data));
                 if (((parseInt('0000000011000000', 2) & data.Seqnum) ^ parseInt('0000000000000000', 2)))
-                    this._sender1.send(message, 0, message.length, 5004, '239.67.67.1');
+                    my_this._sender1.send(message, 0, message.length, 5004, '239.67.67.1');
                 if (((parseInt('0000000011000000', 2) & data.Seqnum) ^ parseInt('0000000011000000', 2)))
-                    this._sender2.send(message, 0, message.length, 5004, '239.67.67.2');
+                    my_this._sender2.send(message, 0, message.length, 5004, '239.67.67.2');
                 //console.log("Pack : " + _this.maxInterval/1000000000) 
             });
         });

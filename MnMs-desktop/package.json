@@ -28,7 +28,8 @@
     "uniqid": "^5.0.3",
     "util": "^0.12.1",
     "ws": "^7.1.2",
-    "yellowstone": "^3.0.1"
+    "yellowstone": "^3.0.1",
+    "net-snmp": "^2.6.0"
   },
   "keywords": [
     "MnMs",

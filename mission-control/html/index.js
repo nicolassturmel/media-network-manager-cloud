@@ -1,7 +1,7 @@
 
 let maddress = []
 let mselection = {}
-let _nodes
+let _nodes = []
 let _data
 let MColors = ["#ff00ff","#ffff00"]
 
@@ -178,6 +178,13 @@ function run() {
             setTimeout(() => {missionControlWS.send("data")},4000)
         }
         else {
+            // copy UI params
+            for(let node of _nodes) {
+                let f = data.findIndex(k => k.Name == node.Name)
+                if(f >= 0) {
+                    data[f].UIParams = node.UIParams
+                }
+            }
             _nodes = data
             for(let node of _nodes) {
                 if(node.Type != "null" && node.Name) {
@@ -197,6 +204,10 @@ function run() {
 
             setTimeout(() => {missionControlWS.send("nodes")},1500)
             buildGraph(_nodes)
+            if(mselection.Type != "stream")
+                if(lastNode) makeDeviceInfo(document.getElementById("node-" + lastNode.Name),update)
+            else
+                selectNew(lastSelected,null)
         }
     }
     missionControlWS.onerror =  () => {
@@ -287,26 +298,31 @@ var makeSettingsMenu = () => {
           });
     }
 
-    var buildSettingsItem = (root,k,val,previd) => {
+    var buildSettingsItem = (root,field,val,previd) => {
 
         if(val["Type"] && val["Type"] == "ServiceLaunch") {
-            if(k == "Type") {
+            if(field == "Type") {
                 return
             }
             else {
-                let act = checkElem(root,previd + k,"div","settingsValue",k)
-                act.onclick = () => { onscreenPopup({Type: val["Type"], Name: k},val[k])}
+                let act = checkElem(root,previd + field,"div","settingsValue",field)
+                act.onclick = () => { onscreenPopup({Type: val["Type"], Name: field},val[field])}
                 return
             }
         }
-        else if(val[k] == null || k=="MnmsData")
+        else if(val[field] == null || field=="MnmsData")
             return;
-        else if(k === "UID" || k == "_id") { return }
+        else if(field === "UID" 
+            || field == "_id"
+            || field == "Schema"
+            || field == "CurrentTime"
+            ) 
+            { return }
 
-        let Id = previd + k
+        let Id = previd + field
         let elem = checkElem(root,Id,"div","settingsItem"," ")
 
-        if(k === "Ws")
+        if(field === "Ws")
         {
             let act = checkElem(elem,"","span","settingsValue","disconnect and remove")
             act.onclick = () => {
@@ -319,42 +335,46 @@ var makeSettingsMenu = () => {
                 close.onclick()
             }
         }
-        else if(k === "Child") {
-            if(val[k])
+        else if(field === "Child") {
+            if(val[field])
             checkElem(elem,"","span","settingsTitle","pause")
             else
             checkElem(elem,"","span","settingsTitle","remove")
         }
-        else if(k === "Type") {
-            checkElem(elem,"","span","settingsValue",val[k] + "")
+        else if(field === "Type") {
+            checkElem(elem,"","span","settingsValue",val[field] + "")
             elem.classList.add("alone")
         }
-        else if(Array.isArray(val[k])) {
-            let toggle = checkElem(elem,"","span","settingsToggle",k)
+        else if(Array.isArray(val[field])) {
+            let toggle = checkElem(elem,"","span","settingsToggle",field)
             toggle.onclick = () => {
                 clickElem(elem)
-                for(let l in val[k]) {
-                    buildSettingsItem(elem,l,val[k],Id)
+                for(let l in val[field]) {
+                    buildSettingsItem(elem,l,val[field],Id)
                 }
             }
 
             //checkElem(elem,"","div","settingsTitle",k + " : Array")
             
         }
-        else if(typeof val[k] === "object") {
-            let toggle = checkElem(elem,"","span","settingsToggle",k)
-            if(val[k].Name) toggle.innerHTML = val[k].Name
+        else if(typeof val[field] === "object") {
+            let toggle = checkElem(elem,"","span","settingsToggle",field)
+            if(val[field].Name) toggle.innerHTML = val[field].Name
+            else if(val[field].Type) {
+                toggle.innerHTML = val[field].Type
+                if(val[field].IP) toggle.innerHTML += ":" + val[field].IP
+            }
 
             toggle.onclick = () => {
                 clickElem(elem)
-                Object.keys(val[k]).forEach(l => buildSettingsItem(elem,l,val[k],Id))
+                Object.keys(val[field]).forEach(l => buildSettingsItem(elem,l,val[field],Id))
             }
         }
         else {
-            let toggle = checkElem(elem,"","span","settingsToggle",k)
+            let toggle = checkElem(elem,"","span","settingsToggle",field)
             elem.classList.add("expanded")
             toggle.onclick = () => clickElem(elem)
-            checkElem(elem,"","div","settingsValue",val[k] + "")
+            checkElem(elem,"","div","settingsValue",val[field] + "")
         }
     } 
 
@@ -365,9 +385,15 @@ var makeSettingsMenu = () => {
 
 /* Selection manipulation */
 let lastSelected = null;
+let lastNode = null;
 
 var selectNew = (newSelected,node) => {
-    maddress = []
+    if(!newSelected) return
+    if(!node) node = lastNode
+    else {
+        lastNode = node
+        maddress = []
+    }
 
     let elem = document.getElementById(lastSelected)
     if(elem) elem.classList.remove("selected")
@@ -398,7 +424,7 @@ var selectNew = (newSelected,node) => {
     prim.onclick = () => {
         prim.className = "prim-off"
         sec.className = "prim-off"
-
+        lastNode = null
         maddress = []
         mselection = {} 
         win = document.getElementById("win").innerHTML = ""
@@ -469,7 +495,23 @@ var getSDPdata = (SDP) => {
                 let frcount = M.invalid.filter(k => k.value.startsWith("framecount"))
                 if(frcount.length > 0) Out.packetTime = (frcount[0].value.split(":")[1]*1000/Out.sr + "").substr(0,4)
             } 
+            if(M.tsRefClocks) {
+                for(let clk of M.tsRefClocks) {
+                    if(clk.clksrc == "ptp" && clk.clksrcExt) {
+                        Out.PTPid = clk.clksrcExt.split(":")[1]
+                        Out.PTPdom = clk.clksrcExt.split(":")[2]
+                    }
+                }
+            }
             m_index++   
+        }
+    }
+    if(SDP.tsRefClocks) {
+        for(let clk of SDP.tsRefClocks) {
+            if(clk.clksrc == "ptp" && clk.clksrcExt) {
+                Out.PTPid = clk.clksrcExt.split(":")[1]
+                Out.PTPdom = clk.clksrcExt.split(":")[2]
+            }
         }
     }
     if(SDP.invalid) {
@@ -528,13 +570,14 @@ var makeStreamInfo = (elem,streamname) => {
     buildGraph(_nodes)
 }
 
-var makeDeviceInfo = (elem) => {
+var makeDeviceInfo = (elem,update) => {
+    console.error("make device info")
     mselection = {}
     let node = elem._data.node
     selectNew("node-unit-" + node.Name,elem._data.node)
     
     let win = document.getElementById("win")
-    win.innerHTML = ""
+    if(!update) win.innerHTML = ""
     mselection.nodeIP = node.IP
 
     console.log(node)
@@ -588,13 +631,52 @@ var makeDeviceInfo = (elem) => {
                     checkElem(SDPinfo,"","div","","SDP not available")
                 }
             }
+            else if(key.includes("netaudio-a")) {
+                let contain = checkElem(streams,"","div","","")
+                if(node.Services[key].Streams) for(let str of node.Services[key].Streams) {
+                    if(str) {
+                        let X = checkElem(contain,str.Id,"div","dante_streams"
+                        ,str.Id  +": " + str.Type+" - "+str.numChan+"ch <br>=> "+str.Address+"<br>"+((str.Address2)? "<br>=> "+str.Address2: "") +(()=>{let zz="" ;str.Channels.forEach(ch => zz += " " + ch); return zz})())
+                        X.onclick = () => {
+                            mselection.nodeIP = elem._data.node.IP
+                            mselection.Type = "stream"
+                            mselection.Name = str.Type + " " + str.Address   
+                            selectNew("node-unit-" + node.Name,elem._data.node) 
+                            maddress = [ str.Address ]   
+                            if(str.Address2)
+                                maddress.push(str.Address2)
+                            buildGraph(_nodes)               
+                        }
+                    }
+                }
+            }
         })
     }
     if(node.Multicast) {
         checkElem(win,"multisub" ,"div","streams","Multicast : " + node.Multicast)
     }  
     if(node.Ports && node.Ports.length > 0) {
+        console.error("Building ports")
         let subcontainer = checkElem(win,"portssub" ,"div","services","")
+        let buttons = checkElem(subcontainer,"buttonsSwitch" ,"div","services","")
+        let unplugged = checkElem(buttons,"buttonsSwitchUP" ,"span",(!node.UIParams.Ports.showUnplugged)? "button" : "button highlight","D.C.")
+        let plugged = checkElem(buttons,"buttonsSwitchP" ,"span",(!node.UIParams.Ports.showPlugged)? "button" : "button highlight","Plugged")
+        let off = checkElem(buttons,"buttonsSwitchOff" ,"span",(!node.UIParams.Ports.showOff)? "button" : "button highlight","Off")
+        unplugged.onclick = () => { 
+            node.UIParams.Ports.showUnplugged = !node.UIParams.Ports.showUnplugged
+            console.error("Click")
+            makeDeviceInfo(elem)
+        }
+        plugged.onclick = () => { 
+            node.UIParams.Ports.showPlugged = !node.UIParams.Ports.showPlugged
+            console.error("Click")
+            makeDeviceInfo(elem)
+        }
+        off.onclick = () => { 
+            node.UIParams.Ports.showOff = !node.UIParams.Ports.showOff
+            console.error("Click")
+            makeDeviceInfo(elem)
+        }
         checkElem(subcontainer,"","div","switch_port_win_text","Port - I/O Mbps - (multi)")
         for(let p of node.Ports) {
             let classP = ""
@@ -606,13 +688,16 @@ var makeDeviceInfo = (elem) => {
                     else {
                         classP += "warn"
                     }
+                    if(!node.UIParams.Ports.showPlugged) continue
                 }
                 else {
                     classP += "dc"
+                    if(!node.UIParams.Ports.showUnplugged) continue
                 }
             }
             else {
                 classP += "off"
+                if(!node.UIParams.Ports.showOff) continue
             }
             let port = checkElem(subcontainer,"","div","switch-port-container","")
             let mport = checkElem(port,"","span","switch_port_win port",p.Name)
@@ -790,7 +875,8 @@ var buildNodeNav = (node,elem) => {
 
 
 /* Graph handling */
-function colorOfType(type,highlight) {
+function colorOfType(type,highlight,cannot) {
+    if(cannot) return "#777777"
     if(!highlight) return "#ff00ff"
     switch(type) {
         case "switch":
@@ -812,7 +898,8 @@ function initGraph() {
           direction: "UD",
           //sortMethod: "directed",
           nodeSpacing: 400,
-          parentCentralization: true,
+          parentCentralization: false,
+          edgeMinimization: true,
           blockShifting: false
         }
       },
@@ -841,6 +928,13 @@ function initGraph() {
     // create a network
     var container = document.getElementById('mynetwork');
    network = new vis.Network(container, data, options);
+   network.on('click',(e) => {
+       if(e.nodes && e.nodes.length > 0 && document.getElementById("node-" + _nodes[e.nodes[0]].Name)) {
+            makeDeviceInfo(document.getElementById("node-" + _nodes[e.nodes[0]].Name))
+            let Node = document.getElementById("node-" + _nodes[e.nodes[0]].Name)
+            let Container = document.getElementById("node_container")
+       }
+    })
 }
 
 let oldNodes = []
@@ -876,23 +970,28 @@ function buildGraph(nodes) {
                                 //console.error("Found mac " + mac + " in switch " + nodes[i].Name + ":" + p.Name)
                             }
                         }
+                        let bcolor = color;
+                        let edge_width = 1;
                         for(let add of maddress) {
                             if(p.IGMP.Groups[add] == true) {
                                 color = MColors[index]
                                 isRouterForStream = true;
-                                console.error(add,color,index)
+                                edge_width = 3
                             }
                             index = (index + 1)%MColors.length
                         }
-                        let bcolor = color;
-                        if(mselection.nodeIP && mselection.nodeIP == nodes[n].IP)  bcolor = "#00ffff"
-                        if(nodes[n].Type != "switch") newNodes.push({id: n , label: nodes[n].Name.split(".")[0], borderWidth: 2, color: {border: bcolor, background: colorOfType(nodes[n].Type,color == "#0077bb")}, font: { color: "#00ffff"}})
-                        newEdges.push({id: i + "_" + p.Name, from: i, to: n, label: "port " + p.Name, color: {color : color}, font: { strokeWidth: 0, color: "white"}})
+                        if(mselection.nodeIP && mselection.nodeIP == nodes[n].IP)  {
+                            bcolor = "#00ffff"
+                        }
+                        if(nodes[n].Type != "switch") newNodes.push({id: n , mass:20, label: nodes[n].Name.split(".")[0], borderWidth: 2, color: {border: bcolor, background: colorOfType(nodes[n].Type,color == "#0077bb")}, font: { color: "#00ffff"}})
+                        newEdges.push({id: i + "_" + p.Name, from: i, to: n, label: "port " + p.Name, color: {color : color}, width: edge_width, font: { strokeWidth: 0, color: "white"}})
                     }
                 }
+                let cannot = false;
                 let bcolor_sw = null;
+                if(maddress.length > 0 && nodes[i].Capabilities && nodes[i].Capabilities.MulticastRoute == "no") cannot = true
                 if(mselection.nodeIP && mselection.nodeIP == nodes[i].IP)  bcolor_sw = "#00ffff"
-                newNodes.push({id: i , label: nodes[i].Name.split(".")[0], widthConstraint : { minimum : 350, maximum : 350}, color: {border: bcolor_sw? bcolor_sw : colorOfType(nodes[i].Type,!isRouterForStream), background: colorOfType(nodes[i].Type,true)}, shape: "box", font: { color: "#ffffff"}})                
+                newNodes.push({id: i , label: nodes[i].Name.split(".")[0], mass: 2000, widthConstraint : { minimum : 350, maximum : 350}, color: {border: bcolor_sw? bcolor_sw : colorOfType(nodes[i].Type,!isRouterForStream), background: colorOfType(nodes[i].Type,true,cannot)}, shape: "box", font: { color: "#ffffff"}})                
             }
         }
     }
