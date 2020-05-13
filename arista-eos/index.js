@@ -1,10 +1,9 @@
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
+        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
@@ -35,6 +34,7 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var _this = this;
 exports.__esModule = true;
 var request = require('request');
 var SwitchPollTime = 5;
@@ -79,7 +79,7 @@ var ActionCount = 0;
 var ClearTime = 0;
 var CountTime = 0;
 var NewData;
-var postReq = function (path, handle) { return __awaiter(void 0, void 0, void 0, function () {
+var postReq = function (path, handle) { return __awaiter(_this, void 0, void 0, function () {
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
@@ -125,7 +125,19 @@ var waitNext = function (fct) {
     setTimeout(fct, SwitchPollTime * 1000);
 };
 var run = function () {
-    postReq("show system systemd detail", function (e) { return console.log(e); });
+    var commands = [
+        "show interfaces management 1",
+        "show hostname",
+        "show interfaces status ",
+        "show interfaces counters",
+        "show mac address-table ",
+        "show ip igmp groups",
+        "show ip igmp static-groups" // same but static groups
+    ];
+    postReq("show system systemd detail", process);
+};
+var process = function (data) {
+    console.log(data);
     waitNext(run);
 };
 run();

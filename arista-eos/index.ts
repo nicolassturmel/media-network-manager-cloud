@@ -94,7 +94,20 @@ var waitNext = (fct) => {
 }
 
 var run = () => {
-    postReq("show system systemd detail",(e) => console.log(e))
+    let commands = [
+        "show interfaces management 1", // get mac address of management
+        "show hostname", // name of the device
+        "show interfaces status ", // interface name and status
+        "show interfaces counters", // computing bandwidth
+        "show mac address-table ", // mac address table
+        "show ip igmp groups", //  multicast groups
+        "show ip igmp static-groups" // same but static groups
+    ]
+    postReq("show system systemd detail",process)
+}
+
+var process = (data) => {
+    console.log(data)
     waitNext(run)
 }
 
