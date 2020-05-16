@@ -8,8 +8,8 @@ import { MnMs_node, boolString, MnMs_node_port } from "../types/types"
 
 // Command line arguments
 const optionDefinitions = [
-    { name: 'ip', alias: 'i', type: String, defaultValue: 'localhost:3080' },
-    { name: 'port', alias: 'p', type: String, defaultValue: 'vrnetlab' },
+    { name: 'ip', alias: 'i', type: String, defaultValue: 'localhost' },
+    { name: 'port', alias: 'p', type: String, defaultValue: '3211' },
     { name: 'key', alias: 'k', type: String, defaultValue: 'nokey' },
     { name: 'id', alias: 'y', type: String, defaultValue: undefined },
     { name: "missioncontrol", alias: "m", type: String}
@@ -54,10 +54,11 @@ var NewData
 
 var postReq = async (path,handle) => {
     request(path, function (error, response, body) {
-  console.error('error:', error); // Print the error if one occurred
-  console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
-  console.log('body:', JSON.parse(body)); // Print the HTML for the Google homepage.
-});
+        console.error('error:', error); // Print the error if one occurred
+        console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
+        console.log('body:', JSON.parse(body)); // Print the HTML for the Google homepage.
+        handle(JSON.parse(body))
+    });
 }
 
 var process = (data) => {
