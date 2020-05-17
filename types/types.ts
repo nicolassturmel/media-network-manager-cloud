@@ -24,6 +24,14 @@ export interface UI_parameters {
             }
 }
 
+export interface SystemParams {
+    CPU5s: number;
+    CPU1min: number;
+    CPU5min: number;
+    MemBusy: number;
+    DiskBuzy: number;
+}
+
 export interface MnMs_node {
     Type: "switch" | "MDNS_node" | "disconnected" | "null"; 
     IP: string;
@@ -39,4 +47,5 @@ export interface MnMs_node {
     id: string;
     Capabilities?: object;
     UIParams?: UI_parameters;
+    System?: SystemParams;
 }
