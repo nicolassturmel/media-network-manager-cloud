@@ -205,7 +205,7 @@ function run() {
             setTimeout(() => {missionControlWS.send("nodes")},1500)
             buildGraph(_nodes)
             if(mselection.Type != "stream")
-                if(lastNode) makeDeviceInfo(document.getElementById("node-" + lastNode.Name),update)
+               if(lastNode && false) makeDeviceInfo(document.getElementById("node-" + lastNode.Name),update)
             else
                 selectNew(lastSelected,null)
         }

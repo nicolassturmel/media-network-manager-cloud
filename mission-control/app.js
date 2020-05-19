@@ -164,7 +164,7 @@ module.exports = function (LocalOptions) {
                         i_1 = Nodes.findIndex(function (k) { return k.IP == node.IP; });
                     }
                     //console.log("Merge now...")
-                    mergeNodes(i_1, node, "");
+                    mergeNodes(i_1, node, null);
                     calculateInterConnect();
                 }
                 else if (ws._data.ServiceClass == "Analysers") {
@@ -303,47 +303,49 @@ module.exports = function (LocalOptions) {
                 Nodes[index].Capabilities = newValue.Capabilities;
             }
         }
-        else if (newValue.Type == "MdnsNode") {
+        else if (newValue.Type == "MdnsNode" || newValue.Type == "ManualNode") {
+            console.log(newValue);
             if (newValue.Schema == 1) {
                 if (Nodes[index].Type && Nodes[index].Type != "switch")
                     Nodes[index].Type = newValue.Type;
                 if (!Nodes[index].Services)
                     Nodes[index].Services = {};
                 if (true) {
-                    Object.keys(newValue.Services).forEach(function (key) {
-                        if (!(Nodes[index].Services[key])
-                            || !(Nodes[index].Services[key].SDP
-                                || _.isEqual(Nodes[index].Services[key], newValue.Services[key]))) {
-                            Nodes[index].Services[key] = newValue.Services[key];
-                            if (key.includes("_rtsp._tcp")) {
-                                sdpgetter("rtsp://" + newValue.IP + ":" + newValue.Services[key].port + "/by-name/" + encodeURIComponent(key.split("._")[0]), function (sdp) { if (Nodes[index].Services[key])
-                                    Nodes[index].Services[key].SDP = sdp; });
+                    if (newValue.Services)
+                        Object.keys(newValue.Services).forEach(function (key) {
+                            if (!(Nodes[index].Services[key])
+                                || !(Nodes[index].Services[key].SDP
+                                    || _.isEqual(Nodes[index].Services[key], newValue.Services[key]))) {
+                                Nodes[index].Services[key] = newValue.Services[key];
+                                if (key.includes("_rtsp._tcp")) {
+                                    sdpgetter("rtsp://" + newValue.IP + ":" + newValue.Services[key].port + "/by-name/" + encodeURIComponent(key.split("._")[0]), function (sdp) { if (Nodes[index].Services[key])
+                                        Nodes[index].Services[key].SDP = sdp; });
+                                }
+                                if (key.includes('_netaudio-arc') && Nodes[index].Services[key] && Nodes[index].Services[key].Polling != true) {
+                                    if (!Nodes[index].Services[key].lastPoll)
+                                        Nodes[index].Services[key].lastPoll = 0;
+                                    if (!Nodes[index].Services[key].Polling)
+                                        Nodes[index].Services[key].Polling = true;
+                                    if (!Nodes[index].Services[key].Streams)
+                                        Nodes[index].Services[key].Streams = [];
+                                    var poll_1 = function () {
+                                        console.log("Polling for " + Nodes[index].Name);
+                                        if (Nodes[index] && Nodes[index].Services[key]
+                                            && Nodes[index].Services[key].Streams
+                                            && Date.now() - Nodes[index].Services[key].lastPoll > 10000) {
+                                            Nodes[index].Services[key].lastPoll = Date.now();
+                                            dante(newValue.IP).then(function (k) {
+                                                Nodes[index].Services[key].Streams = k;
+                                                setTimeout(function () {
+                                                    poll_1();
+                                                }, 15000);
+                                            });
+                                        }
+                                    };
+                                    poll_1();
+                                }
                             }
-                            if (key.includes('_netaudio-arc') && Nodes[index].Services[key] && Nodes[index].Services[key].Polling != true) {
-                                if (!Nodes[index].Services[key].lastPoll)
-                                    Nodes[index].Services[key].lastPoll = 0;
-                                if (!Nodes[index].Services[key].Polling)
-                                    Nodes[index].Services[key].Polling = true;
-                                if (!Nodes[index].Services[key].Streams)
-                                    Nodes[index].Services[key].Streams = [];
-                                var poll_1 = function () {
-                                    console.log("Polling for " + Nodes[index].Name);
-                                    if (Nodes[index] && Nodes[index].Services[key]
-                                        && Nodes[index].Services[key].Streams
-                                        && Date.now() - Nodes[index].Services[key].lastPoll > 10000) {
-                                        Nodes[index].Services[key].lastPoll = Date.now();
-                                        dante(newValue.IP).then(function (k) {
-                                            Nodes[index].Services[key].Streams = k;
-                                            setTimeout(function () {
-                                                poll_1();
-                                            }, 15000);
-                                        });
-                                    }
-                                };
-                                poll_1();
-                            }
-                        }
-                    });
+                        });
                     if (1) {
                         Object.keys(Nodes[index].Services).forEach(function (key) {
                             if (!(newValue.Services[key])) {
@@ -362,7 +364,9 @@ module.exports = function (LocalOptions) {
                 Nodes[index].Neighbour = newValue.Neighbour;
                 Nodes[index].Mac = newValue.Mac;
                 Nodes[index].id = newValue.id;
-                Nodes[index].Name = Name;
+                Nodes[index].Name = Name || newValue.Name;
+                if (newValue.System)
+                    Nodes[index].System = newValue.System;
             }
         }
         else if (newValue.Type == "disconnected") {

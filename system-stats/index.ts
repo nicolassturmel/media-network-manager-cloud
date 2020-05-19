@@ -8,7 +8,6 @@ import { MnMs_node, boolString, MnMs_node_port } from "../types/types"
 
 // Command line arguments
 const optionDefinitions = [
-    { name: 'ip', alias: 'i', type: String, defaultValue: 'localhost:3080' },
     { name: 'user', alias: 'u', type: String, defaultValue: 'vrnetlab' },
     { name: 'password', alias: 'p', type: String, defaultValue: 'VR-netlab9' },
     { name: 'key', alias: 'k', type: String, defaultValue: 'nokey' },
@@ -26,7 +25,7 @@ client.challenge(options.key)
 client.setCallback((data) => {console.log(data)})
 client.run(options.missioncontrol)
 client.info({
-    Info: "Artel switch client",
+    Info: "System client",
     ServiceClass: "Switches",
     id: options.id
 })
@@ -35,8 +34,8 @@ client.info({
 
 var Node : MnMs_node = { 
     Name: "Artel",
-    Type: "switch", 
-    IP: options.ip.split(":")[0],
+    Type: "MdnsNode", 
+    IP: "",
     Schema: 1, 
     Ports: [], 
     Multicast: "off", 
@@ -73,6 +72,8 @@ var busyCpu = (t) => {
     if(t == 5) {
       Node.System.CPU5s = d
       osu.mem.info().then(d => Node.System.MemBusy = 100-d.freeMemPercentage)
+      client.send(JSON.stringify(Node))
+      console.log(Node)
     }
     if(t == 300) {
       Node.System.CPU5min = d

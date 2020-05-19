@@ -179,7 +179,7 @@ export = function(LocalOptions) {
                         i = Nodes.findIndex(k => k.IP == node.IP);
                     }
                     //console.log("Merge now...")
-                    mergeNodes(i,node,"")
+                    mergeNodes(i,node,null)
                     calculateInterConnect()
                 }
                 else if(ws._data.ServiceClass == "Analysers") 
@@ -331,12 +331,13 @@ export = function(LocalOptions) {
                 Nodes[index].Capabilities = newValue.Capabilities 
             }
         }
-        else if(newValue.Type == "MdnsNode") {
+        else if(newValue.Type == "MdnsNode" || newValue.Type == "ManualNode") {
+            console.log(newValue)
             if(newValue.Schema == 1) {
                 if(Nodes[index].Type && Nodes[index].Type != "switch") Nodes[index].Type = newValue.Type
                 if(!Nodes[index].Services) Nodes[index].Services = {} 
                 if(true) {
-                    Object.keys(newValue.Services).forEach((key) => {
+                    if(newValue.Services) Object.keys(newValue.Services).forEach((key) => {
                         if(!(Nodes[index].Services[key]) 
                         || !(Nodes[index].Services[key].SDP 
                         || _.isEqual(Nodes[index].Services[key],newValue.Services[key]))) 
@@ -384,7 +385,8 @@ export = function(LocalOptions) {
                 Nodes[index].Neighbour = newValue.Neighbour
                 Nodes[index].Mac = newValue.Mac
                 Nodes[index].id = newValue.id
-                Nodes[index].Name = Name 
+                Nodes[index].Name = Name || newValue.Name
+                if(newValue.System) Nodes[index].System = newValue.System
             }
         }
         else if(newValue.Type == "disconnected") {

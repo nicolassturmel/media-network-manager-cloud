@@ -33,7 +33,7 @@ export interface SystemParams {
 }
 
 export interface MnMs_node {
-    Type: "switch" | "MDNS_node" | "disconnected" | "null"; 
+    Type: "switch" | "MdnsNode" | "ManualNode" | "disconnected" | "null"; 
     IP: string;
     OtherIPs?: string[];
     Name?: string;

@@ -35,7 +35,7 @@ export = (cb,_mdns) => {
             else {
                 getMacClear = false;
                 arp.getMAC(k.data, function(err, mac) {
-                    if (!err && mac.length>12) {
+                    if (!err && mac && mac.length>12) {
                         let macout = []
                         mac.split(":").forEach((e,i,a) => {if(e.length < 2) macout[i] ="0" + e; else macout[i] = e});
                         mac = macout.join(":")
