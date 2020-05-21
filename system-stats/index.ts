@@ -49,13 +49,17 @@ var Node : MnMs_node = {
       CPU1min: 0,
       CPU5min: 0,
       MemBusy: 0,
-      DiskBuzy: 0
+      DiskBuzy: 0,
+      CPUTemps: [],
+      CPUSpeeds: []
     }
 };    
 
 var osu = require('node-os-utils')
 var os = require('os')
 const nodeDiskInfo = require('node-disk-info');
+const si = require('systeminformation');
+
 
 var busyCpu = (t) => {
   osu.cpu.usage(t*1000).then(d => {
@@ -73,6 +77,8 @@ var busyCpu = (t) => {
       Node.System.CPU5s = d
       osu.mem.info().then(d => Node.System.MemBusy = 100-d.freeMemPercentage)
       client.send(JSON.stringify(Node))
+      si.cpuTemperature().then(d => Node.System.CPUTemps = d.cores)
+      si.cpuCurrentspeed().then(d => Node.System.CPUSpeeds = d.cores)
       console.log(Node)
     }
     if(t == 300) {

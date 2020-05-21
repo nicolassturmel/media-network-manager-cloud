@@ -28,8 +28,10 @@ export interface SystemParams {
     CPU5s: number;
     CPU1min: number;
     CPU5min: number;
-    MemBusy: number;
-    DiskBuzy: number;
+    MemBusy?: number;
+    DiskBuzy?: number;
+    CPUTemps?: number[];
+    CPUSpeeds?: number[];
 }
 
 export interface MnMs_node {
