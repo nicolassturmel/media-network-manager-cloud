@@ -780,6 +780,12 @@ var buildNodeNav = (node,elem) => {
     checkElem(unit,"node-name-" + node.Name,"div",node.Type,name)
     checkElem(unit,"node-IP-" + node.Name,"div",node.Type,node.IP)
     let services = checkElem(elem,"node-services-" + node.Name,"div","services","")
+    if(node.System) {
+        let unit = checkElem(elem,"node-unit-" + node.Name,"div","node-system-unit","")
+        let canva = buildSystemCanva(unit,node.System)
+        let mem = checkElem(unit,"node-system-" + node.Name,"div","node-system-mem","mem 80%")
+        let temp = checkElem(unit,"node-system-" + node.Name,"div","node-system-mem","temp 75C")
+    }
     if(node.Services) {
         let numS = 0;
         var buildServices = (key) => {
