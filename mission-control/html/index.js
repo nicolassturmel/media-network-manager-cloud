@@ -1011,3 +1011,25 @@ function buildGraph(nodes) {
     }
     network.fit()
 }
+
+
+// Canvas
+var cpuInfo = (parent,data) => {
+    var c = document.createElement("canvas");
+    parent.appendChild(c)
+    var ctx = c.getContext("2d");
+    
+    var drawCpu = (v,r,w) => {
+      ctx.beginPath();
+      ctx.lineWidth=w;
+      ctx.arc(24.5, 24.5, r, 3*Math.PI/2, Math.PI*(3/2 + v/50), false) 
+        ctx.stroke();
+    } 
+    
+    
+    drawCpu(data.CPU5s,23,4)
+    drawCpu(data.CPU1min,19,2)
+    drawCpu(data.CPU5min,16,2)
+    ctx.font = "15px Arial";
+    ctx.fillText(Math.floor(data.CPUSpeeds[0]*10)/10, 14, 30);
+}
