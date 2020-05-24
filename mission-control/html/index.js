@@ -781,10 +781,11 @@ var buildNodeNav = (node,elem) => {
     checkElem(unit,"node-IP-" + node.Name,"div",node.Type,node.IP)
     let services = checkElem(elem,"node-services-" + node.Name,"div","services","")
     if(node.System) {
-        let unit = checkElem(elem,"node-unit-" + node.Name,"div","node-system-unit","")
-        let canva = buildSystemCanva(unit,node.System)
-        let mem = checkElem(unit,"node-system-" + node.Name,"div","node-system-mem","mem 80%")
-        let temp = checkElem(unit,"node-system-" + node.Name,"div","node-system-mem","temp 75C")
+        let sys = checkElem(elem,"node-system-" + node.Name,"div","node-system-unit","  ")
+        let canva = cpuInfo(sys,node.System)
+        let mem = checkElem(sys,"node-system-mem-" + node.Name,"div","node-system-mem","mem " + Math.floor(node.System.MemBusy) + "%")
+        let temp = checkElem(sys,"node-system-temp-" + node.Name,"div","node-system-temp","temp " + node.System.CPUTemps[0] + "°C")
+        let disk = checkElem(sys,"node-system-disk-" + node.Name,"div","node-system-disk","Disk<br>" + node.System.DiskBuzy + "%")
     }
     if(node.Services) {
         let numS = 0;
@@ -1021,18 +1022,34 @@ function buildGraph(nodes) {
 
 // Canvas
 var cpuInfo = (parent,data) => {
-    var c = document.createElement("canvas");
-    parent.appendChild(c)
+    var c = document.getElementById("canva-" + parent.id)
+    if(!c)
+    {
+        c = document.createElement("canvas");
+        c.id=-"canva-" + parent.id;
+        var ctx = c.getContext("2d");
+        ctx.canvas.width  = 60;
+        ctx.canvas.height = 50;
+        parent.appendChild(c)
+    }
     var ctx = c.getContext("2d");
+    
+    ctx.clearRect(0, 0, c.width, c.height);
+    ctx.fillStyle = "white"
     
     var drawCpu = (v,r,w) => {
       ctx.beginPath();
       ctx.lineWidth=w;
-      ctx.arc(24.5, 24.5, r, 3*Math.PI/2, Math.PI*(3/2 + v/50), false) 
+      ctx.arc(26.5, 24.5, r, 3*Math.PI/2, Math.PI*(3/2 + v/50), false) 
         ctx.stroke();
     } 
     
     
+    ctx.strokeStyle = "#333333"
+    drawCpu(100,23,4)
+    drawCpu(100,19,2)
+    drawCpu(100,16,2)
+    ctx.strokeStyle = "white"
     drawCpu(data.CPU5s,23,4)
     drawCpu(data.CPU1min,19,2)
     drawCpu(data.CPU5min,16,2)

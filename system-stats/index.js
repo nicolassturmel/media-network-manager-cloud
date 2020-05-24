@@ -87,9 +87,11 @@ var netInts = function () {
             var int = _a[_i];
             if (int.family == 'IPv4' && int.internal == false) {
                 Node.IP = int.address;
-                Node.OtherIPs.push(int.address);
+                if (!Node.OtherIPs.includes(int.address))
+                    Node.OtherIPs.push(int.address);
                 Node.Mac = int.mac;
-                Node.Macs.push(int.mac);
+                if (!Node.Macs.includes(int.mac))
+                    Node.Macs.push(int.mac);
             }
         }
     });

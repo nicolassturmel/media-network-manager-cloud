@@ -336,22 +336,34 @@ nav {
     
 }
 
-.system_mem {
+.node-system-unit {
+    position: relative;
+    width: 100%;
+    height: 50px;
+    font-size: 10pt;
+}
+.node-system-mem {
     position: absolute;
     top: 0;
-    left: 50px;
-    width: 50px;
+    left: 60px;
+    width: auto;
     height: 25px;
-    background-color: green;
   }
-.system_temp {
-    position: absolute;
-    top: 25px;
-    left: 50px;
-    width: 50px;
-    height: 25px;
-    background-color: blue;
-  }
+  .node-system-temp {
+      position: absolute;
+      top: 25px;
+      left: 60px;
+      width: auto;
+      height: 25px;
+    }
+    .node-system-disk {
+        position: absolute;
+        line-height: 25px;
+        top: -3px;
+        left: 150px;
+        width: auto;
+        height: 25px;
+      }
 
 /* Windos information */
 

@@ -346,7 +346,7 @@ module.exports = function (LocalOptions) {
                                 }
                             }
                         });
-                    if (1) {
+                    if (newValue.Services) {
                         Object.keys(Nodes[index].Services).forEach(function (key) {
                             if (!(newValue.Services[key])) {
                                 // console.log("Deleting",key)
