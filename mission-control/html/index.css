@@ -342,6 +342,11 @@ nav {
     height: 50px;
     font-size: 10pt;
 }
+.node-system-cpu {
+    position: absolute;
+    left: 0;
+    top: 0;
+}
 .node-system-mem {
     position: absolute;
     top: 0;
@@ -349,21 +354,31 @@ nav {
     width: auto;
     height: 25px;
   }
-  .node-system-temp {
-      position: absolute;
-      top: 25px;
-      left: 60px;
-      width: auto;
-      height: 25px;
+.node-system-temp {
+    position: absolute;
+    top: 25px;
+    left: 60px;
+    width: auto;
+    height: 25px;
+}
+.node-system-disk {
+    position: absolute;
+    line-height: 25px;
+    top: -3px;
+    left: 150px;
+    width: auto;
+    height: 25px;
     }
-    .node-system-disk {
-        position: absolute;
-        line-height: 25px;
-        top: -3px;
-        left: 150px;
-        width: auto;
-        height: 25px;
-      }
+.node-system-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    text-align: center;
+    width: 100%;
+    height: 100%;
+    background-color: #004488a1;
+    line-height: 50px;
+}
 
 /* Windos information */
 

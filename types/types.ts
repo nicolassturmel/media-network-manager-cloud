@@ -32,6 +32,12 @@ export interface SystemParams {
     DiskBuzy?: number;
     CPUTemps?: number[];
     CPUSpeeds?: number[];
+    offline?: boolean;
+}
+
+export interface node_timers {
+    path: string;
+    time: number;
 }
 
 export interface MnMs_node {
@@ -50,4 +56,5 @@ export interface MnMs_node {
     Capabilities?: object;
     UIParams?: UI_parameters;
     System?: SystemParams;
+    _Timers?: node_timers[];
 }

@@ -274,9 +274,33 @@ module.exports = function (LocalOptions) {
     }
     // Shaping and linking data
     //-----------
-    function mergeNodes(index, newValue, Name) {
-        if (_.isEqual(Nodes[index], newValue))
-            return;
+    var node_timers = [];
+    var mergeNodesTimer = function (index, newValue, Name) {
+        if (newValue._Timers) {
+            if (!Nodes[index]._Timers)
+                Nodes[index]._Timers = [];
+            var _loop_2 = function (t) {
+                var xta = Nodes[index]._Timers.filter(function (k) { return k.path == t.path; });
+                if (xta.length == 0) {
+                    Nodes[index]._Timers.push(t);
+                    xta = Nodes[index]._Timers.filter(function (k) { return k.path == t.path; });
+                }
+                var xt = xta[0];
+                if (xt.path.startsWith("$."))
+                    newValue[xt.path.substr(2)].offline = false;
+                if (!node_timers[index])
+                    node_timers[index] = {};
+                if (node_timers[index][t.path])
+                    clearTimeout(node_timers[index][t.path]);
+                node_timers[index][t.path] = setTimeout(function () { newValue[xt.path.substr(2)].offline = true; }, 1000 * xt.time);
+            };
+            for (var _i = 0, _a = newValue._Timers; _i < _a.length; _i++) {
+                var t = _a[_i];
+                _loop_2(t);
+            }
+        }
+    };
+    var mergeNodesUIParams = function (index) {
         if (!Nodes[index].UIParams) {
             console.error("Built new params");
             Nodes[index].UIParams = {
@@ -287,93 +311,106 @@ module.exports = function (LocalOptions) {
                 }
             };
         }
-        if (newValue.Type == "switch") {
-            if (newValue.Schema == 1) {
-                if (newValue.Name)
-                    Nodes[index].Name = newValue.Name;
-                Nodes[index].Mac = newValue.Mac;
-                if (newValue.Macs)
-                    Nodes[index].Macs = newValue.Macs;
-                if (Nodes[index].Ports && Nodes[index].Ports.length != newValue.Ports.length)
-                    Nodes[index].Ports = [];
-                Nodes[index].Ports = newValue.Ports;
-                Nodes[index].Multicast = newValue.Multicast;
-                Nodes[index].id = newValue.id;
-                Nodes[index].Type = newValue.Type;
-                Nodes[index].Capabilities = newValue.Capabilities;
-            }
-        }
-        else if (newValue.Type == "MdnsNode" || newValue.Type == "ManualNode") {
-            console.log(newValue);
-            if (newValue.Schema == 1) {
-                if (Nodes[index].Type && Nodes[index].Type != "switch")
-                    Nodes[index].Type = newValue.Type;
-                if (!Nodes[index].Services)
-                    Nodes[index].Services = {};
-                if (true) {
-                    if (newValue.Services)
-                        Object.keys(newValue.Services).forEach(function (key) {
-                            if (!(Nodes[index].Services[key])
-                                || !(Nodes[index].Services[key].SDP
-                                    || _.isEqual(Nodes[index].Services[key], newValue.Services[key]))) {
-                                Nodes[index].Services[key] = newValue.Services[key];
-                                if (key.includes("_rtsp._tcp")) {
-                                    sdpgetter("rtsp://" + newValue.IP + ":" + newValue.Services[key].port + "/by-name/" + encodeURIComponent(key.split("._")[0]), function (sdp) { if (Nodes[index].Services[key])
-                                        Nodes[index].Services[key].SDP = sdp; });
-                                }
-                                if (key.includes('_netaudio-arc') && Nodes[index].Services[key] && Nodes[index].Services[key].Polling != true) {
-                                    if (!Nodes[index].Services[key].lastPoll)
-                                        Nodes[index].Services[key].lastPoll = 0;
-                                    if (!Nodes[index].Services[key].Polling)
-                                        Nodes[index].Services[key].Polling = true;
-                                    if (!Nodes[index].Services[key].Streams)
-                                        Nodes[index].Services[key].Streams = [];
-                                    var poll_1 = function () {
-                                        console.log("Polling for " + Nodes[index].Name);
-                                        if (Nodes[index] && Nodes[index].Services[key]
-                                            && Nodes[index].Services[key].Streams
-                                            && Date.now() - Nodes[index].Services[key].lastPoll > 10000) {
-                                            Nodes[index].Services[key].lastPoll = Date.now();
-                                            dante(newValue.IP).then(function (k) {
-                                                Nodes[index].Services[key].Streams = k;
-                                                setTimeout(function () {
-                                                    poll_1();
-                                                }, 15000);
-                                            });
-                                        }
-                                    };
-                                    poll_1();
-                                }
-                            }
-                        });
-                    if (newValue.Services) {
-                        Object.keys(Nodes[index].Services).forEach(function (key) {
-                            if (!(newValue.Services[key])) {
-                                // console.log("Deleting",key)
-                                delete Nodes[index].Services[key];
-                                if (Object.keys(Nodes[index].Services).length == 0) {
-                                    if (Nodes[index].Type && Nodes[index].Type != "switch")
-                                        Nodes[index].Type = "disconnected";
-                                }
-                            }
-                        });
-                    }
-                }
-                Nodes[index].OtherIPs = newValue.OtherIPs;
+    };
+    var mergeNodesSwitch = function (index, newValue, Name) {
+        if (newValue.Schema == 1) {
+            if (newValue.Name)
+                Nodes[index].Name = newValue.Name;
+            Nodes[index].Mac = newValue.Mac;
+            if (newValue.Macs)
                 Nodes[index].Macs = newValue.Macs;
-                Nodes[index].Neighbour = newValue.Neighbour;
-                Nodes[index].Mac = newValue.Mac;
-                Nodes[index].id = newValue.id;
-                Nodes[index].Name = Name || newValue.Name;
-                if (newValue.System)
-                    Nodes[index].System = newValue.System;
+            if (Nodes[index].Ports && Nodes[index].Ports.length != newValue.Ports.length)
+                Nodes[index].Ports = [];
+            Nodes[index].Ports = newValue.Ports;
+            Nodes[index].Multicast = newValue.Multicast;
+            Nodes[index].id = newValue.id;
+            Nodes[index].Type = newValue.Type;
+            Nodes[index].Capabilities = newValue.Capabilities;
+        }
+    };
+    var mergeNodesMdnsManual = function (index, newValue, Name) {
+        console.log(newValue);
+        if (newValue.Schema == 1) {
+            if (Nodes[index].Type && Nodes[index].Type != "switch")
+                Nodes[index].Type = newValue.Type;
+            if (!Nodes[index].Services)
+                Nodes[index].Services = {};
+            if (true) {
+                if (newValue.Services)
+                    Object.keys(newValue.Services).forEach(function (key) {
+                        if (!(Nodes[index].Services[key])
+                            || !(Nodes[index].Services[key].SDP
+                                || _.isEqual(Nodes[index].Services[key], newValue.Services[key]))) {
+                            Nodes[index].Services[key] = newValue.Services[key];
+                            if (key.includes("_rtsp._tcp")) {
+                                sdpgetter("rtsp://" + newValue.IP + ":" + newValue.Services[key].port + "/by-name/" + encodeURIComponent(key.split("._")[0]), function (sdp) { if (Nodes[index].Services[key])
+                                    Nodes[index].Services[key].SDP = sdp; });
+                            }
+                            if (key.includes('_netaudio-arc') && Nodes[index].Services[key] && Nodes[index].Services[key].Polling != true) {
+                                if (!Nodes[index].Services[key].lastPoll)
+                                    Nodes[index].Services[key].lastPoll = 0;
+                                if (!Nodes[index].Services[key].Polling)
+                                    Nodes[index].Services[key].Polling = true;
+                                if (!Nodes[index].Services[key].Streams)
+                                    Nodes[index].Services[key].Streams = [];
+                                var poll_1 = function () {
+                                    console.log("Polling for " + Nodes[index].Name);
+                                    if (Nodes[index] && Nodes[index].Services[key]
+                                        && Nodes[index].Services[key].Streams
+                                        && Date.now() - Nodes[index].Services[key].lastPoll > 10000) {
+                                        Nodes[index].Services[key].lastPoll = Date.now();
+                                        dante(newValue.IP).then(function (k) {
+                                            Nodes[index].Services[key].Streams = k;
+                                            setTimeout(function () {
+                                                poll_1();
+                                            }, 15000);
+                                        });
+                                    }
+                                };
+                                poll_1();
+                            }
+                        }
+                    });
+                if (newValue.Services) {
+                    Object.keys(Nodes[index].Services).forEach(function (key) {
+                        if (!(newValue.Services[key])) {
+                            // console.log("Deleting",key)
+                            delete Nodes[index].Services[key];
+                            if (Object.keys(Nodes[index].Services).length == 0) {
+                                if (Nodes[index].Type && Nodes[index].Type != "switch")
+                                    Nodes[index].Type = "disconnected";
+                            }
+                        }
+                    });
+                }
             }
+            Nodes[index].OtherIPs = newValue.OtherIPs;
+            Nodes[index].Macs = newValue.Macs;
+            Nodes[index].Neighbour = newValue.Neighbour;
+            Nodes[index].Mac = newValue.Mac;
+            Nodes[index].id = newValue.id;
+            Nodes[index].Name = Name || newValue.Name;
+            if (newValue.System)
+                Nodes[index].System = newValue.System;
         }
-        else if (newValue.Type == "disconnected") {
-            Nodes[index].Type = "disconnected";
-        }
-        else {
-            console.log("Node type : " + newValue.Type + " not handled");
+    };
+    function mergeNodes(index, newValue, Name) {
+        mergeNodesUIParams(index);
+        mergeNodesTimer(index, newValue, Name);
+        switch (newValue.Type) {
+            case "switch":
+                mergeNodesSwitch(index, newValue, Name);
+                break;
+            case "MdnsNode":
+            case "ManualNode":
+                mergeNodesMdnsManual(index, newValue, Name);
+                break;
+            case "disconnected":
+                Nodes[index].Type = "disconnected";
+                break;
+            default:
+                console.log("Node type : " + newValue.Type + " not handled");
+                break;
         }
     }
     function calculateInterConnect() {
@@ -387,7 +424,7 @@ module.exports = function (LocalOptions) {
                 linkd[i_3].dataRef = i_3;
                 linkd[i_3].ports = [];
                 conns[i_3] = [];
-                var _loop_2 = function (j) {
+                var _loop_3 = function (j) {
                     if (Nodes[j].Type == "switch" && Nodes[j].Ports.length > 0) {
                         //console.log("Testing ",j)
                         for (var l in Nodes[i_3].Ports) {
@@ -409,7 +446,7 @@ module.exports = function (LocalOptions) {
                     }
                 };
                 for (var j = 0; j < Nodes.length; j++) {
-                    _loop_2(j);
+                    _loop_3(j);
                 }
             }
         }
@@ -422,14 +459,14 @@ module.exports = function (LocalOptions) {
             if (JSON.stringify(cleared) == JSON.stringify(old_cleared))
                 break;
             old_cleared = JSON.parse(JSON.stringify(cleared));
-            var _loop_3 = function (i_4) {
+            var _loop_4 = function (i_4) {
                 if (!(cleared.some(function (k) { return k.dataRef == linkd[i_4].dataRef; }))) {
                     for (var p in linkd[i_4].ports) {
                         if (linkd[i_4].ports[p] != undefined && linkd[i_4].ports[p].length > 1) {
                             //console.log("Switch " , i , " port ", p)
                             var keep = null;
                             var ok = true;
-                            var _loop_5 = function (j) {
+                            var _loop_6 = function (j) {
                                 if (cleared.filter(function (q) { return q.dataRef == j; }).length == 1) {
                                     var test = cleared.filter(function (q) { return q.dataRef == j; })[0];
                                     for (var _i = 0, _a = test.ports; _i < _a.length; _i++) {
@@ -445,7 +482,7 @@ module.exports = function (LocalOptions) {
                             };
                             for (var _i = 0, _a = linkd[i_4].ports[p]; _i < _a.length; _i++) {
                                 var j = _a[_i];
-                                _loop_5(j);
+                                _loop_6(j);
                             }
                             if (ok && keep != null) {
                                 linkd[i_4].ports[p] = [keep];
@@ -458,14 +495,14 @@ module.exports = function (LocalOptions) {
             //console.log(JSON.stringify(linkd))
             // Continuing reduction
             for (var i_4 in linkd) {
-                _loop_3(i_4);
+                _loop_4(i_4);
             }
         }
-        var _loop_4 = function (i_5) {
+        var _loop_5 = function (i_5) {
             //if(Nodes[i].Mac) console.log(Nodes[i].Mac)
             if (Nodes[i_5].Type == "switch" && Nodes[i_5].Ports.length > 0) {
                 var connlist = linkd.filter(function (k) { return k.dataRef == i_5; })[0];
-                var _loop_6 = function (p) {
+                var _loop_7 = function (p) {
                     if (connlist.ports[p]) {
                         Nodes[i_5].Ports[p].Neighbour = Nodes[connlist.ports[p][0]].IP;
                     }
@@ -477,13 +514,13 @@ module.exports = function (LocalOptions) {
                     }
                 };
                 for (var p in Nodes[i_5].Ports) {
-                    _loop_6(p);
+                    _loop_7(p);
                 }
             }
         };
         // Building connection graph
         for (var i_5 in Nodes) {
-            _loop_4(i_5);
+            _loop_5(i_5);
         }
         //console.log(JSON.stringify(linkd.filter(k => k.ports.some(l => l.length == 1))))
     }

@@ -52,7 +52,13 @@ var Node : MnMs_node = {
       DiskBuzy: 0,
       CPUTemps: [],
       CPUSpeeds: []
-    }
+    },
+    _Timers: [
+      {
+        path: "$.System",
+        time: 5
+      }
+    ]
 };    
 
 var osu = require('node-os-utils')

@@ -204,8 +204,9 @@ function run() {
 
             setTimeout(() => {missionControlWS.send("nodes")},1500)
             buildGraph(_nodes)
-            if(mselection.Type != "stream")
-               if(lastNode && false) makeDeviceInfo(document.getElementById("node-" + lastNode.Name),update)
+            if(mselection.Type != "stream") {
+               if(lastNode) makeDeviceInfo(document.getElementById("node-" + lastNode.Name),true)
+            }
             else
                 selectNew(lastSelected,null)
         }
@@ -571,7 +572,6 @@ var makeStreamInfo = (elem,streamname) => {
 }
 
 var makeDeviceInfo = (elem,update) => {
-    console.error("make device info")
     mselection = {}
     let node = elem._data.node
     selectNew("node-unit-" + node.Name,elem._data.node)
@@ -583,13 +583,16 @@ var makeDeviceInfo = (elem,update) => {
     console.log(node)
 
     buildGraph(_nodes)
-    checkElem(win,"","div","win-device-name",node.Name)
-    let ips = checkElem(win,"","div","win-device-ips","")
+    checkElem(win,"win-device-name","div","win-device-name",node.Name)
+    let ips = checkElem(win,"win-device-ips","div","win-device-ips"," ")
     checkElem(ips,"","div","",node.IP)
     for(let i of node.OtherIPs) {
         checkElem(ips,"","div","",i)
     }
-    let services = checkElem(win,"","div","services","")
+    let services = checkElem(win,"win-device-services","div","services"," ")
+    if(node.System) {
+        buildSystemInfo(node,win,"left-")
+    }
     if(node.Services) {
         Object.keys(node.Services).forEach((key) => {
             let name = key.split("._")[0]
@@ -605,12 +608,12 @@ var makeDeviceInfo = (elem,update) => {
             }
         })
     }
-    let streams = checkElem(win,"strsub" ,"div","streams","")
+    let streams = checkElem(win,"strsub" ,"div","streams"," ")
     if(node.Services) {
         Object.keys(node.Services).forEach((key) => {
             let name = key.split("._")[0]
             if(key.includes("_rtsp._tcp")) {
-                let subcontainer = checkElem(streams,"","div","","")
+                let subcontainer = checkElem(streams,"","div",""," ")
                 checkElem(subcontainer,"","i","fas fa-play-circle","")
                 checkElem(subcontainer,"","span","",name)
                 let SDPinfo = checkElem(subcontainer,"","div","mini-stream-info","")
@@ -656,7 +659,6 @@ var makeDeviceInfo = (elem,update) => {
         checkElem(win,"multisub" ,"div","streams","Multicast : " + node.Multicast)
     }  
     if(node.Ports && node.Ports.length > 0) {
-        console.error("Building ports")
         let subcontainer = checkElem(win,"portssub" ,"div","services","")
         let buttons = checkElem(subcontainer,"buttonsSwitch" ,"div","services","")
         let unplugged = checkElem(buttons,"buttonsSwitchUP" ,"span",(!node.UIParams.Ports.showUnplugged)? "button" : "button highlight","D.C.")
@@ -677,7 +679,7 @@ var makeDeviceInfo = (elem,update) => {
             console.error("Click")
             makeDeviceInfo(elem)
         }
-        checkElem(subcontainer,"","div","switch_port_win_text","Port - I/O Mbps - (multi)")
+        checkElem(subcontainer,"win-ports-title","div","switch_port_win_text","Port - I/O Mbps - (multi)")
         for(let p of node.Ports) {
             let classP = ""
             if(p.AdminState == "Up") {
@@ -699,7 +701,7 @@ var makeDeviceInfo = (elem,update) => {
                 classP += "off"
                 if(!node.UIParams.Ports.showOff) continue
             }
-            let port = checkElem(subcontainer,"","div","switch-port-container","")
+            let port = checkElem(subcontainer,"win-ports-" + p.Name,"div","switch-port-container"," ")
             let mport = checkElem(port,"","span","switch_port_win port",p.Name)
             console.log(p.IGMP.ForwardAll)
             if(classP == "dc") {
@@ -767,6 +769,18 @@ var checkElem = (root,id,domtype,classElem,innerHTML) => {
     return elem;
 }
 
+var buildSystemInfo = (node,elem,pref) => {
+    let sys = checkElem(elem,pref + "node-system-" + node.Name,"div","node-system-unit","")
+    let canva = cpuInfo(sys,node.System,pref)
+    let mem = checkElem(sys,pref + "node-system-mem-" + node.Name,"div","node-system-mem","mem " + Math.floor(node.System.MemBusy) + "%")
+    let temp = checkElem(sys,pref + "node-system-temp-" + node.Name,"div","node-system-temp","temp " + node.System.CPUTemps[0] + "°C")
+    let disk = checkElem(sys,pref + "node-system-disk-" + node.Name,"div","node-system-disk","Disk<br>" + node.System.DiskBuzy + "%")
+    if(node.System.offline) 
+        checkElem(sys,pref + "node-system-overlay-" + node.Name,"div","node-system-overlay","Offline")
+    else if(document.getElementById(pref + "node-system-overlay-" + node.Name)) {
+        document.getElementById(pref + "node-system-overlay-" + node.Name).outerHTML = ""
+    } 
+}
 var buildNodeNav = (node,elem) => {
     let flex_id = 1000000;
     if(elem._data.node && _.isEqual(elem._data.node,node))
@@ -781,11 +795,7 @@ var buildNodeNav = (node,elem) => {
     checkElem(unit,"node-IP-" + node.Name,"div",node.Type,node.IP)
     let services = checkElem(elem,"node-services-" + node.Name,"div","services","")
     if(node.System) {
-        let sys = checkElem(elem,"node-system-" + node.Name,"div","node-system-unit","  ")
-        let canva = cpuInfo(sys,node.System)
-        let mem = checkElem(sys,"node-system-mem-" + node.Name,"div","node-system-mem","mem " + Math.floor(node.System.MemBusy) + "%")
-        let temp = checkElem(sys,"node-system-temp-" + node.Name,"div","node-system-temp","temp " + node.System.CPUTemps[0] + "°C")
-        let disk = checkElem(sys,"node-system-disk-" + node.Name,"div","node-system-disk","Disk<br>" + node.System.DiskBuzy + "%")
+        buildSystemInfo(node,elem,"node-")
     }
     if(node.Services) {
         let numS = 0;
@@ -1021,23 +1031,24 @@ function buildGraph(nodes) {
 
 
 // Canvas
-var cpuInfo = (parent,data) => {
-    var c = document.getElementById("canva-" + parent.id)
+var cpuInfo = (parent,data,pref) => {
+    let c = document.getElementById(pref + "canva-" + parent.id)
     if(!c)
     {
         c = document.createElement("canvas");
-        c.id=-"canva-" + parent.id;
-        var ctx = c.getContext("2d");
+        c.className = "node-system-cpu"
+        c.id=pref + "canva-" + parent.id;
+        let ctx = c.getContext("2d");
         ctx.canvas.width  = 60;
         ctx.canvas.height = 50;
         parent.appendChild(c)
     }
-    var ctx = c.getContext("2d");
+    let ctx = c.getContext("2d");
     
     ctx.clearRect(0, 0, c.width, c.height);
     ctx.fillStyle = "white"
     
-    var drawCpu = (v,r,w) => {
+    let drawCpu = (v,r,w) => {
       ctx.beginPath();
       ctx.lineWidth=w;
       ctx.arc(26.5, 24.5, r, 3*Math.PI/2, Math.PI*(3/2 + v/50), false) 

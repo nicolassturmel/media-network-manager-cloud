@@ -44,7 +44,13 @@ var Node = {
         DiskBuzy: 0,
         CPUTemps: [],
         CPUSpeeds: []
-    }
+    },
+    _Timers: [
+        {
+            path: "$.System",
+            time: 5
+        }
+    ]
 };
 var osu = require('node-os-utils');
 var os = require('os');
