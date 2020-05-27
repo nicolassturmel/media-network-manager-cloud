@@ -280,19 +280,21 @@ module.exports = function (LocalOptions) {
             if (!Nodes[index]._Timers)
                 Nodes[index]._Timers = [];
             var _loop_2 = function (t) {
-                var xta = Nodes[index]._Timers.filter(function (k) { return k.path == t.path; });
-                if (xta.length == 0) {
+                var t_index = Nodes[index]._Timers.findIndex(function (k) { return k.path == t.path; });
+                if (t_index < 0) {
                     Nodes[index]._Timers.push(t);
-                    xta = Nodes[index]._Timers.filter(function (k) { return k.path == t.path; });
+                    t_index = Nodes[index]._Timers.findIndex(function (k) { return k.path == t.path; });
                 }
-                var xt = xta[0];
+                Nodes[index]._Timers[t_index].time = t.time;
+                var xt = Nodes[index]._Timers[t_index];
                 if (xt.path.startsWith("$."))
                     newValue[xt.path.substr(2)].offline = false;
                 if (!node_timers[index])
                     node_timers[index] = {};
                 if (node_timers[index][t.path])
                     clearTimeout(node_timers[index][t.path]);
-                node_timers[index][t.path] = setTimeout(function () { newValue[xt.path.substr(2)].offline = true; }, 1000 * xt.time);
+                if (xt.path.startsWith("$."))
+                    node_timers[index][t.path] = setTimeout(function () { newValue[xt.path.substr(2)].offline = true; }, 1000 * xt.time);
             };
             for (var _i = 0, _a = newValue._Timers; _i < _a.length; _i++) {
                 var t = _a[_i];
@@ -412,6 +414,9 @@ module.exports = function (LocalOptions) {
                 console.log("Node type : " + newValue.Type + " not handled");
                 break;
         }
+        if (!Nodes[index].seqnum)
+            Nodes[index].seqnum = 0;
+        Nodes[index].seqnum++;
     }
     function calculateInterConnect() {
         var linkd = [];

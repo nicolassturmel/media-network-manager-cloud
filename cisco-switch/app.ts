@@ -43,7 +43,13 @@ var Switch : MnMs_node = {
     Multicast: "off", 
     Neighbour: "",
     Mac: "", 
-    id: options.id
+    id: options.id,
+    _Timers: [
+        {
+            path: "$",
+            time: 10
+        }
+    ]
 };    
 var ActionCount = 0;
 var ClearTime = 0;
@@ -213,6 +219,7 @@ function computeBandWidth() {
     NewData = true
     //console.log(Switch)
     try {
+        Switch._Timers[0].time = client.getSendInterval()
         client.send(JSON.stringify(Switch))
         console.log("OK! " + options.ip)
     } catch (error) {

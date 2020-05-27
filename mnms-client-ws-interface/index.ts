@@ -131,9 +131,19 @@ function run(target) {
     })
 }
 
+let lastSend = 0;
+let sendTime = 15000;
+
 export = {
+
     run: run,
-    send: (data) => { if(wsc) { console.log("sendings...") ; wsc.send(data) }},
+    send: (data) => { if(wsc) { 
+        console.log("sendings...") ; 
+        if(lastSend) sendTime = 0.8*sendTime + 0.2*((Date.now() - lastSend))
+        lastSend = Date.now();
+        wsc.send(data) 
+    }},
+    getSendInterval: () => {return sendTime/1000;},
     setCallback: (cb) => { callback = cb},
     challenge: (c) => {challenge = c},
     info: (i) => {

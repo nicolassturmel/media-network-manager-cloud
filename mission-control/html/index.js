@@ -584,6 +584,7 @@ var makeDeviceInfo = (elem,update) => {
 
     buildGraph(_nodes)
     checkElem(win,"win-device-name","div","win-device-name",node.Name)
+    buildRefreshTimer(node,win,"win-")
     let ips = checkElem(win,"win-device-ips","div","win-device-ips"," ")
     checkElem(ips,"","div","",node.IP)
     for(let i of node.OtherIPs) {
@@ -781,6 +782,35 @@ var buildSystemInfo = (node,elem,pref) => {
         document.getElementById(pref + "node-system-overlay-" + node.Name).outerHTML = ""
     } 
 }
+
+var progressBar = (refreshbar,time,start) => {
+    if(!refreshbar) return
+    if(time <= 0) {
+        refreshbar.style.width = "100%"
+        refreshbar.className = "node-refresh-end"
+        return
+    }
+    if(start && refreshbar._data.timer) clearTimeout(refreshbar._data.timer) 
+    if(start) refreshbar._data.maxtime = time
+    refreshbar.className = "node-refresh-ongoing"
+    refreshbar.style.width = (time/refreshbar._data.maxtime)*100 + "%"
+    refreshbar._data.timer = setTimeout(() => progressBar(refreshbar,time-0.5,false),500)
+}
+
+var buildRefreshTimer = (node,elem,pre) => {
+    let refreshcont = checkElem(elem,pre + "node-refresh-cont-" + node.Name,"div","node-refresh-container","")
+    let refreshbar = checkElem(refreshcont,pre + "node-refresh-" + node.Name,"div","","")
+    if(node._Timers) {
+        let rootTimer = node._Timers.filter(k => k.path == "$")
+        if(!refreshbar._data) refreshbar._data = {}
+        if(rootTimer.length > 0) {
+            if(refreshbar._data.seqnum != node.seqnum) {
+                refreshbar._data.seqnum = node.seqnum
+                progressBar(refreshbar,rootTimer[0].time+1,true)
+            }
+        }
+    }
+}
 var buildNodeNav = (node,elem) => {
     let flex_id = 1000000;
     if(elem._data.node && _.isEqual(elem._data.node,node))
@@ -791,6 +821,7 @@ var buildNodeNav = (node,elem) => {
         name = name.substr(0,12) + "..." + name.substr(-5)
     }
     let unit = checkElem(elem,"node-unit-" + node.Name,"div","node-unit","")
+    buildRefreshTimer(node,elem)
     checkElem(unit,"node-name-" + node.Name,"div",node.Type,name)
     checkElem(unit,"node-IP-" + node.Name,"div",node.Type,node.IP)
     let services = checkElem(elem,"node-services-" + node.Name,"div","services","")

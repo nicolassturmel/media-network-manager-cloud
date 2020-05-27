@@ -47,6 +47,10 @@ var Node = {
     },
     _Timers: [
         {
+            path: "$",
+            time: 5
+        },
+        {
             path: "$.System",
             time: 5
         }
@@ -72,6 +76,7 @@ var busyCpu = function (t) {
         if (t == 5) {
             Node.System.CPU5s = d;
             osu.mem.info().then(function (d) { return Node.System.MemBusy = 100 - d.freeMemPercentage; });
+            Node._Timers[0].time = client.getSendInterval() / 1000;
             client.send(JSON.stringify(Node));
             si.cpuTemperature().then(function (d) { return Node.System.CPUTemps = d.cores; });
             si.cpuCurrentspeed().then(function (d) { return Node.System.CPUSpeeds = d.cores; });

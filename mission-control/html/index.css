@@ -335,7 +335,35 @@ nav {
     text-align: center;
     
 }
+.node-refresh-ongoing {
+    position: absolute;
+    height: 100%;
+    background-color: var(--sec-color-light);
+    transition: width 0.5s linear;
+}
 
+.node-refresh-end {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    background-color: var(--tri-color-light);
+    transition: with 0s linear;
+}
+
+.node-refresh-empty {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    background-color: var(--tri-color-dim);
+    transition: with 0s linear;
+}
+
+.node-refresh-container {
+    position: relative;
+    width: 90%;
+    height: 5px;
+    margin: auto;
+}
 .node-system-unit {
     position: relative;
     width: 100%;

@@ -57,4 +57,5 @@ export interface MnMs_node {
     UIParams?: UI_parameters;
     System?: SystemParams;
     _Timers?: node_timers[];
+    seqnum?: number;
 }

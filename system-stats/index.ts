@@ -55,6 +55,10 @@ var Node : MnMs_node = {
     },
     _Timers: [
       {
+        path: "$",
+        time: 5
+      },
+      {
         path: "$.System",
         time: 5
       }
@@ -82,6 +86,7 @@ var busyCpu = (t) => {
     if(t == 5) {
       Node.System.CPU5s = d
       osu.mem.info().then(d => Node.System.MemBusy = 100-d.freeMemPercentage)
+      Node._Timers[0].time = client.getSendInterval()
       client.send(JSON.stringify(Node))
       si.cpuTemperature().then(d => Node.System.CPUTemps = d.cores)
       si.cpuCurrentspeed().then(d => Node.System.CPUSpeeds = d.cores)

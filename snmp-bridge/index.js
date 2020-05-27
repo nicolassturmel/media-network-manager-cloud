@@ -40,7 +40,11 @@ var Switch = {
         MacFwdTable: "yes",
         MulticastRoute: "no",
         PortStats: "yes"
-    }
+    },
+    _Timers: [{
+        path: "$",
+        time: 10
+    }]
 };
 
 var BW_Data = []
@@ -315,6 +319,7 @@ async function run() {
  Switch.Ports = Switch.Ports.filter(function (el) {
     return el != null;
   });
+  Switch._Timers[0].time = client.getSendInterval()
  client.send(JSON.stringify(Switch))
  //console.log(Switch)
  console.log("Sent SNMP from " + options.ip)

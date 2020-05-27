@@ -114,12 +114,20 @@ function run(target) {
             }]
     });
 }
+var lastSend = 0;
+var sendTime = 15000;
 module.exports = {
     run: run,
-    send: function (data) { if (wsc) {
-        console.log("sendings...");
-        wsc.send(data);
-    } },
+    send: function (data) {
+        if (wsc) {
+            console.log("sendings...");
+            if (lastSend)
+                sendTime = 0.8 * sendTime + 0.2 * ((Date.now() - lastSend));
+            lastSend = Date.now();
+            wsc.send(data);
+        }
+    },
+    getSendInterval: function () { return sendTime / 1000; },
     setCallback: function (cb) { callback = cb; },
     challenge: function (c) { challenge = c; },
     info: function (i) {

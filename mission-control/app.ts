@@ -309,16 +309,17 @@ export = function(LocalOptions) {
         if(newValue._Timers) {
             if(!Nodes[index]._Timers) Nodes[index]._Timers = []
             for(let t of newValue._Timers) {
-                let xta = Nodes[index]._Timers.filter(k => k.path == t.path)
-                if(xta.length == 0) {
+                let t_index = Nodes[index]._Timers.findIndex(k => k.path == t.path)
+                if(t_index < 0) {
                     Nodes[index]._Timers.push(t)
-                    xta = Nodes[index]._Timers.filter(k => k.path == t.path)
+                    t_index = Nodes[index]._Timers.findIndex(k => k.path == t.path)
                 }
-                let xt : node_timers = xta[0]
+                Nodes[index]._Timers[t_index].time = t.time
+                let xt : node_timers = Nodes[index]._Timers[t_index]
                 if(xt.path.startsWith("$.")) newValue[xt.path.substr(2)].offline = false
                 if(!node_timers[index]) node_timers[index] = {}
                 if(node_timers[index][t.path]) clearTimeout(node_timers[index][t.path])
-                node_timers[index][t.path] = setTimeout(function(){  newValue[xt.path.substr(2)].offline = true; }, 1000*xt.time);
+                if(xt.path.startsWith("$.")) node_timers[index][t.path] = setTimeout(function(){  newValue[xt.path.substr(2)].offline = true; }, 1000*xt.time);
             }
         }
     }
@@ -427,6 +428,8 @@ export = function(LocalOptions) {
                 console.log("Node type : " + newValue.Type + " not handled")
                 break
         }
+        if(!Nodes[index].seqnum) Nodes[index].seqnum = 0
+        Nodes[index].seqnum++
     }
 
     function calculateInterConnect() {

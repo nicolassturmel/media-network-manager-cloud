@@ -46,7 +46,11 @@ var Switch : MnMs_node = {
     Multicast: "off", 
     Neighbour: "",
     Mac: "", 
-    id: options.id
+    id: options.id,
+    _Timers: [{
+        path: "$",
+        time: 10
+    }]
 };    
 var ActionCount = 0;
 var ClearTime = 0;
@@ -192,6 +196,7 @@ var nextCmd = (path) => {
             postReq("ipmc-snooping.status.igmp.router-port.get",getRouterPorts)
             break
         case "ipmc-snooping.status.igmp.router-port.get":
+            Switch._Timers[0].time = client.getSendInterval()
             client.send(JSON.stringify(Switch))
             //console.log(Switch.Ports)
             waitNext()
