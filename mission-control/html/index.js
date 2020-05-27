@@ -158,11 +158,15 @@ function run() {
     switchInfo.onclick = switchMenu 
     ptpInfo.onclick = ptpMenu
 
+    let title = false
     missionControlWS.onmessage = function (event) {
         data = JSON.parse(event.data)
         if(data.Type && data.Type == "MnmsData") {
             _data = data
-            document.getElementById("workspacename-bar").innerHTML = _data.Workspace;
+            if(!title) {
+                document.getElementById("workspacename-bar").innerHTML = _data.Workspace;
+                title = true
+            }
             let swInfoTxt = checkElem(switchInfo,"switchInfoText","span","switch-info-span",
                 "<i class=\"fas fa-network-wired\"></i> Switches (" + _data.OkSwitches + "/" + _data.Switches.length + ")");
             if(_data.OkSwitches != _data.Switches.length)  swInfoTxt.classList.add("warn")

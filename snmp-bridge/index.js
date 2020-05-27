@@ -219,7 +219,7 @@ async function getPorts() {
             let x = idx[idx.length-1]
             let i = Number(e.value)
             let t = Date.now()
-            Switch.Ports[x].In = Number(i - BW_Data[x].Inb )/(t - BW_Data[x].InTime)*8/1000
+            Switch.Ports[x].In = Number((i - BW_Data[x].Inb + Math.pow(2,32) )%(Math.pow(2,32)))/(t - BW_Data[x].InTime)*8/1000
             Switch.Ports[x].In = Math.floor(Switch.Ports[x].In*10)/10
             BW_Data[x].Inb = i
             BW_Data[x].InTime = t
@@ -240,7 +240,7 @@ async function getPorts() {
             let x = idx[idx.length-1]
             let i = Number(e.value)
             let t = Date.now()
-            Switch.Ports[x].Out = Number(i - BW_Data[x].Outb)/(t - BW_Data[x].OutTime)*8/1000
+            Switch.Ports[x].Out = Number((i - BW_Data[x].Outb + Math.pow(2,32))%(Math.pow(2,32)))/(t - BW_Data[x].OutTime)*8/1000
             Switch.Ports[x].Out = Math.floor(Switch.Ports[x].Out*10)/10
             BW_Data[x].Outb = i
             BW_Data[x].OutTime = t
