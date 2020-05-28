@@ -13,6 +13,10 @@ export interface MnMs_node_port {
     Speed: string | number;
     In: number;
     Out: number;
+    Vlan?: {
+        Untagged: number;
+        Tagged: number[];
+    },
     Neighbour?: string; 
 }
 

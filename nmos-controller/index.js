@@ -1,9 +1,10 @@
 "use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
+    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
         function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
         function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : new P(function (resolve) { resolve(result.value); }).then(fulfilled, rejected); }
+        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
@@ -34,15 +35,14 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var _this = this;
 exports.__esModule = true;
 var request = require('request');
 var SwitchPollTime = 5;
 var commandLineArgs = require('command-line-args');
 // Command line arguments
 var optionDefinitions = [
-    { name: 'ip', alias: 'i', type: String, defaultValue: 'localhost:3080' },
-    { name: 'port', alias: 'p', type: String, defaultValue: 'vrnetlab' },
+    { name: 'ip', alias: 'i', type: String, defaultValue: 'localhost' },
+    { name: 'port', alias: 'p', type: String, defaultValue: '3211' },
     { name: 'key', alias: 'k', type: String, defaultValue: 'nokey' },
     { name: 'id', alias: 'y', type: String, defaultValue: undefined },
     { name: "missioncontrol", alias: "m", type: String }
@@ -78,20 +78,76 @@ var ActionCount = 0;
 var ClearTime = 0;
 var CountTime = 0;
 var NewData;
-var postReq = function (path, handle) { return __awaiter(_this, void 0, void 0, function () {
+var postReq = function (path) { return __awaiter(void 0, void 0, void 0, function () {
     return __generator(this, function (_a) {
-        request(path, function (error, response, body) {
-            console.error('error:', error); // Print the error if one occurred
-            console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
-            console.log('body:', JSON.parse(body)); // Print the HTML for the Google homepage.
-        });
-        return [2 /*return*/];
+        return [2 /*return*/, new Promise(function (resolve, error) {
+                request(path, function (error, response, body) {
+                    //console.error('error:', error); // Print the error if one occurred
+                    //console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
+                    //console.log('body:', JSON.parse(body)); // Print the HTML for the Google homepage.
+                    resolve(JSON.parse(body));
+                });
+            })];
     });
 }); };
+var Switches = [];
+var newSwitch = function (ip, name) {
+    return Switches.push({
+        IP: ip,
+        Name: name,
+        Type: "MdnsNode",
+        Schema: 1,
+        Ports: [],
+        Multicast: "off",
+        Neighbour: "",
+        Mac: "",
+        OtherIPs: [],
+        Macs: [],
+        id: options.id,
+        _Timers: [
+            {
+                path: "$",
+                time: 5
+            }
+        ]
+    }) - 1;
+};
+var nmos_refs = {};
 var process = function (data) {
-    console.log(data);
+    //console.log(data)
+    for (var _i = 0, data_1 = data; _i < data_1.length; _i++) {
+        var n = data_1[_i];
+        nmos_refs[n.id] = {
+            index: newSwitch("", n.label),
+            node: n.node_id,
+            senders: [],
+            receivers: [],
+            sources: []
+        };
+    }
 };
-var run = function () {
-    postReq("http://192.168.1.162:3211/x-nmos/query/v1.2/senders/", process);
-};
+var run = function () { return __awaiter(void 0, void 0, void 0, function () {
+    return __generator(this, function (_a) {
+        switch (_a.label) {
+            case 0:
+                Switches = [];
+                return [4 /*yield*/, postReq("http://192.168.1.162:3211/x-nmos/query/v1.2/devices/").then(process)];
+            case 1:
+                _a.sent();
+                return [4 /*yield*/, Object.keys(nmos_refs).forEach(function (r) { return __awaiter(void 0, void 0, void 0, function () {
+                        return __generator(this, function (_a) {
+                            switch (_a.label) {
+                                case 0: return [4 /*yield*/, postReq("http://192.168.1.162:3211/x-nmos/query/v1.2/nodes/" + nmos_refs[r].node).then(function (d) { return console.log(nmos_refs[r].node, d); })];
+                                case 1:
+                                    _a.sent();
+                                    return [2 /*return*/];
+                            }
+                        });
+                    }); })];
+            case 2:
+                _a.sent();
+                return [2 /*return*/];
+        }
+    });
+}); };
 run();
