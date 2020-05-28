@@ -16,6 +16,8 @@ function run() {
     let ptpInfo = document.getElementById("ptp-info")
     let mdnsInfo = document.getElementById("mdns-info")
     let container = document.getElementById("nodes_container")
+    let overlay = document.getElementById("popupSpace")
+    overlay.oncontextmenu = false
     missionControlWS = new WebSocket("ws://" + window.location.host)
 
     document.getElementById("leftmenu").style.display = "none"
@@ -803,17 +805,19 @@ var progressBar = (refreshbar,time,start) => {
 
 var buildRefreshTimer = (node,elem,pre) => {
     let refreshcont = checkElem(elem,pre + "node-refresh-cont-" + node.Name,"div","node-refresh-container","")
-    let refreshbar = checkElem(refreshcont,pre + "node-refresh-" + node.Name,"div","","")
     if(node._Timers) {
         let rootTimer = node._Timers.filter(k => k.path == "$")
-        if(!refreshbar._data) refreshbar._data = {}
         if(rootTimer.length > 0) {
+            let refreshbar = checkElem(refreshcont,pre + "node-refresh-" + node.Name,"div","","")
+            if(!refreshbar._data) refreshbar._data = {}
             if(refreshbar._data.seqnum != node.seqnum) {
                 refreshbar._data.seqnum = node.seqnum
                 progressBar(refreshbar,rootTimer[0].time+1,true)
+                return
             }
         }
     }
+    let refreshbar = checkElem(refreshcont,pre + "node-refresh-" + node.Name,"div","node-refresh-unknown","")
 }
 var buildNodeNav = (node,elem) => {
     let flex_id = 1000000;
@@ -824,6 +828,7 @@ var buildNodeNav = (node,elem) => {
     if(name.length > 21) {
         name = name.substr(0,12) + "..." + name.substr(-5)
     }
+    elem.oncontextmenu = (e) => nodeContextMenu(node,e)
     let unit = checkElem(elem,"node-unit-" + node.Name,"div","node-unit","")
     buildRefreshTimer(node,elem)
     checkElem(unit,"node-name-" + node.Name,"div",node.Type,name)
@@ -1101,4 +1106,82 @@ var cpuInfo = (parent,data,pref) => {
     drawCpu(data.CPU5min,16,2)
     ctx.font = "15px Arial";
     ctx.fillText(Math.floor(data.CPUSpeeds[0]*10)/10, 14, 30);
+}
+
+var nodeContextMenu = (node,pos) => {
+    console.error(pos)
+    
+    /*node._Actions = [{
+        Name: "toggle port on/off",
+        type: "applyToRange",
+        label: "Name",
+        path: "Ports",
+        id: 1
+    },{
+        Name: "test cable on portf",
+        type: "applyToRange",
+        label: "Name",
+        path: "Ports",
+        id: 2
+    }]*/
+    let dom_items = []
+    if(node._Actions) {
+        let contextMenu = checkElem( document.getElementById("popupSpace"),"context-menu","div","context-menu",node.Name + "<br>---")
+        contextMenu.style.top = pos.y
+        contextMenu.style.left = pos.x
+
+        // Handling appear disappear
+        let vanish = () => {
+            contextMenu.outerHTML = ""
+        }
+        let vanish_t = setTimeout(vanish,3000)
+        contextMenu.onmouseover = () => clearTimeout(vanish_t)
+        contextMenu.onmouseout = () => vanish_t = setTimeout(vanish,200)
+
+        for(let A of node._Actions) {
+            switch(A.type) {
+                case "applyToRange":
+                    dom_items[A.id] = checkElem(contextMenu,"action-" + A.id,"div","context-menu-item",A.Name)
+                    dom_items[A.id].onmouseover = () =>{
+                        if(document.getElementById("context-menu-sub")) document.getElementById("context-menu-sub").outerHTML = ""
+                        let contextSubMenu = checkElem( contextMenu,"context-menu-sub","div","context-menu context-menu-croped","")
+                        var rect = dom_items[A.id].getBoundingClientRect();
+                        var rect2 = contextMenu.getBoundingClientRect();
+                        contextSubMenu.style.top = rect.top - rect2.top
+                        contextSubMenu.style.left = rect.right - rect2.left
+                        for(let item of node[A.path]) {
+                            let dom_item = checkElem(contextSubMenu,"context-menu-action-" + A.id + item[A.label],"div","context-menu-item",item[A.label])
+                            dom_item.onclick = () => {
+                                console.error("Click",A,item)
+                            }
+                        }
+                        let subvanish = () => {
+                            contextSubMenu.outerHTML = ""
+                        }
+                        let subvanish_t
+                        contextSubMenu.onmouseover = () => {clearTimeout(subvanish_t);clearTimeout(vanish_t)}
+                        contextSubMenu.onmouseout = () => {subvanish_t = setTimeout(subvanish,200)}
+
+                    }
+                    break
+                case "simple":
+                    dom_items[A.id] = checkElem(contextMenu,"action-" + A.id,"div","context-menu-item",A.Name)
+                    dom_items[A.id].onclick = () => {
+                        console.error("Click",A)
+                    }
+                    break;
+                case "missionControlAction":
+                    dom_items[A.id] = checkElem(contextMenu,"action-" + A.id,"div","context-menu-item",A.Name)
+                    dom_items[A.id].onclick = () => {
+                        console.error("Click",A)
+                    }
+                    break;
+            }
+        }
+    }
+    pos.preventDefault()
+}
+
+var sendAction = (processId,action,params) => {
+
 }

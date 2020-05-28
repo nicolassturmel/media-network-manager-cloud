@@ -187,6 +187,22 @@ body {
     font-weight: bold;
 }
 
+.context-menu {
+    position: absolute;
+    background-color: var(--main-color-dim);
+    z-index: 60;
+    padding: 10px;
+}
+
+.context-menu-croped {
+    max-height: 300px;
+    overflow-y: scroll;
+}
+
+.context-menu-item:hover {
+    background-color: var(--main-color-light);
+}
+
 /* width */
 ::-webkit-scrollbar {
     width: 8px;
@@ -350,6 +366,14 @@ nav {
     transition: with 0s linear;
 }
 
+.node-refresh-unknown {
+    position: absolute;
+    height: 100%;
+    width: 100%;
+    background-color: var(--sec-color-dim);
+    transition: with 0s linear;
+}
+
 .node-refresh-empty {
     position: absolute;
     height: 100%;
@@ -361,7 +385,7 @@ nav {
 .node-refresh-container {
     position: relative;
     width: 90%;
-    height: 5px;
+    height: 2px;
     margin: auto;
 }
 .node-system-unit {
