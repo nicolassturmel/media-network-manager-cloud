@@ -440,6 +440,60 @@ function systemInfo() {
         setTimeout(getNextFct("systemInfo"), SwitchPollTime * 1000);
     });
 }
+function getVlans() {
+    var portList = function (l) {
+        var it = l.replace(/\s/g, "").split(",");
+        var r = [];
+        for (var _i = 0, it_1 = it; _i < it_1.length; _i++) {
+            var s = it_1[_i];
+            if (s.startsWith("gi")) {
+                var g = s.split('-');
+                r.push(g[0]);
+                if (g.length == 2) {
+                    var start = parseInt(g[0].substr(2));
+                    var stop_1 = parseInt(g[1]);
+                    for (var p = start + 1; p <= stop_1; p++)
+                        r.push("gi" + p);
+                }
+            }
+        }
+        return r;
+    };
+    switchTelnet.exec("show vlan", function (err, response) {
+        var array;
+        try {
+            array = response.split("\n");
+        }
+        catch (error) {
+        }
+        console.log(array);
+        var grid = array[3];
+        var items = grid.split(" ");
+        for (var l = 4; l < array.length - 2; l++) {
+            var vlan = parseInt(array[l].substr(0, items[0].length));
+            var nextstop = items[0].length + 1;
+            nextstop += items[1].length + 1;
+            var taged = array[l].substr(nextstop, items[2].length);
+            nextstop += items[2].length + 1;
+            var untaged = array[l].substr(nextstop, items[3].length);
+            console.log(vlan, taged, untaged, portList(taged), portList(untaged));
+            for (var _i = 0, _a = portList(taged); _i < _a.length; _i++) {
+                var p = _a[_i];
+                if (!SwitchData[p].Vlan)
+                    SwitchData[p].Vlan = { Tagged: [], Untagged: [] };
+                SwitchData[p].Vlan.Tagged.push(vlan);
+            }
+            for (var _b = 0, _c = portList(untaged); _b < _c.length; _b++) {
+                var p = _c[_b];
+                if (!SwitchData[p].Vlan)
+                    SwitchData[p].Vlan = { Tagged: [], Untagged: [] };
+                SwitchData[p].Vlan.Untagged.push(vlan);
+            }
+        }
+        console.log(SwitchData);
+        setTimeout(getNextFct("getVlans"), SwitchPollTime * 1000);
+    });
+}
 function getNextFct(current) {
     switch (current) {
         case "clear_count":
@@ -459,6 +513,8 @@ function getNextFct(current) {
         case "getLLDP":
             return getMulticastSources;
         case "getMulticastSources":
+            return getVlans;
+        case "getVlans":
             return get_count;
     }
 }

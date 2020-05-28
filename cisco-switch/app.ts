@@ -462,6 +462,55 @@ function systemInfo() {
     })
 }
 
+function getVlans() {
+    var portList = (l) => {
+        let it = l.replace(/\s/g,"").split(",")
+        let r = []
+        for(let s of it) {
+            if(s.startsWith("gi")) {
+                let g = s.split('-')
+                r.push(g[0])
+                if(g.length == 2) {
+                    let start = parseInt(g[0].substr(2))
+                    let stop = parseInt(g[1])
+                    for(let p = start+1; p <= stop; p++)
+                        r.push("gi"+p)
+                }
+            }
+        }
+        return r
+    }
+    switchTelnet.exec("show vlan", function (err, response) {
+        let array 
+        try {
+            array = response.split("\n")
+        } catch (error) {
+        }
+        console.log(array)
+        let grid = array[3]
+        let items = grid.split(" ");
+        for(let l = 4; l < array.length - 2; l++) {
+            let vlan = parseInt(array[l].substr(0,items[0].length))
+            let nextstop = items[0].length+1
+            nextstop += items[1].length+1
+            let taged = array[l].substr(nextstop,items[2].length)
+            nextstop += items[2].length+1
+            let untaged = array[l].substr(nextstop,items[3].length)
+            console.log(vlan,taged,untaged,portList(taged),portList(untaged))
+            for(let p of portList(taged)) {
+                if(!SwitchData[p].Vlan) SwitchData[p].Vlan = { Tagged: [], Untagged: []}
+                SwitchData[p].Vlan.Tagged.push(vlan)
+            }
+            for(let p of portList(untaged)) {
+                if(!SwitchData[p].Vlan) SwitchData[p].Vlan = { Tagged: [], Untagged: []}
+                SwitchData[p].Vlan.Untagged.push(vlan)
+            }
+        }
+        console.log(SwitchData)
+        setTimeout(getNextFct("getVlans"), SwitchPollTime*1000);
+    })
+}
+
 function getNextFct(current)
 {
     switch(current) {
@@ -482,6 +531,8 @@ function getNextFct(current)
         case "getLLDP" :
             return getMulticastSources
         case "getMulticastSources" :
+            return getVlans
+        case "getVlans" :
             return get_count
     }
 }
