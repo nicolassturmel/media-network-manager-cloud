@@ -1,6 +1,7 @@
 "use strict";
 exports.__esModule = true;
 var request = require('request');
+var exec = require('child_process').exec;
 var SwitchPollTime = 5;
 var commandLineArgs = require('command-line-args');
 // Command line arguments
@@ -10,7 +11,8 @@ var optionDefinitions = [
     { name: 'key', alias: 'k', type: String, defaultValue: 'nokey' },
     { name: 'id', alias: 'y', type: String, defaultValue: undefined },
     { name: 'disk', alias: 'd', type: String, defaultValue: "/" },
-    { name: "missioncontrol", alias: "m", type: String }
+    { name: "missioncontrol", alias: "m", type: String },
+    { name: "raspberry", alias: "w", type: Boolean, defaultValue: false }
 ];
 var options = commandLineArgs(optionDefinitions);
 console.log(options);
@@ -76,9 +78,12 @@ var busyCpu = function (t) {
         if (t == 5) {
             Node.System.CPU5s = d;
             osu.mem.info().then(function (d) { return Node.System.MemBusy = 100 - d.freeMemPercentage; });
-            Node._Timers[0].time = client.getSendInterval() / 1000;
+            Node._Timers[0].time = client.getSendInterval();
             client.send(JSON.stringify(Node));
-            si.cpuTemperature().then(function (d) { return Node.System.CPUTemps = d.cores; });
+            if (options.raspberry)
+                exec("sudo vcgencmd measure_temp", function (e, stdout, stderr) { Node.System.CPUTemps = [parseInt(stdout.split("=")[1])]; });
+            else
+                si.cpuTemperature().then(function (d) { return Node.System.CPUTemps = d.cores; });
             si.cpuCurrentspeed().then(function (d) { return Node.System.CPUSpeeds = d.cores; });
             console.log(Node);
         }

@@ -1,4 +1,5 @@
 const request = require('request')
+const { exec } = require('child_process');
 
 const SwitchPollTime = 5
 
@@ -13,7 +14,8 @@ const optionDefinitions = [
     { name: 'key', alias: 'k', type: String, defaultValue: 'nokey' },
     { name: 'id', alias: 'y', type: String, defaultValue: undefined },
     { name: 'disk', alias: 'd', type: String, defaultValue: "/" },
-    { name: "missioncontrol", alias: "m", type: String}
+    { name: "missioncontrol", alias: "m", type: String},
+    { name: "raspberry", alias: "w", type: Boolean, defaultValue: false}
   ]
 
 const options = commandLineArgs(optionDefinitions)
@@ -88,7 +90,8 @@ var busyCpu = (t) => {
       osu.mem.info().then(d => Node.System.MemBusy = 100-d.freeMemPercentage)
       Node._Timers[0].time = client.getSendInterval()
       client.send(JSON.stringify(Node))
-      si.cpuTemperature().then(d => Node.System.CPUTemps = d.cores)
+      if(options.raspberry) exec("sudo vcgencmd measure_temp",(e, stdout, stderr) => { Node.System.CPUTemps = [parseInt(stdout.split("=")[1])]})
+      else si.cpuTemperature().then(d => Node.System.CPUTemps = d.cores)
       si.cpuCurrentspeed().then(d => Node.System.CPUSpeeds = d.cores)
       console.log(Node)
     }
