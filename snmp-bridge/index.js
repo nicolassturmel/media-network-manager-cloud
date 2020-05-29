@@ -14,7 +14,7 @@ console.log(options);
 var client = require('../mnms-client-ws-interface');
 client.challenge(options.key);
 client.setCallback(function (data) { console.log(data); });
-//client.run(options.missioncontrol);
+client.run(options.missioncontrol);
 client.info({
     Info: "SNMP switch client",
     ServiceClass: "Switches",
@@ -367,6 +367,7 @@ async function getVlans() {
     }
     oid = vlanUntagged
     nn = oid
+    console.log("-- a")
     while(1) {
         let e = await getNext(nn)
         nn = e.oid
@@ -376,6 +377,7 @@ async function getVlans() {
     }
     oid = vlanEgress
     nn = oid
+    console.log("-- b")
     while(1) {
         let e = await getNext(nn)
         nn = e.oid
@@ -389,11 +391,12 @@ async function run() {
  await getName()
  await getPorts()
  await getMacs()
- await getVlans()
+ //await getVlans()
  Switch.Ports = Switch.Ports.filter(function (el) {
     return el != null;
   });
   Switch._Timers[0].time = client.getSendInterval()
+  console.log(Switch)
  client.send(JSON.stringify(Switch))
  //console.log(Switch)
  console.log("Sent SNMP from " + options.ip)

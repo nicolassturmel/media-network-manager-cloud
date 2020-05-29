@@ -177,6 +177,11 @@ var nextCmd = function (path) {
             postReq("ipmc-snooping.status.igmp.router-port.get", getRouterPorts);
             break;
         case "ipmc-snooping.status.igmp.router-port.get":
+            postReq("vlan.config.interface.get", function (e) { return e.result.forEach(function (element) {
+                console.log("--", element.val);
+            }); });
+            break;
+        case "vlan.config.interface.get":
             Switch._Timers[0].time = client.getSendInterval();
             client.send(JSON.stringify(Switch));
             //console.log(Switch.Ports)

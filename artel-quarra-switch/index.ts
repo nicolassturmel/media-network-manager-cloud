@@ -196,6 +196,11 @@ var nextCmd = (path) => {
             postReq("ipmc-snooping.status.igmp.router-port.get",getRouterPorts)
             break
         case "ipmc-snooping.status.igmp.router-port.get":
+            postReq("vlan.config.interface.get",e => e.result.forEach(element => {
+                console.log("--",element.val)
+            }))
+            break
+        case "vlan.config.interface.get":
             Switch._Timers[0].time = client.getSendInterval()
             client.send(JSON.stringify(Switch))
             //console.log(Switch.Ports)
