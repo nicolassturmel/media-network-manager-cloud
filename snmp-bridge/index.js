@@ -14,7 +14,7 @@ console.log(options);
 var client = require('../mnms-client-ws-interface');
 client.challenge(options.key);
 client.setCallback(function (data) { console.log(data); });
-client.run(options.missioncontrol);
+//client.run(options.missioncontrol);
 client.info({
     Info: "SNMP switch client",
     ServiceClass: "Switches",
@@ -111,6 +111,9 @@ var portsOutE_oid = "1.3.6.1.2.1.2.2.1.20"
 var fwdmac = "1.3.6.1.2.1.17.4.3.1.2"
 var fwdtype = "1.3.6.1.2.1.17.4.3.1.3"
 var portindex = "1.3.6.1.2.1.17.1.4.1.2"
+var vlansActive = "1.3.6.1.2.1.17.7.1.4.2.1.3"
+var vlanUntagged = "1.3.6.1.2.1.17.7.1.4.2.1.5"
+var vlanEgress = "1.3.6.1.2.1.17.7.1.4.2.1.4"
 
 async function run(oid) {
 }
@@ -312,10 +315,81 @@ async function getMacs() {
     }
 }
 
+async function getVlans() {
+    let vlans = [];
+    let oid = vlansActive
+    let nn = oid
+    console.log("getVlans")
+
+    function vlanUBitParse(vlan,buf) {
+        for(let i = 0; i < buf.length ; i++) {
+            let c = buf.readUInt8(i)
+            let p = 8*(i+1)
+            while(c > 0) {
+                if(c%2 == 1)
+                {
+                    if(Switch.Ports[p]) {
+                        if(!Switch.Ports[p].Vlan) Switch.Ports[p].Vlan = { Tagged: [], Untagged: null}
+                        Switch.Ports[p].Vlan.Untagged = vlan
+                    }
+                    c --
+                }
+                c=c/2
+                p--
+            }
+        }
+    }
+
+    function vlanEBitParse(vlan,buf) {
+        for(let i = 0; i < buf.length ; i++) {
+            let c = buf.readUInt8(i)
+            let p = 8*(i+1)
+            while(c > 0) {
+                if(c%2 == 1) {
+                    if(Switch.Ports[p]) {
+                        if(!Switch.Ports[p].Vlan) Switch.Ports[p].Vlan = { Tagged: [], Untagged: null}
+                        if(Switch.Ports[p].Vlan.Untagged != vlan) Switch.Ports[p].Vlan.Tagged.push(vlan)
+                    }
+                    c--
+                }
+                c=c/2
+                p--
+            }
+        }
+    }
+
+    while(1) {
+        let e = await getNext(nn)
+        nn = e.oid
+        if(!compareOIDs(oid,nn)) break
+        let idx = e.oid.split('.')
+        vlans[idx[idx.length-1]] = Number(e.value)
+    }
+    oid = vlanUntagged
+    nn = oid
+    while(1) {
+        let e = await getNext(nn)
+        nn = e.oid
+        if(!compareOIDs(oid,nn)) break
+        let idx = e.oid.split('.')
+        vlanUBitParse(idx[idx.length-1],e.value)
+    }
+    oid = vlanEgress
+    nn = oid
+    while(1) {
+        let e = await getNext(nn)
+        nn = e.oid
+        if(!compareOIDs(oid,nn)) break
+        let idx = e.oid.split('.')
+        vlanEBitParse(idx[idx.length-1],e.value)
+    }
+}
+
 async function run() {
  await getName()
  await getPorts()
  await getMacs()
+ await getVlans()
  Switch.Ports = Switch.Ports.filter(function (el) {
     return el != null;
   });
