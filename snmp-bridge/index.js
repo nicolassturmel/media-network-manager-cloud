@@ -391,7 +391,7 @@ async function run() {
  await getName()
  await getPorts()
  await getMacs()
- //await getVlans()
+ await getVlans()
  Switch.Ports = Switch.Ports.filter(function (el) {
     return el != null;
   });
