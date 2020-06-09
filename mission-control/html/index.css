@@ -75,6 +75,12 @@ body {
       "bottom bottom bottom";
 }
 
+#port.devices-only {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+    grid-template-areas: "header";
+}
+
 #leftmenu {
     grid-area: leftmenu;
     display: grid;
@@ -113,6 +119,16 @@ body {
     color: white;
     border: none;
     height: 14px;
+}
+
+#vlan-sel {
+    height: 100%;
+    width: 100px;
+    background-color: grey;
+    color: white;
+    padding-left: 10px;
+    padding-right: 10px;
+    margin-left: -20px;
 }
 
 .left {
@@ -191,7 +207,7 @@ body {
     position: absolute;
     background-color: var(--main-color-dim);
     z-index: 60;
-    padding: 10px;
+    padding: 2px;
 }
 
 .context-menu-croped {
@@ -199,8 +215,13 @@ body {
     overflow-y: scroll;
 }
 
+.context-menu-item {
+    padding: 5px;
+}
+
 .context-menu-item:hover {
     background-color: var(--main-color-light);
+    border: 1px white solid;
 }
 
 /* width */

@@ -179,6 +179,7 @@ function computeBandWidth() {
                 ForwardAll: val.ForwardAll,
                 Groups: val.IGMPGroups
             },
+            Vlan: val.Vlan,
             AdminState: AdminState,
             Speed: speed,
             In: Math.round(val.In * 8 / CountTime / 1024 / 1024 * 10 * 1000) / 10,
@@ -441,6 +442,9 @@ function systemInfo() {
     });
 }
 function getVlans() {
+    Object.keys(SwitchData).forEach(function (k) {
+        SwitchData[k].Vlan = null;
+    });
     var portList = function (l) {
         var it = l.replace(/\s/g, "").split(",");
         var r = [];

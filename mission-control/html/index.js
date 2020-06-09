@@ -1,6 +1,24 @@
 
 let maddress = []
-let mselection = {}
+let mselection = {
+    vlan: null
+}
+let mvlans = [
+    1,
+    2,
+    2022
+]
+let VlanColor = (v) => {
+    let corrlen = (e) => {
+        if(e.length < 2) return "0" + e
+        return e
+    }
+    let r = (v%11)*22
+    let g = (v%3)*80
+    let b = (v%7)*35
+    return "#" + corrlen(r.toString(16)) + corrlen(g.toString(16)) + corrlen(b.toString(16))
+}
+
 let _nodes = []
 let _data
 let MColors = ["#ff00ff","#ffff00"]
@@ -224,6 +242,7 @@ function run() {
         document.getElementById("workspacename-bar").innerHTML  = "<b style='color:red;'>lost connection : socket closed</b>"
     }
     initGraph()
+    selectNew(null,null)
 }
 
 var makeSettingsMenu = () => {
@@ -395,6 +414,19 @@ let lastSelected = null;
 let lastNode = null;
 
 var selectNew = (newSelected,node) => {
+    let velem = document.getElementById("vlan-sel")
+    velem.oncontextmenu = vlanMenu
+    velem.onclick = vlanMenu
+    if(mselection.vlan == null)
+    {
+        velem.innerHTML = "All Vlans: untagged / trunk"
+        velem.style["background-color"]=null
+    }
+    else{
+        velem.innerHTML = "Vlan " + mselection.vlan
+        velem.style["background-color"]= VlanColor(mselection.vlan)
+    }
+    
     if(!newSelected) return
     if(!node) node = lastNode
     else {
@@ -420,7 +452,7 @@ var selectNew = (newSelected,node) => {
         sec.onclick = () => {
             sec.className = "prim-off"
             maddress = []
-            mselection = {} 
+            mselection = { vlan: mselection.vlan} 
             makeDeviceInfo(document.getElementById("node-" + node.Name))
         }
     }
@@ -433,7 +465,7 @@ var selectNew = (newSelected,node) => {
         sec.className = "prim-off"
         lastNode = null
         maddress = []
-        mselection = {} 
+        mselection = { vlan: mselection.vlan} 
         win = document.getElementById("win").innerHTML = ""
 
         let elem = document.getElementById(lastSelected)
@@ -578,7 +610,7 @@ var makeStreamInfo = (elem,streamname) => {
 }
 
 var makeDeviceInfo = (elem,update) => {
-    mselection = {}
+    mselection = {vlan: mselection.vlan}
     let node = elem._data.node
     selectNew("node-unit-" + node.Name,elem._data.node)
     
@@ -998,14 +1030,22 @@ let oldNodes = []
 let oldEdges = []
 let macToFind = []
 
+
 function buildGraph(nodes) {
     let newNodes = [];
     let newEdges = [];
+    let newvlans = []
     for(let i in nodes) {
         if(nodes[i].Name) {
             if(nodes[i].Type == "switch") {
                 let isRouterForStream = false;
                 for(let p of nodes[i].Ports) {
+                    if(p.Vlan) {
+                        for(let v of p.Vlan.Untagged)
+                            if(!newvlans.includes(v)) newvlans.push(v)
+                        for(let v of p.Vlan.Tagged)
+                            if(!newvlans.includes(v)) newvlans.push(v)
+                    }
                     let color = "#0077bb"
                     let n = nodes.findIndex(k => { if(k.Type == "null") return false ; return( k.OtherIPs.some(l => l == p.Neighbour) || k.IP == p.Neighbour) })
                     if(n > 0) {
@@ -1029,19 +1069,59 @@ function buildGraph(nodes) {
                         }
                         let bcolor = color;
                         let edge_width = 1;
+                        let edge = {
+                            color: color,
+                            width: 3,
+                            style: null,
+                            dashes: false
+                        }
+                        if(!p.Vlan) {
+                            edge.with = 100
+                            edge.color = "gray"
+                            edge.dashes = true
+                        }
+                        else if(!mselection.vlan && p.Vlan.Tagged.length > 0) {
+                            edge.width = 6
+                            edge.color = "gray"
+                        }
+                        else if(!mselection.vlan && p.Vlan.Untagged.length > 0) {
+                            edge.width = 6
+                            edge.color = VlanColor(p.Vlan.Untagged[0])
+                        }
+                        else if(!mselection.vlan) {
+                            edge.width = 0
+                        }
+                        else if(p.Vlan.Untagged.includes(mselection.vlan))  {
+                            edge.width = 3
+                            edge.color =  VlanColor(mselection.vlan)
+                        }
+                        else if(p.Vlan.Tagged.includes(mselection.vlan)) {
+                            edge.width = 3
+                            edge.color = VlanColor(mselection.vlan)
+                            edge.dashes = [20,40]
+                        }
+                        else {
+                            edge.width = 0
+                            edge.dashes = true
+                        }
+                        edge_width = edge.width
+                        color = edge.color
+                        let highlight = false
                         for(let add of maddress) {
                             if(p.IGMP.Groups[add] == true) {
                                 color = MColors[index]
                                 isRouterForStream = true;
-                                edge_width = 3
+                                highlight = true
+                                edge_width = 9
                             }
                             index = (index + 1)%MColors.length
                         }
                         if(mselection.nodeIP && mselection.nodeIP == nodes[n].IP)  {
                             bcolor = "#00ffff"
+                            highlight = true
                         }
-                        if(nodes[n].Type != "switch") newNodes.push({id: n , mass:20, label: nodes[n].Name.split(".")[0], borderWidth: 2, color: {border: bcolor, background: colorOfType(nodes[n].Type,color == "#0077bb")}, font: { color: "#00ffff"}})
-                        newEdges.push({id: i + "_" + p.Name, from: i, to: n, label: "port " + p.Name, color: {color : color}, width: edge_width, font: { strokeWidth: 0, color: "white"}})
+                        if(nodes[n].Type != "switch") newNodes.push({id: n , mass:20, label: nodes[n].Name.split(".")[0], borderWidth: 2, color: {border: bcolor, background: colorOfType(nodes[n].Type,!highlight)}, font: { color: "#00ffff"}})
+                        newEdges.push({id: i + "_" + p.Name, from: i, to: n, label: "port " + p.Name, dashes: edge.dashes, color: {color : color}, width: edge_width, font: { strokeWidth: 0, color: "white"}})
                     }
                 }
                 let cannot = false;
@@ -1066,6 +1146,7 @@ function buildGraph(nodes) {
         visedge.update(tmp)
         console.log("new edges")
     }
+    mvlans = newvlans
     network.fit()
 }
 
@@ -1108,8 +1189,59 @@ var cpuInfo = (parent,data,pref) => {
     ctx.fillText(Math.floor(data.CPUSpeeds[0]*10)/10, 14, 30);
 }
 
+var vlanMenu = (e) => {
+    let f = {
+        Name: "vlans",
+        _Actions : [{
+            id: 50000,
+            Name: "show all",
+            type: "simple",
+            action: () => {
+                mselection.vlan = null
+                selectNew(null,null)
+                buildGraph(_nodes)
+            }
+        }]
+    }
+
+    let Sub = [
+        {
+            Name: "rename",
+            action: () => {}
+        },
+        {
+            Name: "color",
+            action: () => {}
+        },
+        {
+            Name: "select",
+            action: (id) => { mselection.vlan = mvlans[id]}
+        }
+    ]
+
+    let a = 0
+    for(let v of mvlans) {
+        f._Actions.push({
+            Name: v + ": " + "vlan " + v,
+            Number: v,
+            Style: {
+                "background-color":VlanColor(v) 
+            },
+            type: "simple",
+            action: () => {
+                mselection.vlan = v
+                selectNew(null,null)
+                buildGraph(_nodes)
+            },
+            id: a
+        })
+        a++
+    }
+
+    nodeContextMenu(f,e)
+}
+
 var nodeContextMenu = (node,pos) => {
-    console.error(pos)
     
     /*node._Actions = [{
         Name: "toggle port on/off",
@@ -1139,15 +1271,43 @@ var nodeContextMenu = (node,pos) => {
         contextMenu.onmouseout = () => vanish_t = setTimeout(vanish,200)
 
         for(let A of node._Actions) {
+            dom_items[A.id] = checkElem(contextMenu,"action-" + A.id,"div","context-menu-item",A.Name)
+            if(A.Style) {
+                Object.keys(A.Style).forEach(style_key => {
+                    dom_items[A.id].style[style_key] = A.Style[style_key]
+                })
+            }
             switch(A.type) {
-                case "applyToRange":
-                    dom_items[A.id] = checkElem(contextMenu,"action-" + A.id,"div","context-menu-item",A.Name)
+                case "subactions":
                     dom_items[A.id].onmouseover = () =>{
                         if(document.getElementById("context-menu-sub")) document.getElementById("context-menu-sub").outerHTML = ""
                         let contextSubMenu = checkElem( contextMenu,"context-menu-sub","div","context-menu context-menu-croped","")
                         var rect = dom_items[A.id].getBoundingClientRect();
                         var rect2 = contextMenu.getBoundingClientRect();
-                        contextSubMenu.style.top = rect.top - rect2.top
+                        contextSubMenu.style.top = rect.top - rect2.top - 10
+                        contextSubMenu.style.left = rect.right - rect2.left
+                        for(let item of A.Subs) {
+                            let dom_item = checkElem(contextSubMenu,"context-menu-action-" + A.id + item.Name,"div","context-menu-item",item.Name)
+                            dom_item.onclick = () => {
+                                item.action(A.id)
+                            }
+                        }
+                        let subvanish = () => {
+                            contextSubMenu.outerHTML = ""
+                        }
+                        let subvanish_t
+                        contextSubMenu.onmouseover = () => {clearTimeout(subvanish_t);clearTimeout(vanish_t)}
+                        contextSubMenu.onmouseout = () => {subvanish_t = setTimeout(subvanish,200)}
+
+                    }
+                    break
+                case "applyToRange":
+                    dom_items[A.id].onmouseover = () =>{
+                        if(document.getElementById("context-menu-sub")) document.getElementById("context-menu-sub").outerHTML = ""
+                        let contextSubMenu = checkElem( contextMenu,"context-menu-sub","div","context-menu context-menu-croped","")
+                        var rect = dom_items[A.id].getBoundingClientRect();
+                        var rect2 = contextMenu.getBoundingClientRect();
+                        contextSubMenu.style.top = rect.top - rect2.top - 10
                         contextSubMenu.style.left = rect.right - rect2.left
                         for(let item of node[A.path]) {
                             let dom_item = checkElem(contextSubMenu,"context-menu-action-" + A.id + item[A.label],"div","context-menu-item",item[A.label])
@@ -1165,17 +1325,17 @@ var nodeContextMenu = (node,pos) => {
                     }
                     break
                 case "simple":
-                    dom_items[A.id] = checkElem(contextMenu,"action-" + A.id,"div","context-menu-item",A.Name)
                     dom_items[A.id].onclick = () => {
-                        console.error("Click",A)
+                        A.action()
                     }
                     break;
                 case "missionControlAction":
-                    dom_items[A.id] = checkElem(contextMenu,"action-" + A.id,"div","context-menu-item",A.Name)
                     dom_items[A.id].onclick = () => {
                         console.error("Click",A)
                     }
                     break;
+                default:
+                    break
             }
         }
     }
