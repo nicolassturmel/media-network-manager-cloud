@@ -114,14 +114,22 @@ function run() {
                         if(key.search("_csco-sb") != -1) {
                             let newSw = checkElem(popUp,"popup-switch-" + n.IP,"div","popUp-elem","Add cisco switch at " + n.IP)
                             newSw.onclick = () => {
-                                missionControlWS.send(JSON.stringify(
+                                onscreenPopup({Type: "cisco_switch", 
+                                Name: "cisco_switch",
+                                Params: {
+                                    IP: n.IP,
+                                    User: "cisco",
+                                    Password: "cisco"
+                                }
+                            },_data.Services.cisco_switch)
+                                /*missionControlWS.send(JSON.stringify(
                                     {
                                         Type: "ciscoSG",
                                         IP: n.IP,
                                         User: "cisco",
                                         Password: "cisco"
                                     }
-                                ))
+                                ))*/
                             }
                         }
                     })
@@ -245,6 +253,64 @@ function run() {
     selectNew(null,null)
 }
 
+var onscreenPopup = (type,params) => {
+    if(document.getElementById("popupBox")) return
+    let root = document.getElementById("popupSpace");
+    let win = document.createElement("div")
+    win.id = "popupBox";
+    let port = document.getElementById("port")
+    port.classList.add("blured")
+    /*port.onclick = () => {
+        port.classList.remove("blured")
+        root.innerHTML = ""
+    }*/
+
+
+    if(type.Name) {
+        let a = checkElem(win,"","div","","")
+        checkElem(a,"","h2","","Launch " + type.Name.replace("_"," "))
+    }
+
+    let fiedls = {};
+    Object.keys(params).forEach((k) => {
+        if(k == "Type") return
+        let a = checkElem(win,"","div","","")
+        checkElem(a,"popupField" + k,"span","popup-field",k)
+        let f = checkElem(a,"","input","right","")
+        f.value = (type.Params && type.Params[k])? type.Params[k] : "empty"
+        fiedls[k] = f
+    })
+
+
+    let a = checkElem(win,"","div","","")
+    let cancel = checkElem(a,"","span","popupCancel left","Cancel")
+    let ok = checkElem(a,"","span","popupOk right","Ok")
+    cancel.onclick = () => {
+        port.classList.remove("blured")
+        root.innerHTML = ""
+    }
+    ok.onclick = () => {
+        Object.keys(fiedls).forEach((k) => {
+            params[k] = fiedls[k].value
+        })
+        missionControlWS.send(JSON.stringify(params))
+        port.classList.remove("blured")
+        root.innerHTML = ""
+    }
+
+    root.appendChild(win)
+
+    win.addEventListener("keyup", function(event) {
+        // Number 13 is the "Enter" key on the keyboard
+        if (event.keyCode === 13) {
+          // Cancel the default action, if needed
+          ok.onclick();
+          // Trigger the button element with a click
+          document.getElementById("myBtn").click();
+        }
+      });
+}
+
 var makeSettingsMenu = () => {
 
     let menu = document.getElementById("leftmenu");
@@ -265,63 +331,6 @@ var makeSettingsMenu = () => {
             X.classList.add("expanded")
             return true
         }
-    }
-
-    var onscreenPopup = (type,params) => {
-        if(document.getElementById("popupBox")) return
-        let root = document.getElementById("popupSpace");
-        let win = document.createElement("div")
-        win.id = "popupBox";
-        let port = document.getElementById("port")
-        port.classList.add("blured")
-        /*port.onclick = () => {
-            port.classList.remove("blured")
-            root.innerHTML = ""
-        }*/
-
-
-        if(type.Name) {
-            let a = checkElem(win,"","div","","")
-            checkElem(a,"","h2","","Launch " + type.Name.replace("_"," "))
-        }
-
-        let fiedls = {};
-        Object.keys(params).forEach((k) => {
-            if(k == "Type") return
-            let a = checkElem(win,"","div","","")
-            checkElem(a,"popupField" + k,"span","popup-field",k)
-            let f = checkElem(a,"","input","right","")
-            fiedls[k] = f
-        })
-
-
-        let a = checkElem(win,"","div","","")
-        let cancel = checkElem(a,"","span","popupCancel left","Cancel")
-        let ok = checkElem(a,"","span","popupOk right","Ok")
-        cancel.onclick = () => {
-            port.classList.remove("blured")
-            root.innerHTML = ""
-        }
-        ok.onclick = () => {
-            Object.keys(fiedls).forEach((k) => {
-                params[k] = fiedls[k].value
-            })
-            missionControlWS.send(JSON.stringify(params))
-            port.classList.remove("blured")
-            root.innerHTML = ""
-        }
-
-        root.appendChild(win)
-
-        win.addEventListener("keyup", function(event) {
-            // Number 13 is the "Enter" key on the keyboard
-            if (event.keyCode === 13) {
-              // Cancel the default action, if needed
-              ok.onclick();
-              // Trigger the button element with a click
-              document.getElementById("myBtn").click();
-            }
-          });
     }
 
     var buildSettingsItem = (root,field,val,previd) => {
