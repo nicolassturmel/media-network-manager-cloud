@@ -285,8 +285,7 @@ function getMacAddressTable() {
         for (var _i = 0, array_5 = array; _i < array_5.length; _i++) {
             var line = array_5[_i];
             var add = line.split(/\s+/);
-            //console.log(add)
-            if (add.length >= 4) {
+            if (add.length == 6) {
                 if (add[3] == 0) {
                     Switch.Mac = add[2];
                 }
@@ -312,14 +311,10 @@ function getArp() {
             setTimeout(function () { getPortConfig(); }, SwitchPollTime * 1000);
             return;
         }
-        Object.keys(SwitchData).forEach(function (key) {
-            SwitchData[key].ConnectedMacs = [];
-        });
         var Ports = {};
         for (var _i = 0, array_6 = array; _i < array_6.length; _i++) {
             var line = array_6[_i];
             var add = line.split(/\s+/);
-            console.log(add);
             if (add.length >= 7) {
                 if (!Ports[add[2]])
                     Ports[add[2]] = [];
@@ -327,7 +322,7 @@ function getArp() {
             }
         }
         Object.keys(Ports).forEach(function (p) {
-            if (SwitchData[p] && Ports[p].length == 1)
+            if (SwitchData[p] && SwitchData[p].ConnectedMacs.length == 1 && Ports[p].length == 1)
                 SwitchData[p].Neighbour = Ports[p][0];
         });
         setTimeout(getNextFct("getArp"), SwitchPollTime * 1000);
@@ -514,7 +509,6 @@ function getVlans() {
             var taged = array[l].substr(nextstop, items[2].length);
             nextstop += items[2].length + 1;
             var untaged = array[l].substr(nextstop, items[3].length);
-            console.log(vlan, taged, untaged, portList(taged), portList(untaged));
             for (var _i = 0, _a = portList(taged); _i < _a.length; _i++) {
                 var p = _a[_i];
                 if (!SwitchData[p].Vlan)

@@ -314,8 +314,7 @@ function getMacAddressTable() {
         for(let line of array) {
             
             let add = line.split(/\s+/)
-            //console.log(add)
-            if(add.length >= 4) {
+            if(add.length == 6) {
                 if(add[3] == 0) {
                     Switch.Mac = add[2]
                 }
@@ -342,20 +341,16 @@ function getArp() {
             setTimeout(function() {getPortConfig()}, SwitchPollTime*1000);
             return
         }
-        Object.keys(SwitchData).forEach(function(key) {
-            SwitchData[key].ConnectedMacs = []
-        })
         let Ports = {}
         for(let line of array) {
             let add = line.split(/\s+/)
-            console.log(add)
             if(add.length >= 7) {
                 if(!Ports[add[2]]) Ports[add[2]] = []
                 Ports[add[2]].push(add[3])
             }
         }
         Object.keys(Ports).forEach((p) => {
-            if(SwitchData[p] && Ports[p].length == 1)
+            if(SwitchData[p] && SwitchData[p].ConnectedMacs.length == 1 && Ports[p].length == 1)
                 SwitchData[p].Neighbour = Ports[p][0]
         })
         setTimeout(getNextFct("getArp"), SwitchPollTime*1000);
@@ -532,7 +527,6 @@ function getVlans() {
             let taged = array[l].substr(nextstop,items[2].length)
             nextstop += items[2].length+1
             let untaged = array[l].substr(nextstop,items[3].length)
-            console.log(vlan,taged,untaged,portList(taged),portList(untaged))
             for(let p of portList(taged)) {
                 if(!SwitchData[p].Vlan) SwitchData[p].Vlan = { Tagged: [], Untagged: []}
                 SwitchData[p].Vlan.Tagged.push(vlan)
@@ -568,7 +562,7 @@ function getNextFct(current)
         case "getMulticastSources" :
             return getVlans
         case "getVlans" :
-            return getArp
+           return getArp
         case "getArp" :
             return get_count
     }
