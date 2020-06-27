@@ -579,8 +579,8 @@ module.exports = function (LocalOptions) {
                         && friendPort_1 >= 0
                         && friendNode.Ports[listPort_1]
                         && listNode.Ports[friendPort_1]
-                        && friendNode.Ports[friendPort_1].Vlan
-                        && listNode.Ports[listPort_1].Vlan)
+                        && friendNode.Ports[listPort_1].Vlan
+                        && listNode.Ports[friendPort_1].Vlan)
                         console.log("--------------", friendNode.Ports[listPort_1].Vlan, listNode.Ports[friendPort_1].Vlan);
                 }
             }
