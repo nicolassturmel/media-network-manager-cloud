@@ -202,7 +202,7 @@ function computeBandWidth() {
             speed = val.Speed
         if(val.AdminState)
             AdminState = val.AdminState
-        Switch.Ports.push({ 
+        let p = Switch.Ports.push({ 
             Name: key, 
             ConnectedMacs : ConnectedMacs, 
             IGMP : {
@@ -213,12 +213,13 @@ function computeBandWidth() {
             AdminState: AdminState, 
             Speed: speed, 
             In : Math.round(val.In*8/CountTime/1024/1024*10*1000)/10, 
-            Out : Math.round(val.Out*8/CountTime/1024/1024*10*1000)/10
+            Out : Math.round(val.Out*8/CountTime/1024/1024*10*1000)/10,
+            
         })
-    
+        if(val.Neighbour) Switch.Ports[p-1].Neighbour = val.Neighbour
     });
     NewData = true
-    //console.log(Switch)
+    console.log(Switch)
     try {
         Switch._Timers[0].time = client.getSendInterval()
         client.send(JSON.stringify(Switch))
@@ -326,6 +327,38 @@ function getMacAddressTable() {
             }
         }
         setTimeout(getNextFct("getMacAddressTable"), SwitchPollTime*1000);
+    
+    })
+}
+
+function getArp() {        
+    switchTelnet.exec("show arp ", function (err, response) {
+        let array 
+        try {
+            array = response.split("\n")
+        } catch (error) {
+            console.log("Response error : can not split in array")
+            console.log(response)
+            setTimeout(function() {getPortConfig()}, SwitchPollTime*1000);
+            return
+        }
+        Object.keys(SwitchData).forEach(function(key) {
+            SwitchData[key].ConnectedMacs = []
+        })
+        let Ports = {}
+        for(let line of array) {
+            let add = line.split(/\s+/)
+            console.log(add)
+            if(add.length >= 7) {
+                if(!Ports[add[2]]) Ports[add[2]] = []
+                Ports[add[2]].push(add[3])
+            }
+        }
+        Object.keys(Ports).forEach((p) => {
+            if(SwitchData[p] && Ports[p].length == 1)
+                SwitchData[p].Neighbour = Ports[p][0]
+        })
+        setTimeout(getNextFct("getArp"), SwitchPollTime*1000);
     
     })
 }
@@ -490,7 +523,6 @@ function getVlans() {
             array = response.split("\n")
         } catch (error) {
         }
-        console.log(array)
         let grid = array[3]
         let items = grid.split(" ");
         for(let l = 4; l < array.length - 2; l++) {
@@ -510,7 +542,6 @@ function getVlans() {
                 SwitchData[p].Vlan.Untagged.push(vlan)
             }
         }
-        console.log(SwitchData)
         setTimeout(getNextFct("getVlans"), SwitchPollTime*1000);
     })
 }
@@ -537,6 +568,8 @@ function getNextFct(current)
         case "getMulticastSources" :
             return getVlans
         case "getVlans" :
+            return getArp
+        case "getArp" :
             return get_count
     }
 }
