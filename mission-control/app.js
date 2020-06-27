@@ -546,6 +546,7 @@ module.exports = function (LocalOptions) {
                             console.log(friend_1[0].ports, list.dataRef, friendPort_1);
                         }
                     });
+                    // Just to fuck with your head
                     var listNode = Nodes[friend_1[0].dataRef];
                     var friendNode = Nodes[list.dataRef];
                     console.log("VLAN  testing " + friendNode.Name + " - " + listPort_1 + "<->" + listNode.Name + " - " + friendPort_1);
@@ -576,6 +577,8 @@ module.exports = function (LocalOptions) {
                     }
                     if (listPort_1 >= 0
                         && friendPort_1 >= 0
+                        && friendNode.Ports[listPort_1]
+                        && listNode.Ports[friendPort_1]
                         && friendNode.Ports[friendPort_1].Vlan
                         && listNode.Ports[listPort_1].Vlan)
                         console.log("--------------", friendNode.Ports[friendPort_1].Vlan, listNode.Ports[listPort_1].Vlan);

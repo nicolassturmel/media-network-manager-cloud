@@ -540,8 +540,11 @@ export = function(LocalOptions) {
                         friendPort = id
                         console.log(friend[0].ports,list.dataRef,friendPort)
                     }})
+
+                    // Just to fuck with your head
                     let listNode = Nodes[friend[0].dataRef]
                     let friendNode = Nodes[list.dataRef]
+
                     console.log("VLAN  testing " + friendNode.Name + " - " + listPort + "<->" + listNode.Name  +" - " + friendPort )
                     if(listPort >= 0 
                         && friendPort >= 0
@@ -571,6 +574,8 @@ export = function(LocalOptions) {
                      
                     if(listPort >= 0 
                         && friendPort >= 0
+                        && friendNode.Ports[listPort]
+                        && listNode.Ports[friendPort]
                         && friendNode.Ports[friendPort].Vlan 
                         && listNode.Ports[listPort].Vlan)   
                         console.log("--------------",friendNode.Ports[friendPort].Vlan ,listNode.Ports[listPort].Vlan)
