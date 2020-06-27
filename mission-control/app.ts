@@ -578,7 +578,7 @@ export = function(LocalOptions) {
                         && listNode.Ports[friendPort]
                         && friendNode.Ports[friendPort].Vlan 
                         && listNode.Ports[listPort].Vlan)   
-                        console.log("--------------",friendNode.Ports[friendPort].Vlan ,listNode.Ports[listPort].Vlan)
+                        console.log("--------------",friendNode.Ports[listPort].Vlan ,listNode.Ports[friendPort].Vlan)
 
                         
                 }
