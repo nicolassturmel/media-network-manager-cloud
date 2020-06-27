@@ -314,7 +314,7 @@ function getMacAddressTable() {
             
             let add = line.split(/\s+/)
             //console.log(add)
-            if(add[1] == 1) {
+            if(add.length >= 4) {
                 if(add[3] == 0) {
                     Switch.Mac = add[2]
                 }
