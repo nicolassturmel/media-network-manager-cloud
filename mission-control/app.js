@@ -551,6 +551,8 @@ module.exports = function (LocalOptions) {
                     console.log("VLAN  testing " + friendNode.Name + " - " + listPort_1 + "<->" + listNode.Name + " - " + friendPort_1);
                     if (listPort_1 >= 0
                         && friendPort_1 >= 0
+                        && friendNode.Ports[listPort_1]
+                        && listNode.Ports[friendPort_1]
                         && friendNode.Ports[listPort_1].Vlan
                         && listNode.Ports[friendPort_1].Vlan
                         && (!_.isEqual(listNode.Ports[friendPort_1].Vlan.Tagged.sort(), friendNode.Ports[listPort_1].Vlan.Tagged.sort())

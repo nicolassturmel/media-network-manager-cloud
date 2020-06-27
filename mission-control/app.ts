@@ -545,6 +545,8 @@ export = function(LocalOptions) {
                     console.log("VLAN  testing " + friendNode.Name + " - " + listPort + "<->" + listNode.Name  +" - " + friendPort )
                     if(listPort >= 0 
                         && friendPort >= 0
+                        && friendNode.Ports[listPort]
+                        && listNode.Ports[friendPort]
                         && friendNode.Ports[listPort].Vlan 
                         && listNode.Ports[friendPort].Vlan
                         && (
