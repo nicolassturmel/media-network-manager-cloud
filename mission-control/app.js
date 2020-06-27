@@ -471,7 +471,7 @@ module.exports = function (LocalOptions) {
                             //console.log("Switch " , i , " port ", p)
                             var keep = null;
                             var ok = true;
-                            var _loop_6 = function (j) {
+                            var _loop_7 = function (j) {
                                 if (cleared.filter(function (q) { return q.dataRef == j; }).length == 1) {
                                     var test = cleared.filter(function (q) { return q.dataRef == j; })[0];
                                     for (var _i = 0, _a = test.ports; _i < _a.length; _i++) {
@@ -487,7 +487,7 @@ module.exports = function (LocalOptions) {
                             };
                             for (var _i = 0, _a = linkd[i_4].ports[p]; _i < _a.length; _i++) {
                                 var j = _a[_i];
-                                _loop_6(j);
+                                _loop_7(j);
                             }
                             if (ok && keep != null) {
                                 linkd[i_4].ports[p] = [keep];
@@ -507,19 +507,20 @@ module.exports = function (LocalOptions) {
             //if(Nodes[i].Mac) console.log(Nodes[i].Mac)
             if (Nodes[i_5].Type == "switch" && Nodes[i_5].Ports.length > 0) {
                 var connlist = linkd.filter(function (k) { return k.dataRef == i_5; })[0];
-                var _loop_7 = function (p) {
+                var _loop_8 = function (p) {
                     if (connlist.ports[p]) {
                         Nodes[i_5].Ports[p].Neighbour = Nodes[connlist.ports[p][0]].IP;
                     }
                     else if (Nodes[i_5].Ports[p].ConnectedMacs.length >= 1) {
                         var d = Nodes.filter(function (k) { return k.Macs && k.Macs.some(function (l) { return Nodes[i_5].Ports[p].ConnectedMacs.includes(l); }); });
                         //       console.log("size 1 : " + Nodes[i].Ports[p].ConnectedMacs[0] + " : d size " + d.length + " N->" + Nodes[i].Ports[p].Neighbour)
-                        if (d.length >= 1)
+                        if (d.length >= 1) {
                             Nodes[i_5].Ports[p].Neighbour = d[0].IP;
+                        }
                     }
                 };
                 for (var p in Nodes[i_5].Ports) {
-                    _loop_7(p);
+                    _loop_8(p);
                 }
             }
         };
@@ -527,13 +528,85 @@ module.exports = function (LocalOptions) {
         for (var i_5 in Nodes) {
             _loop_5(i_5);
         }
-        //console.log(JSON.stringify(linkd.filter(k => k.ports.some(l => l.length == 1))))
+        var _loop_6 = function (list) {
+            if (list && list.dataRef) {
+                var friend_1 = linkd.filter(function (k) { return k.ports.some(function (l) { return l == list.dataRef; }); });
+                if (friend_1.length == 1 && friend_1[0]) {
+                    var listPort_1 = -1;
+                    list.ports.forEach(function (kval, id) {
+                        if (kval.includes(parseInt(friend_1[0].dataRef))) {
+                            listPort_1 = id;
+                            console.log(list.ports, friend_1[0].dataRef, listPort_1);
+                        }
+                    });
+                    var friendPort_1 = -1;
+                    friend_1[0].ports.forEach(function (kval, id) {
+                        if (kval.includes(parseInt(list.dataRef))) {
+                            friendPort_1 = id;
+                            console.log(friend_1[0].ports, list.dataRef, friendPort_1);
+                        }
+                    });
+                    var listNode = Nodes[friend_1[0].dataRef];
+                    var friendNode = Nodes[list.dataRef];
+                    console.log("VLAN  testing " + friendNode.Name + " - " + listPort_1 + "<->" + listNode.Name + " - " + friendPort_1);
+                    if (listPort_1 >= 0
+                        && friendPort_1 >= 0
+                        && friendNode.Ports[listPort_1].Vlan
+                        && listNode.Ports[friendPort_1].Vlan
+                        && (!_.isEqual(listNode.Ports[friendPort_1].Vlan.Tagged.sort(), friendNode.Ports[listPort_1].Vlan.Tagged.sort())
+                            || !_.isEqual(listNode.Ports[friendPort_1].Vlan.Untagged.sort(), friendNode.Ports[listPort_1].Vlan.Untagged.sort()))) {
+                        if (!listNode.Errors)
+                            listNode.Errors = {};
+                        if (!listNode.Errors.Ports)
+                            listNode.Errors.Ports = [];
+                        if (!listNode.Errors.Ports[friendPort_1])
+                            listNode.Errors.Ports[friendPort_1] = {};
+                        listNode.Errors.Ports[friendPort_1].vlanMissmatch = "VLAN mismatch with connection to switch " + friendNode.Name;
+                        if (!friendNode.Errors)
+                            friendNode.Errors = {};
+                        if (!friendNode.Errors.Ports)
+                            friendNode.Errors.Ports = [];
+                        if (!friendNode.Errors.Ports[listPort_1])
+                            friendNode.Errors.Ports[listPort_1] = {};
+                        friendNode.Errors.Ports[listPort_1].vlanMissmatch = "VLAN mismatch with connection to switch " + listNode.Name;
+                        console.log("VLAN  mismatch for switch to switch link on " + friendNode.Name + "-" + listPort_1 + "<->" + listNode.Name + " - " + friendPort_1);
+                        //listNode.Errors.Ports[listPort]
+                    }
+                    if (listPort_1 >= 0
+                        && friendPort_1 >= 0
+                        && friendNode.Ports[friendPort_1].Vlan
+                        && listNode.Ports[listPort_1].Vlan)
+                        console.log("--------------", friendNode.Ports[friendPort_1].Vlan, listNode.Ports[listPort_1].Vlan);
+                }
+            }
+        };
+        // Check vlan symmetry
+        for (var _i = 0, _a = linkd.filter(function (k) { return k.ports.some(function (l) { return l.length == 1; }); }); _i < _a.length; _i++) {
+            var list = _a[_i];
+            _loop_6(list);
+        }
+        console.log(JSON.stringify(linkd.filter(function (k) { return k.ports.some(function (l) { return l.length == 1; }); })));
     }
     // User and GUI side
     //------------------
     var user_app = exp();
     var server = http.createServer(user_app);
     user_app.use('/', exp.static(__dirname + '/html'));
+    user_app.get('/nodes', function (req, res) {
+        if (Object.keys(req.query).length == 0)
+            res.send(Nodes);
+        else
+            res.send(Nodes.filter(function (N) {
+                var found = false;
+                Object.keys(req.query).forEach(function (k) {
+                    if (N[k] == req.query[k])
+                        found = true;
+                    else
+                        found = false;
+                });
+                return found;
+            }));
+    });
     server.listen(Options.clients_port, function () {
         console.log("Server started on port " + Options.clients_port + " :)");
     });

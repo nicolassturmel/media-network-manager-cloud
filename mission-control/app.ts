@@ -517,15 +517,68 @@ export = function(LocalOptions) {
                     else if(Nodes[i].Ports[p].ConnectedMacs.length >= 1){
                         let d = Nodes.filter(k => k.Macs && k.Macs.some(l => Nodes[i].Ports[p].ConnectedMacs.includes(l)))
                 //       console.log("size 1 : " + Nodes[i].Ports[p].ConnectedMacs[0] + " : d size " + d.length + " N->" + Nodes[i].Ports[p].Neighbour)
-                        if(d.length >= 1)
+                        if(d.length >= 1) {
                             Nodes[i].Ports[p].Neighbour=d[0].IP
+                        }
                     }
                 // console.log(Nodes[i].Ports[p].Neighbour)
                 }
             }
         }
+        // Check vlan symmetry
+        for(let list of linkd.filter(k => k.ports.some(l => l.length == 1))) {
+            if(list && list.dataRef) {
+                let friend = linkd.filter(k => k.ports.some(l => l == list.dataRef)) 
+                if(friend.length == 1 && friend[0]) {
+                    let listPort = -1
+                    list.ports.forEach((kval,id) => {if(kval.includes(parseInt(friend[0].dataRef))) {
+                        listPort = id
+                        console.log(list.ports,friend[0].dataRef,listPort)
+                    }})
+                    let friendPort = -1
+                    friend[0].ports.forEach((kval,id) => {if(kval.includes(parseInt(list.dataRef))) {
+                        friendPort = id
+                        console.log(friend[0].ports,list.dataRef,friendPort)
+                    }})
+                    let listNode = Nodes[friend[0].dataRef]
+                    let friendNode = Nodes[list.dataRef]
+                    console.log("VLAN  testing " + friendNode.Name + " - " + listPort + "<->" + listNode.Name  +" - " + friendPort )
+                    if(listPort >= 0 
+                        && friendPort >= 0
+                        && friendNode.Ports[listPort].Vlan 
+                        && listNode.Ports[friendPort].Vlan
+                        && (
+                            !_.isEqual(listNode.Ports[friendPort].Vlan.Tagged.sort(),friendNode.Ports[listPort].Vlan.Tagged.sort())
+                            || !_.isEqual(listNode.Ports[friendPort].Vlan.Untagged.sort(),friendNode.Ports[listPort].Vlan.Untagged.sort())
+                        ))
+                        {
+                            if(!listNode.Errors) listNode.Errors={}
+                            if(!listNode.Errors.Ports) listNode.Errors.Ports=[]
+                            if(!listNode.Errors.Ports[friendPort]) listNode.Errors.Ports[friendPort] = {}
+                            listNode.Errors.Ports[friendPort].vlanMissmatch = "VLAN mismatch with connection to switch " + friendNode.Name
+                            if(!friendNode.Errors) friendNode.Errors={}
+                            if(!friendNode.Errors.Ports) friendNode.Errors.Ports=[]
+                            if(!friendNode.Errors.Ports[listPort]) friendNode.Errors.Ports[listPort] = {}
+                            friendNode.Errors.Ports[listPort].vlanMissmatch = "VLAN mismatch with connection to switch " + listNode.Name
 
-        //console.log(JSON.stringify(linkd.filter(k => k.ports.some(l => l.length == 1))))
+
+                            console.log("VLAN  mismatch for switch to switch link on " + friendNode.Name + "-" + listPort + "<->" + listNode.Name  +" - " + friendPort )
+                            //listNode.Errors.Ports[listPort]
+                        }
+                
+                     
+                    if(listPort >= 0 
+                        && friendPort >= 0
+                        && friendNode.Ports[friendPort].Vlan 
+                        && listNode.Ports[listPort].Vlan)   
+                        console.log("--------------",friendNode.Ports[friendPort].Vlan ,listNode.Ports[listPort].Vlan)
+
+                        
+                }
+            }
+        }    
+
+        console.log(JSON.stringify(linkd.filter(k => k.ports.some(l => l.length == 1))))
     }
 
 
@@ -537,6 +590,22 @@ export = function(LocalOptions) {
     const server = http.createServer(user_app);
 
     user_app.use('/', exp.static(__dirname + '/html'));
+
+    user_app.get('/nodes',(req,res) => {
+        if(Object.keys(req.query).length == 0)
+            res.send(Nodes)
+        else
+            res.send(Nodes.filter((N) => {
+                let found = false
+                Object.keys(req.query).forEach(k => {
+                    if(N[k] == req.query[k])
+                            found = true
+                    else
+                            found = false
+                })
+                return found
+            }))
+    })
 
     server.listen(Options.clients_port, () => {
         console.log(`Server started on port ` + Options.clients_port + ` :)`);

@@ -14,7 +14,7 @@ export interface MnMs_node_port {
     In: number;
     Out: number;
     Vlan?: {
-        Untagged: number;
+        Untagged: number[];
         Tagged: number[];
     },
     Neighbour?: string; 
@@ -62,4 +62,5 @@ export interface MnMs_node {
     System?: SystemParams;
     _Timers?: node_timers[];
     seqnum?: number;
+    Errors?: any;
 }
