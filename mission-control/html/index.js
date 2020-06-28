@@ -179,7 +179,7 @@ function run() {
                 }
                     
             } 
-            else checkElem(popUp,"pop-up-ptp","span","","To have more ptp info launch the PTP service with administrator permissions.")
+            else checkElem(popUp,"pop-up-ptp","span","","PTP scaneer is a work in progress.")
         }
     }
 
