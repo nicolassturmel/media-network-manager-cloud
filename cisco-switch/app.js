@@ -105,48 +105,39 @@ function get_count() {
         }
         CountTime = now.getTime() - ClearTime;
         ClearTime = now.getTime();
-        var Bit = [0];
+        var previousExtractedNumbers = [0];
         var CurrentPortNumber = 0;
         for (var _i = 0, array_1 = array; _i < array_1.length; _i++) {
-            var str = array_1[_i];
-            str = str.replace("0m", "");
-            var T = str.split(/\D+/).slice(1, -1);
-            if (T.length == 0) { }
+            var line = array_1[_i];
+            var extractedNumbers = line.split(/\D+/).slice(1, -1);
+            console.log(line, extractedNumbers, previousExtractedNumbers, CurrentPortNumber);
+            if (extractedNumbers.length == 0) { }
             else {
-                if (T.length == 1) {
-                    Bit[Bit.length - 1] += T[0] + "";
-                }
-                else {
-                    for (var j in Bit)
-                        Bit[j] = parseInt(Bit[j]);
-                    //console.log(Bit)
-                    if (Bit[0] < CurrentPortNumber) {
-                        CurrentPortNumber = 1;
-                        if (State == ParseState.Out) {
-                            setTimeout(getNextFct("get_count"), SwitchPollTime * 1000);
-                            return;
-                        }
-                        State = ParseState.Out;
+                if (previousExtractedNumbers[0] < CurrentPortNumber) {
+                    CurrentPortNumber = 1;
+                    if (State == ParseState.Out) {
+                        setTimeout(getNextFct("get_count"), SwitchPollTime * 1000);
+                        return;
                     }
-                    if (Bit[0] == CurrentPortNumber) {
-                        if (Bit[0]) {
-                            if (SwitchData["gi" + CurrentPortNumber] == undefined) {
-                                SwitchData["gi" + CurrentPortNumber] = {};
-                                OldValue["gi" + CurrentPortNumber] = {};
-                            }
-                            if (SwitchData["gi" + CurrentPortNumber][State] == undefined) {
-                                SwitchData["gi" + CurrentPortNumber][State] = Bit[Bit.length - 1];
-                                OldValue["gi" + CurrentPortNumber][State] = Bit[Bit.length - 1];
-                            }
-                            else {
-                                SwitchData["gi" + CurrentPortNumber][State] = (Math.pow(2, 32) + Bit[Bit.length - 1] - OldValue["gi" + CurrentPortNumber][State]) % Math.pow(2, 32);
-                                OldValue["gi" + CurrentPortNumber][State] = Bit[Bit.length - 1];
-                            }
-                        }
-                        CurrentPortNumber++;
-                    }
-                    Bit = T;
+                    State = ParseState.Out;
                 }
+                if (previousExtractedNumbers[0] == CurrentPortNumber && CurrentPortNumber != 0) {
+                    console.log("Filling ", CurrentPortNumber);
+                    if (SwitchData["gi" + CurrentPortNumber] == undefined) {
+                        SwitchData["gi" + CurrentPortNumber] = {};
+                        OldValue["gi" + CurrentPortNumber] = {};
+                    }
+                    if (SwitchData["gi" + CurrentPortNumber][State] == undefined) {
+                        SwitchData["gi" + CurrentPortNumber][State] = previousExtractedNumbers[4];
+                        OldValue["gi" + CurrentPortNumber][State] = previousExtractedNumbers[4];
+                    }
+                    else {
+                        SwitchData["gi" + CurrentPortNumber][State] = (Math.pow(2, 32) + previousExtractedNumbers[4] - OldValue["gi" + CurrentPortNumber][State]) % Math.pow(2, 32);
+                        OldValue["gi" + CurrentPortNumber][State] = previousExtractedNumbers[4];
+                    }
+                }
+                CurrentPortNumber++;
+                previousExtractedNumbers = extractedNumbers;
             }
         }
     });
@@ -474,7 +465,8 @@ function systemInfo() {
             setTimeout(function () { getPortConfig(); }, SwitchPollTime * 1000);
             return;
         }
-        Switch.Name = array[3].split(/\s+/)[2];
+        if (array[3].includes("System Name"))
+            Switch.Name = array[3].split(/\s+/)[2];
         var llineNumber;
         for (llineNumber in array) {
             llineNumber = parseInt(llineNumber);
