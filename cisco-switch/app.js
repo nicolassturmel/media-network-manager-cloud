@@ -124,7 +124,6 @@ function get_count() {
                         CurrentPortNumber = 1;
                         if (State == ParseState.Out) {
                             setTimeout(getNextFct("get_count"), SwitchPollTime * 1000);
-                            computeBandWidth();
                             return;
                         }
                         State = ParseState.Out;
@@ -140,7 +139,7 @@ function get_count() {
                                 OldValue["gi" + CurrentPortNumber][State] = Bit[Bit.length - 1];
                             }
                             else {
-                                SwitchData["gi" + CurrentPortNumber][State] = Bit[Bit.length - 1] - OldValue["gi" + CurrentPortNumber][State];
+                                SwitchData["gi" + CurrentPortNumber][State] = (Math.pow(2, 32) + Bit[Bit.length - 1] - OldValue["gi" + CurrentPortNumber][State]) % Math.pow(2, 32);
                                 OldValue["gi" + CurrentPortNumber][State] = Bit[Bit.length - 1];
                             }
                         }
@@ -592,6 +591,7 @@ function getNextFct(current) {
         case "getVlans":
             return getArp;
         case "getArp":
+            computeBandWidth();
             return get_count;
     }
 }

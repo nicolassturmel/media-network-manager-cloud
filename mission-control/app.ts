@@ -829,7 +829,7 @@ export = function(LocalOptions) {
             if(MnmsData.Switches[s].Child) {
                 if(now - MnmsData.Switches[s].Timer < 30000)
                     okswitches++
-                else if(now - MnmsData.Switches[s].StartTime < 15000)
+                else if(now - MnmsData.Switches[s].StartTime < 20000)
                     instart++
                 else 
                     MnmsData.Switches[s].Child = serviceLauncher({

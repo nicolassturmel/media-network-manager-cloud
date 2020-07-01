@@ -412,10 +412,11 @@ nav {
 }
 .node-system-unit {
     position: relative;
-    width: 100%;
+    width: 94%;
     height: 50px;
     font-size: 10pt;
     margin-top: 10px;
+    margin-left: 2%;
 }
 .node-system-cpu {
     position: absolute;

@@ -641,6 +641,8 @@ var makeDeviceInfo = (elem,update) => {
     if(node.System) {
         buildSystemInfo(node,win,"left-")
     }
+    else 
+        checkElem(win,"left-node-system-" + node.Name,"div","node-system-unit","")
     if(node.Services) {
         Object.keys(node.Services).forEach((key) => {
             let name = key.split("._")[0]
@@ -846,6 +848,7 @@ var progressBar = (refreshbar,time,start) => {
 
 var buildRefreshTimer = (node,elem,pre) => {
     let refreshcont = checkElem(elem,pre + "node-refresh-cont-" + node.Name,"div","node-refresh-container","")
+    let refreshbar = checkElem(refreshcont,pre + "node-refresh-" + node.Name,"div","node-refresh-unknown","")
     if(node._Timers) {
         let rootTimer = node._Timers.filter(k => k.path == "$")
         if(rootTimer.length > 0) {
@@ -854,16 +857,16 @@ var buildRefreshTimer = (node,elem,pre) => {
             if(refreshbar._data.seqnum != node.seqnum) {
                 refreshbar._data.seqnum = node.seqnum
                 progressBar(refreshbar,rootTimer[0].time+1,true)
-                return
             }
         }
     }
-    let refreshbar = checkElem(refreshcont,pre + "node-refresh-" + node.Name,"div","node-refresh-unknown","")
+    
 }
 var buildNodeNav = (node,elem) => {
     let flex_id = 1000000;
     if(elem._data.node && _.isEqual(elem._data.node,node))
         return
+
     elem._data.node = node
     let name = node.Name.split(".")[0]
     if(name.length > 21) {
@@ -877,6 +880,8 @@ var buildNodeNav = (node,elem) => {
     if(node.System) {
         buildSystemInfo(node,elem,"node-")
     }
+    else 
+        checkElem(elem,"node-node-system-" + node.Name,"div","","")
     let services = checkElem(elem,"node-services-" + node.Name,"div","services","")
     if(node.Services) {
         let numS = 0;
@@ -1181,7 +1186,7 @@ var cpuInfo = (parent,data,pref) => {
     let drawCpu = (v,r,w) => {
       ctx.beginPath();
       ctx.lineWidth=w;
-      ctx.arc(26.5, 24.5, r, 3*Math.PI/2, Math.PI*(3/2 + v/50), false) 
+      ctx.arc(26.5, 24.5, r, Math.PI*(1/2+10/60), Math.PI*(1/2 + 10/60 + v/60), false) 
         ctx.stroke();
     } 
     
