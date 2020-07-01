@@ -406,7 +406,6 @@ export = function(LocalOptions) {
             Nodes[index].Mac = newValue.Mac
             Nodes[index].id = newValue.id
             Nodes[index].Name = Name || newValue.Name
-            if(newValue.System) Nodes[index].System = newValue.System
         }
     }
     function mergeNodes(index: number,newValue : MnMs_node,Name: string)
@@ -428,6 +427,7 @@ export = function(LocalOptions) {
                 console.log("Node type : " + newValue.Type + " not handled")
                 break
         }
+        if(newValue.System) Nodes[index].System = newValue.System
         if(!Nodes[index].seqnum) Nodes[index].seqnum = 0
         Nodes[index].seqnum++
     }
@@ -605,7 +605,11 @@ export = function(LocalOptions) {
             res.send(Nodes.filter((N) => {
                 let found = false
                 Object.keys(req.query).forEach(k => {
-                    if(N[k] == req.query[k])
+                    if(N[k] 
+                        && ((typeof N[k] == "number" && N[k] == req.query[k])
+                            || (typeof N[k] == "string" && N[k].includes(req.query[k]))
+                            || (Array.isArray(N[k]) && N[k].includes(req.query[k]))
+                    ))
                             found = true
                     else
                             found = false

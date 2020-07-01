@@ -392,8 +392,6 @@ module.exports = function (LocalOptions) {
             Nodes[index].Mac = newValue.Mac;
             Nodes[index].id = newValue.id;
             Nodes[index].Name = Name || newValue.Name;
-            if (newValue.System)
-                Nodes[index].System = newValue.System;
         }
     };
     function mergeNodes(index, newValue, Name) {
@@ -414,6 +412,8 @@ module.exports = function (LocalOptions) {
                 console.log("Node type : " + newValue.Type + " not handled");
                 break;
         }
+        if (newValue.System)
+            Nodes[index].System = newValue.System;
         if (!Nodes[index].seqnum)
             Nodes[index].seqnum = 0;
         Nodes[index].seqnum++;
@@ -604,7 +604,10 @@ module.exports = function (LocalOptions) {
             res.send(Nodes.filter(function (N) {
                 var found = false;
                 Object.keys(req.query).forEach(function (k) {
-                    if (N[k] == req.query[k])
+                    if (N[k]
+                        && ((typeof N[k] == "number" && N[k] == req.query[k])
+                            || (typeof N[k] == "string" && N[k].includes(req.query[k]))
+                            || (Array.isArray(N[k]) && N[k].includes(req.query[k]))))
                         found = true;
                     else
                         found = false;

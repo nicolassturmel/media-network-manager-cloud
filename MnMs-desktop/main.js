@@ -2,6 +2,8 @@
 const {app, BrowserWindow} = require('electron')
 const path = require('path')
 
+const {ipcMain} = require('electron')
+
 const { fork } = require('child_process');
 
 // Keep a global reference of the window object, if you don't, the window will

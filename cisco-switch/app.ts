@@ -44,6 +44,14 @@ var Switch : MnMs_node = {
     Neighbour: "",
     Mac: "", 
     id: options.id,
+    System : {
+        CPU5s: 0,
+        CPU1min: 0,
+        CPU5min: 0,
+        CPUSpeeds: [],
+        CPUTemps: [],
+        DiskBuzy: 0
+    },
     _Timers: [
         {
             path: "$",
@@ -486,8 +494,44 @@ function systemInfo() {
             return
         }
         Switch.Name = array[3].split(/\s+/)[2]
+        let llineNumber : any
+        for( llineNumber in array) {
+            llineNumber = parseInt(llineNumber)
+            if(array[llineNumber].startsWith("Unit") && array[llineNumber].includes("Temp") && llineNumber<array.length) {
+                Switch.System.CPUTemps = [parseInt(array[llineNumber+2].split(/\s+/)[2])]
 
-        setTimeout(getNextFct("systemInfo"), SwitchPollTime*1000);
+            }
+        }
+        switchTelnet.exec("show system tcam utili", (err,response) => {
+            try {
+                array = response.split("\n")
+            } catch (error) {
+                console.log("Response error : can not split in array")
+                console.log(response)
+                setTimeout(function() {getPortConfig()}, SwitchPollTime*1000);
+                return
+            }
+            Switch.System.MemBusy = parseInt(array[0].split(" ")[1])
+
+            switchTelnet.exec("show cpu util", (err,response) => {
+                try {
+                    array = response.split("\n")
+                } catch (error) {
+                    console.log("Response error : can not split in array")
+                    console.log(response)
+                    setTimeout(function() {getPortConfig()}, SwitchPollTime*1000);
+                    return
+                }
+
+                if(array.length>=5) {
+                    let p = array[4].split(/\s+/)
+                    Switch.System.CPU5s  = parseInt(p[2])
+                    Switch.System.CPU1min  = parseInt(p[5])
+                    Switch.System.CPU5min  = parseInt(p[8])
+                }
+                setTimeout(getNextFct("systemInfo"), SwitchPollTime*1000);
+            })
+        })
     })
 }
 

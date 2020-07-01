@@ -874,10 +874,10 @@ var buildNodeNav = (node,elem) => {
     buildRefreshTimer(node,elem)
     checkElem(unit,"node-name-" + node.Name,"div",node.Type,name)
     checkElem(unit,"node-IP-" + node.Name,"div",node.Type,node.IP)
-    let services = checkElem(elem,"node-services-" + node.Name,"div","services","")
     if(node.System) {
         buildSystemInfo(node,elem,"node-")
     }
+    let services = checkElem(elem,"node-services-" + node.Name,"div","services","")
     if(node.Services) {
         let numS = 0;
         var buildServices = (key) => {
@@ -1195,7 +1195,7 @@ var cpuInfo = (parent,data,pref) => {
     drawCpu(data.CPU1min,19,2)
     drawCpu(data.CPU5min,16,2)
     ctx.font = "15px Arial";
-    ctx.fillText(Math.floor(data.CPUSpeeds[0]*10)/10, 14, 30);
+    if(data.CPUSpeeds[0]) ctx.fillText(Math.floor(data.CPUSpeeds[0]*10)/10, 14, 30);
 }
 
 var vlanMenu = (e) => {
