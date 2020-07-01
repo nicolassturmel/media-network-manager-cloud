@@ -13,6 +13,7 @@ var lookfor_target = false
 
 let challenge = "none"
 let callback = (data) => {}
+let exitOnDisco = true
 
 let info = {
     Info: "none",
@@ -21,7 +22,8 @@ let info = {
     id: uuid()
 }
 
-function run(target) {
+function run(target,retry) {
+    if(retry) exitOnDisco = false
     if(!target) {
         mdns.on('response', function(response) {
             if(response.answers.length == 1) {
@@ -71,7 +73,11 @@ function run(target) {
 
             wsc.on('close', function close() {
                 console.log('close disconnected');
-                process.exit()
+                if(exitOnDisco) process.exit()
+                else {
+                    wsc = null
+                    setTimeout(() => run(target,retry),2000)
+                }
                 //setTimeout(() => { handleItem(k)}, 2000);
             });
 
@@ -112,7 +118,11 @@ function run(target) {
 
                     wsc.on('close', function close() {
                         console.log('close disconnected');
-                        process.exit()
+                        if(exitOnDisco) process.exit()
+                        else {
+                            wsc = null
+                            setTimeout(() => run(target,retry),2000)
+                        }
                         //setTimeout(() => { handleItem(k)}, 2000);
                     });
 

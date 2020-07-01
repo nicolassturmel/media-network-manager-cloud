@@ -2,7 +2,9 @@
 
 14th Oct: Artel switch supported in desktop app, settings menu and daily app build !
 
-25th Sept: Fixed a bug preventing connection to cisco switch.... if you tried and were unhappy, test latest version  
+25th Sept: Fixed a bug preventing connection to cisco switch.... if you tried and were unhappy, test latest version
+
+30th June: New version with vlan support, SNMP switches, better UI
 
 # media-network-manager-cloud
 
@@ -42,7 +44,7 @@ You have to tell the system to connect to the switches, click on the switch text
 Or you can launch the services by hand ! (still need telnet on cisco)
 
 
-## Launching switches by hand (Artel, Cisco... custom user/pwd)
+## Launching switches by hand (Artel, Cisco, SNMP... custom user/pwd)
 
 Open the left menu
 
@@ -67,7 +69,7 @@ Here it should be there
 
 ## Limitations
 
-The SG3XX switches MUST have mdns, telnet access enabled and the cisco/cisco user. You will be able to change this in the future.
+The SG3XX switches MUST telnet access enabled, mDNS/Bonjour is always better.
 
 <img src="./media_assets/image003.png" width="400" alt="">
 <img src="./media_assets/image004.png" width="300" alt="">
@@ -80,7 +82,13 @@ Right now... this is only data mining and shaping
 
 ## Components
 
-You have to run npm i in every subfolder
+### Arhitecure
+
+The central point of the system is the "mission control", it manages other services based on what is discovered and configured.
+
+### Installig from github
+
+Run the script "install.sh" to pull all the dependencies in every directory
 
 ### mission control
 
@@ -105,6 +113,13 @@ Does simple query to get SDP from RRTSP
 ### MnMs-desktop
 
 The electron app builder, firt run npm cloud-copy before npm package-<system>
+
+## Debug, custom UI
+
+A smal rest API
+localhost:8888/noodes gives you the full inner data
+you can even use key/value pairs to filter the data
+localhost:8888/nodes?Type=switch will only give you the switches 
 
 ## About the poject owner
 

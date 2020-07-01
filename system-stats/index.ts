@@ -7,10 +7,10 @@ const commandLineArgs = require('command-line-args')
 
 import { MnMs_node, boolString, MnMs_node_port } from "../types/types"
 
+let callback = null
+
 // Command line arguments
 const optionDefinitions = [
-    { name: 'user', alias: 'u', type: String, defaultValue: 'vrnetlab' },
-    { name: 'password', alias: 'p', type: String, defaultValue: 'VR-netlab9' },
     { name: 'key', alias: 'k', type: String, defaultValue: 'nokey' },
     { name: 'id', alias: 'y', type: String, defaultValue: undefined },
     { name: 'disk', alias: 'd', type: String, defaultValue: "/" },
@@ -22,15 +22,6 @@ const options = commandLineArgs(optionDefinitions)
 console.log(options)
 
 var client = require('../mnms-client-ws-interface')
-
-client.challenge(options.key)
-client.setCallback((data) => {console.log(data)})
-client.run(options.missioncontrol)
-client.info({
-    Info: "System client",
-    ServiceClass: "Switches",
-    id: options.id
-})
 
 // Connecting to switch
 
@@ -89,6 +80,9 @@ var busyCpu = (t) => {
       Node.System.CPU5s = d
       osu.mem.info().then(d => Node.System.MemBusy = 100-d.freeMemPercentage)
       Node._Timers[0].time = client.getSendInterval()
+
+      // Sending
+      if(callback) callback(Node)
       client.send(JSON.stringify(Node))
       if(options.raspberry) exec("sudo vcgencmd measure_temp",(e, stdout, stderr) => { Node.System.CPUTemps = [parseInt(stdout.split("=")[1])]})
       else si.cpuTemperature().then(d => Node.System.CPUTemps = d.cores)
@@ -102,7 +96,7 @@ var busyCpu = (t) => {
     busyCpu(t)
   })
 }
-osu.cpu.usage().then(d => console.log(d))
+
 Node.Name = os.hostname()
 
 var netInts = () => {
@@ -121,7 +115,7 @@ var netInts = () => {
 }
 
 function diskSize(disks) {
- for (const disk of disks) {
+  for (const disk of disks) {
       console.log('Filesystem:', disk.filesystem);
       console.log('Blocks:', disk.blocks);
       console.log('Used:', disk.used);
@@ -136,7 +130,24 @@ function diskSize(disks) {
   }
 }
 
-busyCpu(5)
-busyCpu(60)
-busyCpu(300)
-netInts()
+export = {
+  run: (key,missioncontrol,id) => {
+    if(key) options.key = key
+    if(missioncontrol) options.missioncontrol = missioncontrol
+    if(id) options.id = id
+    client.challenge(options.key)
+    client.setCallback((data) => {console.log(data)})
+    client.run(options.missioncontrol,true)
+    client.info({
+        Info: "System client",
+        ServiceClass: "Switches",
+        id: options.id
+    })
+
+    busyCpu(5)
+    busyCpu(60)
+    busyCpu(300)
+    netInts()
+  },
+  setCb: (cb) => callback=cb
+}
