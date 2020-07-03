@@ -1,6 +1,6 @@
 
 
-const SwitchPollTime = 0.5
+const SwitchPollTime = 1.2
 
 const Telnet = require('telnet-client')
 const commandLineArgs = require('command-line-args')
@@ -132,7 +132,7 @@ function get_count() {
         for (let line of array) 
         {
             let extractedNumbers = line.split(/\D+/).slice(1, -1)
-            console.log(line,extractedNumbers,previousExtractedNumbers,CurrentPortNumber)
+            //console.log(line,extractedNumbers,previousExtractedNumbers,CurrentPortNumber)
             if (extractedNumbers.length == 0) { }
             else {
                 if (previousExtractedNumbers[0] < CurrentPortNumber) {
@@ -144,7 +144,7 @@ function get_count() {
                     State = ParseState.Out
                 }
                 if (previousExtractedNumbers[0] == CurrentPortNumber && CurrentPortNumber != 0) {
-                    console.log("Filling ",CurrentPortNumber)
+                    //console.log("Filling ",CurrentPortNumber)
                     if(SwitchData["gi" + CurrentPortNumber] == undefined) {
                         SwitchData["gi" + CurrentPortNumber] = {}
                         OldValue["gi" + CurrentPortNumber] = {}
@@ -179,7 +179,7 @@ function clear_count() {
                 setTimeout(getNextFct("clear_count"), SwitchPollTime*1000);
             }
             else
-                setTimeout(function() {clear_count()}, SwitchPollTime*1000);
+                setTimeout(function() {clear_count()}, 200);
         })
 }
 
@@ -490,7 +490,7 @@ function systemInfo() {
 
             }
         }
-        switchTelnet.exec("show system tcam utili", (err,response) => {
+        setTimeout(() => switchTelnet.exec("show system tcam utili", (err,response) => {
             try {
                 array = response.split("\n")
             } catch (error) {
@@ -501,7 +501,7 @@ function systemInfo() {
             }
             Switch.System.MemBusy = parseInt(array[0].split(" ")[1])
 
-            switchTelnet.exec("show cpu util", (err,response) => {
+            setTimeout(() => switchTelnet.exec("show cpu util", (err,response) => {
                 try {
                     array = response.split("\n")
                 } catch (error) {
@@ -518,8 +518,8 @@ function systemInfo() {
                     Switch.System.CPU5min  = parseInt(p[8])
                 }
                 setTimeout(getNextFct("systemInfo"), SwitchPollTime*1000);
-            })
-        })
+            }),300)
+        }),300)
     })
 }
 
@@ -572,8 +572,10 @@ function getVlans() {
     })
 }
 
+let cycle = 100
 function getNextFct(current)
 {
+    //console.log(cycle)
     switch(current) {
         case "clear_count" :
             return get_count
@@ -592,11 +594,11 @@ function getNextFct(current)
         case "getLLDP" :
             return getMulticastSources
         case "getMulticastSources" :
+            computeBandWidth()
             return getVlans
         case "getVlans" :
            return getArp
         case "getArp" :
-            computeBandWidth()
             return get_count
     }
 }
@@ -604,7 +606,16 @@ function getNextFct(current)
 function StartSwitchDatamine() {
     switchTelnet.exec("terminal datad", (err, respond) => {
         switchTelnet.exec("terminal width 0", (err, respond) => {
-            setTimeout(clear_count, 1000);
+            switchTelnet.exec("config", (err, respond) => {
+                //console.log(err,respond)
+                switchTelnet.exec("no logging console", (err, respond) => {
+                    //console.log(err,respond)
+                    switchTelnet.exec("exit", (err, respond) => {
+                        //console.log(err,respond)
+                        setTimeout(clear_count, 1000);
+                    })
+                })
+            })
         })
     })
 }
