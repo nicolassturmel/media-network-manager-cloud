@@ -13,6 +13,8 @@
     </head>
     <body oncontextmenu="return false;" onload="run()">
         <div id=popupSpace></div>
+        <div id=disconnectMessage>Trying to connect to mission control...</div>
+        <div id=firstSwitchMessage class=hidden>Add a new switch to start</div>
         <div id=port>
             <div id=leftmenu></div>
             <div id=top>
@@ -32,7 +34,8 @@
                 </ul>
             </nav>
             <div id=navig><span id="vlan-sel"></span><span id="prim-selection" class="prim-off"></span><span id="prim-selection-sec" class="prim-off"></span></div>
-            <div id="mynetwork"></div>
+            <div id="mynetwork">
+            </div>
             <div id=bottom>
                     <div class="bar-comp" id="switch-info"><span id=switchInfoText><i class="fas fa-network-wired"></i>   Switches</span></div>
                     <div class="bar-comp off"><i class="fas fa-archive"></i>Devices</div>

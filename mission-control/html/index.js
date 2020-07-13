@@ -188,6 +188,7 @@ function run() {
 
     let title = false
     missionControlWS.onmessage = function (event) {
+        document.getElementById("disconnectMessage").classList.add("hidden")
         data = JSON.parse(event.data)
         if(data.Type && data.Type == "MnmsData") {
             _data = data
@@ -248,6 +249,9 @@ function run() {
     }
     missionControlWS.onclose = () => {
         document.getElementById("workspacename-bar").innerHTML  = "<b style='color:red;'>lost connection : socket closed</b>"
+
+        document.getElementById("disconnectMessage").classList.remove("hidden")
+        setTimeout(run,2000)
     }
     initGraph()
     selectNew(null,null)
@@ -1044,11 +1048,30 @@ let oldNodes = []
 let oldEdges = []
 let macToFind = []
 
+var welcomeMessage = () => {
+    if(!_nodes.some(k => k.Type == "switch") || (_data && _data.Switches && _data.Switches.length == 0)) {
+        document.getElementById("firstSwitchMessage").classList.remove("hidden")
+        if(_data.Switches.length) {
+            document.getElementById("firstSwitchMessage").innerHTML = "Waiting for first switch to respond"
+            document.getElementById("firstSwitchMessage").style.height = "30px"
+        }
+        else {
+            document.getElementById("firstSwitchMessage").innerHTML = "Add a switch to start using MNMS<br><img src='switch_gif.gif'>"
+            document.getElementById("firstSwitchMessage").style.height = "390px"
+        }
+        return;
+    }
+    else {
+        document.getElementById("firstSwitchMessage").classList.add("hidden")
+        document.getElementById("firstSwitchMessage").innerHTML = ""
+    }
+}
 
 function buildGraph(nodes) {
     let newNodes = [];
     let newEdges = [];
     let newvlans = []
+    welcomeMessage()
     for(let i in nodes) {
         if(nodes[i].Name) {
             if(nodes[i].Type == "switch") {

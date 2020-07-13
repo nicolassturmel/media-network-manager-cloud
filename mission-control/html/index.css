@@ -27,6 +27,37 @@ body {
     color: white;
 }
 
+#disconnectMessage {
+    position: absolute;
+    color: white;
+    width: 200px;
+    height: 60px;
+    right: calc(50% - 100px);
+    text-align: center;
+    line-height: 30px;
+    margin-top:5%;
+    padding: 30px;
+    background-color: red;
+    z-index: 40;
+}
+
+#firstSwitchMessage {
+    position: absolute;
+    color: white;
+    width: 480px;
+    height: 390px;
+    text-align: center;
+    line-height: 30px;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    margin: auto;
+    padding: 10px;
+    background-color: var(--sec-color-dim);
+    z-index: 40;
+}
+
 #popupSpace {
     position: absolute;
     height: 98vh;
