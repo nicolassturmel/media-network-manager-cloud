@@ -143,8 +143,8 @@ function run() {
                     secsStr = " started " + parseInt(secs/60) + "min"
                 if(secs > 7200)
                     secsStr = " started " + parseInt(secs/3600) + "hours"
-                if(secs < 16) {
-                    secsStr = " starting..."
+                if(s.Timer - _data.CurrentTime < -30000) {
+                    secsStr = (s.Timer - _data.CurrentTime ) + " starting..."
                     swClass += " warn"
                 }
                 checkElem(popUp,"popup-switch-" + s.IP,"div",swClass,s.Type + ":" + s.IP + secsStr)
@@ -1380,5 +1380,4 @@ var nodeContextMenu = (node,pos) => {
 }
 
 var sendAction = (processId,action,params) => {
-
 }

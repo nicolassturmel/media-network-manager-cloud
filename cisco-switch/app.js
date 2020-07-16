@@ -152,7 +152,7 @@ function clear_count() {
             setTimeout(getNextFct("clear_count"), SwitchPollTime * 1000);
         }
         else
-            setTimeout(function () { clear_count(); }, 200);
+            setTimeout(function () { clear_count(); }, 500);
     });
 }
 function computeBandWidth() {
@@ -563,6 +563,7 @@ function getVlans() {
 var cycle = 100;
 function getNextFct(current) {
     //console.log(cycle)
+    console.log(current);
     switch (current) {
         case "clear_count":
             return get_count;
@@ -593,11 +594,11 @@ function StartSwitchDatamine() {
     switchTelnet.exec("terminal datad", function (err, respond) {
         switchTelnet.exec("terminal width 0", function (err, respond) {
             switchTelnet.exec("config", function (err, respond) {
-                //console.log(err,respond)
+                console.log(err, respond);
                 switchTelnet.exec("no logging console", function (err, respond) {
-                    //console.log(err,respond)
+                    console.log(err, respond);
                     switchTelnet.exec("exit", function (err, respond) {
-                        //console.log(err,respond)
+                        console.log(err, respond);
                         setTimeout(clear_count, 1000);
                     });
                 });
