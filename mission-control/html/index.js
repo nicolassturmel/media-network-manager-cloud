@@ -757,6 +757,31 @@ var makeDeviceInfo = (elem,update) => {
             }
             let port = checkElem(subcontainer,"win-ports-" + p.Name,"div","switch-port-container"," ")
             let mport = checkElem(port,"","span","switch_port_win port",p.Name)
+            console.log(p)
+            if(mselection.vlan) {
+                if(p.Vlan) {
+                    if(p.Vlan.Tagged.includes(mselection.vlan))
+                        mport.style.border = "2px dashed " + VlanColor(p.Vlan.Untagged[0])
+                    else if(p.Vlan.Untagged.includes(mselection.vlan))
+                        mport.style.border = "2px solid " + VlanColor(p.Vlan.Untagged[0])
+                    else 
+                        mport.style.border = null
+                }
+                else {
+                    mport.style.border = "1px dashed grey" 
+                }
+            }
+            else {
+                if(p.Vlan) {
+                    if(p.Vlan.Tagged.length > 0)
+                        mport.style.border = "2px solid grey"
+                    else 
+                        mport.style.border = "2px solid " + VlanColor(p.Vlan.Untagged[0])
+                }
+                else {
+                    mport.style.border = "1px dashed grey" 
+                }
+            }
             console.log(p.IGMP.ForwardAll)
             if(classP == "dc") {
                 let text = checkElem(port,"","span","switch_port_win_text port","not connected")
@@ -782,6 +807,7 @@ var makeDeviceInfo = (elem,update) => {
                 }
             }
             mport.classList.add(classP)
+            mport.style["border-radius"] = "10px"
         }
     }
 
@@ -950,6 +976,31 @@ var buildNodeNav = (node,elem) => {
         let subcontainer = checkElem(elem,"node-ports-" + node.Name,"div","ports","")
         for(let p of node.Ports) {
             flex_id -= 100;
+            let port = checkElem(subcontainer,"node-port-" + p.Name + ":" + node.Name,"div","switch_port port",p.Name)
+            if(mselection.vlan) {
+                if(p.Vlan) {
+                    if(p.Vlan.Tagged.includes(mselection.vlan))
+                        port.style.border = "2px dashed " + VlanColor(p.Vlan.Untagged[0])
+                    else if(p.Vlan.Untagged.includes(mselection.vlan))
+                        port.style.border = "2px solid " + VlanColor(p.Vlan.Untagged[0])
+                    else 
+                        port.style.border = null
+                }
+                else {
+                    port.style.border = "1px dashed grey" 
+                }
+            }
+            else {
+                if(p.Vlan) {
+                    if(p.Vlan.Tagged.length > 0)
+                        port.style.border = "2px solid grey"
+                    else 
+                        port.style.border = "2px solid " + VlanColor(p.Vlan.Untagged[0])
+                }
+                else {
+                    port.style.border = "1px dashed grey" 
+                }
+            }
             let classP = ""
             if(p.AdminState == "Up") {
                 if(p.Speed > 0) {
@@ -969,12 +1020,12 @@ var buildNodeNav = (node,elem) => {
             else {
                 classP += "off"
             }
-            let port = checkElem(subcontainer,"node-port-" + p.Name + ":" + node.Name,"div","switch_port port",p.Name)
             port.classList.remove("off")
             port.classList.remove("warn")
             port.classList.remove("dc")
             port.classList.remove("off")
             port.classList.add(classP)
+            port.style["border-radius"] = "10px"
         }
     }
     elem.style.order = flex_id
