@@ -144,7 +144,7 @@ function run() {
                 if(secs > 7200)
                     secsStr = " started " + parseInt(secs/3600) + "hours"
                 if(s.Timer - _data.CurrentTime < -30000) {
-                    secsStr = (s.Timer - _data.CurrentTime ) + " starting..."
+                    secsStr = " starting..."
                     swClass += " warn"
                 }
                 checkElem(popUp,"popup-switch-" + s.IP,"div",swClass,s.Type + ":" + s.IP + secsStr)
@@ -653,7 +653,7 @@ var makeDeviceInfo = (elem,update) => {
             if(key.includes("_http._tcp")) {
                 let subcontainer = checkElem(services,"","div","","")
                 checkElem(subcontainer,"","i","fas fa-link","")
-                checkElem(subcontainer,"",{type: "a", href: "http://" + node.IP + ":" + node.Services[key].port},"http",name)
+                checkElem(subcontainer,key,{type: "a", href: "http://" + node.IP + ":" + node.Services[key].port},"http",name)
             }
             else if(key.includes("_telnet")) {
                 let subcontainer = checkElem(services,"" + key,"div","","")
