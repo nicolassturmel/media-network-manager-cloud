@@ -1,7 +1,7 @@
 import { SSL_OP_TLS_ROLLBACK_BUG } from "constants";
 import { kMaxLength } from "buffer";
 
-import { MnMs_node, node_timers } from "../types/types"
+import { MnMs_node, node_timers, MnMs_node_port } from "../types/types"
 
 var mdns_ = require('../multicast-dns')
 var mdnss = []
@@ -78,6 +78,7 @@ export = function(LocalOptions) {
     Multicast: null,
     Neighbour: "",
     Mac: ""}]
+    var ArpCache = {};
 
     var privateKey = fs.readFileSync(path.join(__dirname, 'server.key'), 'utf8');
     var certificate = fs.readFileSync(path.join(__dirname, 'server.cert'), 'utf8');
@@ -154,33 +155,42 @@ export = function(LocalOptions) {
                 //console.log("Got a message")
                 if(ws._data.ServiceClass == "Switches")
                 {
-                    let i = Nodes.findIndex(k => k.IP == node.IP);
-                    let sw = MnmsData[ws._data.Info.ServiceClass].filter(k => k.UID == ws._data.Info.id)
-                        if(sw.length == 1) {
-                            let t = new Date
-                            sw[0].Timer = t.getTime()
-                            //console.log(node.id,MnmsData.Switches.filter(k => k.UID == node.id)[0].Timer)
-                        }
-                    if(i == -1) {
-                        Nodes.push(
-                            {
-                                Type: "null",
-                                IP: node.IP,
-                                id: "0",
-                                Schema: 1,
-                                Ports: [],
-                                Services: {},
-                                Multicast: null,
-                                Neighbour: "",
-                                Mac: "",
-                                OtherIPs: []
+                    if(node.Type == "switch") {
+                        let i = Nodes.findIndex(k => k.IP == node.IP);
+                        let sw = MnmsData[ws._data.Info.ServiceClass].filter(k => k.UID == ws._data.Info.id)
+                            if(sw.length == 1) {
+                                let t = new Date
+                                sw[0].Timer = t.getTime()
+                                //console.log(node.id,MnmsData.Switches.filter(k => k.UID == node.id)[0].Timer)
                             }
-                        )
-                        i = Nodes.findIndex(k => k.IP == node.IP);
+                        if(i == -1) {
+                            Nodes.push(
+                                {
+                                    Type: "null",
+                                    IP: node.IP,
+                                    id: "0",
+                                    Schema: 1,
+                                    Ports: [],
+                                    Services: {},
+                                    Multicast: null,
+                                    Neighbour: "",
+                                    Mac: "",
+                                    OtherIPs: []
+                                }
+                            )
+                            i = Nodes.findIndex(k => k.IP == node.IP);
+                        }
+                        //console.log("Merge now...")
+                        mergeNodes(i,node,null)
+                        calculateInterConnect()
                     }
-                    //console.log("Merge now...")
-                    mergeNodes(i,node,null)
-                    calculateInterConnect()
+                    else if (node.Type == "ARP") {
+                        node.Data.forEach(d => ArpCache[d.Mac] = d.Ip)
+                        console.log(ArpCache)
+                    }
+                    else {
+                        console.error("Unknown type " + node.Type)
+                    }
                 }
                 else if(ws._data.ServiceClass == "Analysers") 
                 {
@@ -336,23 +346,50 @@ export = function(LocalOptions) {
             }
         }
     }
-
+    var mergePorts = (oldPs : MnMs_node_port[], newPs : MnMs_node_port[]) => {
+        newPs.forEach(newP => {
+            if(newP.ConnectedMacs.length == 1) {
+                if(ArpCache[newP.ConnectedMacs[0]]) {
+                    newP.Neighbour = ArpCache[newP.ConnectedMacs[0]]
+                    console.log("New neighbor " + newP.Neighbour + " on port " + newP.Name)
+                }
+            }
+        })
+        return newPs
+    }
     var mergeNodesSwitch = (index: number,newValue : MnMs_node,Name: string) => {
         if(newValue.Schema == 1) {
             if(newValue.Name) Nodes[index].Name = newValue.Name
             Nodes[index].Mac = newValue.Mac
             if(newValue.Macs) Nodes[index].Macs = newValue.Macs
             if(Nodes[index].Ports && Nodes[index].Ports.length != newValue.Ports.length) Nodes[index].Ports = []
-            Nodes[index].Ports = newValue.Ports
+            Nodes[index].Ports = mergePorts(Nodes[index].Ports, newValue.Ports)
             Nodes[index].Multicast = newValue.Multicast
             Nodes[index].id = newValue.id 
             Nodes[index].Type = newValue.Type 
             Nodes[index].Capabilities = newValue.Capabilities 
+
+            // Building ghost devices
+            for(let p of newValue.Ports) {
+                if(p.Neighbour && !Nodes.some(k => (k.IP == p.Neighbour || (k.OtherIPs && k.OtherIPs.includes(p.Neighbour))))) {
+                    let N : MnMs_node = {
+                        Name: "(G) " + p.Neighbour.replace(/\./g,"-"),
+                        Type: "disconnected", 
+                        IP: p.Neighbour,
+                        Neighbour: null,
+                        Schema: 1,
+                        Multicast: "off",
+                        Mac: (p.ConnectedMacs.length > 0) ? p.ConnectedMacs[0] : "00:00:00:00:00:00",
+                        id:  "(G) " + p.Neighbour
+                    }
+                    Nodes.push(N)
+                }
+            }
         }
     }
 
     var mergeNodesMdnsManual = (index: number,newValue : MnMs_node,Name: string) => {
-        console.log(newValue)
+        //console.log(newValue)
         if(newValue.Schema == 1) {
             if(Nodes[index].Type && Nodes[index].Type != "switch") Nodes[index].Type = newValue.Type
             if(!Nodes[index].Services) Nodes[index].Services = {} 

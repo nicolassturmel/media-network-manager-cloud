@@ -757,7 +757,7 @@ var makeDeviceInfo = (elem,update) => {
             }
             let port = checkElem(subcontainer,"win-ports-" + p.Name,"div","switch-port-container"," ")
             let mport = checkElem(port,"","span","switch_port_win port",p.Name)
-            console.log(p)
+            //console.log(p)
             if(mselection.vlan) {
                 if(p.Vlan) {
                     if(p.Vlan.Tagged.includes(mselection.vlan))
@@ -782,7 +782,7 @@ var makeDeviceInfo = (elem,update) => {
                     mport.style.border = "1px dashed grey" 
                 }
             }
-            console.log(p.IGMP.ForwardAll)
+            //console.log(p.IGMP.ForwardAll)
             if(classP == "dc") {
                 let text = checkElem(port,"","span","switch_port_win_text port","not connected")
                 text.classList.add(classP)
@@ -822,7 +822,8 @@ var checkElem = (root,id,domtype,classElem,innerHTML) => {
     }
 
 
-    let elem = document.getElementById(id)
+    let elem = null;
+    if(id) elem = document.getElementById(id)
     if(!elem) {
         if(isObject(domtype))
         {
@@ -839,7 +840,7 @@ var checkElem = (root,id,domtype,classElem,innerHTML) => {
         else {
             elem = document.createElement(domtype)
         }
-            elem.id = id
+        if(id)    elem.id = id
         root.appendChild(elem)
     }
 
@@ -1135,7 +1136,7 @@ function buildGraph(nodes) {
                             if(!newvlans.includes(v)) newvlans.push(v)
                     }
                     let color = "#0077bb"
-                    let n = nodes.findIndex(k => { if(k.Type == "null") return false ; return( k.OtherIPs.some(l => l == p.Neighbour) || k.IP == p.Neighbour) })
+                    let n = nodes.findIndex(k => { if(k.Type == "null") return false ; return( (k.OtherIPs && k.OtherIPs.some(l => l == p.Neighbour)) || k.IP == p.Neighbour) })
                     if(n > 0) {
                         if(nodes[n].Type == "switch") {
                             if(p.IGMP.ForwardAll == "on") {

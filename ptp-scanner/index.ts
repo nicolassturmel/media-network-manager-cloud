@@ -21,7 +21,7 @@ var client = require('../mnms-client-ws-interface')
 
 client.challenge(options.key)
 client.setCallback((data) => {console.log(data)})
-client.run(options.missioncontrol)
+//client.run(options.missioncontrol)
 client.info({
     Info: "PTP scannner",
     ServiceClass: "Analysers",
@@ -33,7 +33,7 @@ client.info({
 
 enum MessageType{
 	SYNC=0x0,
-	DELAY_REQ,
+	DELAY_REQ=0x1,
 	PDELAY_REQ,
 	PDELAY_RESP,
 	FOLLOW_UP=0x8,
@@ -122,10 +122,16 @@ class PtpDomain {
         console.log("Version ",this._version," - Announce for ",this._number)
         return {error: 0, message: ""}
     }
+    rcvDelayReq(packet, rcvinfo) {
+        console.log("Delay Req for domain " + this._number + " from " + rcvinfo.address)
+    }
     rcvMessage(packet : PtPPacketHeader, rcvInfo, port) : object {
         let suggestedMaster = rcvInfo.address
         let rcvTime = Date.now()
         switch (packet.messageType) {
+            case MessageType.DELAY_REQ:
+                this.rcvDelayReq(packet,rcvInfo)
+                break
             case MessageType.ANNOUNCE:
                 let Payload = new PtPAnnoncePayload(packet._data)
                 if(this._masterAddress != suggestedMaster) {
@@ -191,24 +197,34 @@ const socket2 = dgram.createSocket({ type: "udp4", reuseAddr: true });
 const PORT = 319;
 const MULTICAST_ADDR = "224.0.1.129";
 
-socket.bind(PORT);
+ 
+socket.on("message", function(message, rinfo) {
+    //let pack = new PtPPacketHeader(message)
+    console.log("message")
+    receivePtp2Packet(message,rinfo,320)
+});
 
 socket.on("listening", function() {
-    socket.addMembership(MULTICAST_ADDR);
+    socket.addMembership(MULTICAST_ADDR,"192.168.201.3");
     const address = socket.address();
-    socket.on("message", function(message, rinfo) {
-        let pack = new PtPPacketHeader(message)
-        receivePtp2Packet(message,rinfo,319)
-      });
+    console.log("Ready to receive")
+    console.log(`server listening ${address.address}:${address.port}`);
   });
+socket.bind(PORT,"192.168.201.3")
   
-socket2.bind(PORT+1);
+socket2.on("message", function(message, rinfo) {
+    //let pack = new PtPPacketHeader(message)
+    console.log("message")
+    receivePtp2Packet(message,rinfo,320)
+});
 
 socket2.on("listening", function() {
-    socket2.addMembership(MULTICAST_ADDR);
+    socket2.addMembership(MULTICAST_ADDR,"192.168.201.3");
     const address = socket2.address();
-    socket2.on("message", function(message, rinfo) {
-        let pack = new PtPPacketHeader(message)
-        receivePtp2Packet(message,rinfo,320)
-      });
+    console.log("Ready to receive")
+    console.log(`server listening ${address.address}:${address.port}`);
   });
+socket2.bind(PORT+1,"192.168.201.3")
+
+
+  console.log("started")

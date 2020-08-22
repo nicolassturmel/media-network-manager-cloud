@@ -4,7 +4,7 @@
   "description": "gathers all data and fires additionnal micro services",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "for i in $(ls ..) ; do cd ../$i ; tsc *.ts ; cd ../mission-control ; done && node main"
   },
   "author": "",
   "license": "MIT",

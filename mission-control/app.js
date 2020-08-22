@@ -73,6 +73,7 @@ module.exports = function (LocalOptions) {
             Multicast: null,
             Neighbour: "",
             Mac: "" }];
+    var ArpCache = {};
     var privateKey = fs.readFileSync(path.join(__dirname, 'server.key'), 'utf8');
     var certificate = fs.readFileSync(path.join(__dirname, 'server.cert'), 'utf8');
     var credentials = { key: privateKey, cert: certificate };
@@ -141,31 +142,40 @@ module.exports = function (LocalOptions) {
             else if (ws._data.auth) {
                 //console.log("Got a message")
                 if (ws._data.ServiceClass == "Switches") {
-                    var i_1 = Nodes.findIndex(function (k) { return k.IP == node.IP; });
-                    var sw = MnmsData[ws._data.Info.ServiceClass].filter(function (k) { return k.UID == ws._data.Info.id; });
-                    if (sw.length == 1) {
-                        var t = new Date;
-                        sw[0].Timer = t.getTime();
-                        //console.log(node.id,MnmsData.Switches.filter(k => k.UID == node.id)[0].Timer)
+                    if (node.Type == "switch") {
+                        var i_1 = Nodes.findIndex(function (k) { return k.IP == node.IP; });
+                        var sw = MnmsData[ws._data.Info.ServiceClass].filter(function (k) { return k.UID == ws._data.Info.id; });
+                        if (sw.length == 1) {
+                            var t = new Date;
+                            sw[0].Timer = t.getTime();
+                            //console.log(node.id,MnmsData.Switches.filter(k => k.UID == node.id)[0].Timer)
+                        }
+                        if (i_1 == -1) {
+                            Nodes.push({
+                                Type: "null",
+                                IP: node.IP,
+                                id: "0",
+                                Schema: 1,
+                                Ports: [],
+                                Services: {},
+                                Multicast: null,
+                                Neighbour: "",
+                                Mac: "",
+                                OtherIPs: []
+                            });
+                            i_1 = Nodes.findIndex(function (k) { return k.IP == node.IP; });
+                        }
+                        //console.log("Merge now...")
+                        mergeNodes(i_1, node, null);
+                        calculateInterConnect();
                     }
-                    if (i_1 == -1) {
-                        Nodes.push({
-                            Type: "null",
-                            IP: node.IP,
-                            id: "0",
-                            Schema: 1,
-                            Ports: [],
-                            Services: {},
-                            Multicast: null,
-                            Neighbour: "",
-                            Mac: "",
-                            OtherIPs: []
-                        });
-                        i_1 = Nodes.findIndex(function (k) { return k.IP == node.IP; });
+                    else if (node.Type == "ARP") {
+                        node.Data.forEach(function (d) { return ArpCache[d.Mac] = d.Ip; });
+                        console.log(ArpCache);
                     }
-                    //console.log("Merge now...")
-                    mergeNodes(i_1, node, null);
-                    calculateInterConnect();
+                    else {
+                        console.error("Unknown type " + node.Type);
+                    }
                 }
                 else if (ws._data.ServiceClass == "Analysers") {
                     console.log("Copying");
@@ -314,6 +324,17 @@ module.exports = function (LocalOptions) {
             };
         }
     };
+    var mergePorts = function (oldPs, newPs) {
+        newPs.forEach(function (newP) {
+            if (newP.ConnectedMacs.length == 1) {
+                if (ArpCache[newP.ConnectedMacs[0]]) {
+                    newP.Neighbour = ArpCache[newP.ConnectedMacs[0]];
+                    console.log("New neighbor " + newP.Neighbour + " on port " + newP.Name);
+                }
+            }
+        });
+        return newPs;
+    };
     var mergeNodesSwitch = function (index, newValue, Name) {
         if (newValue.Schema == 1) {
             if (newValue.Name)
@@ -323,15 +344,35 @@ module.exports = function (LocalOptions) {
                 Nodes[index].Macs = newValue.Macs;
             if (Nodes[index].Ports && Nodes[index].Ports.length != newValue.Ports.length)
                 Nodes[index].Ports = [];
-            Nodes[index].Ports = newValue.Ports;
+            Nodes[index].Ports = mergePorts(Nodes[index].Ports, newValue.Ports);
             Nodes[index].Multicast = newValue.Multicast;
             Nodes[index].id = newValue.id;
             Nodes[index].Type = newValue.Type;
             Nodes[index].Capabilities = newValue.Capabilities;
+            var _loop_3 = function (p) {
+                if (p.Neighbour && !Nodes.some(function (k) { return (k.IP == p.Neighbour || (k.OtherIPs && k.OtherIPs.includes(p.Neighbour))); })) {
+                    var N = {
+                        Name: "(G) " + p.Neighbour.replace(/\./g, "-"),
+                        Type: "disconnected",
+                        IP: p.Neighbour,
+                        Neighbour: null,
+                        Schema: 1,
+                        Multicast: "off",
+                        Mac: (p.ConnectedMacs.length > 0) ? p.ConnectedMacs[0] : "00:00:00:00:00:00",
+                        id: "(G) " + p.Neighbour
+                    };
+                    Nodes.push(N);
+                }
+            };
+            // Building ghost devices
+            for (var _i = 0, _a = newValue.Ports; _i < _a.length; _i++) {
+                var p = _a[_i];
+                _loop_3(p);
+            }
         }
     };
     var mergeNodesMdnsManual = function (index, newValue, Name) {
-        console.log(newValue);
+        //console.log(newValue)
         if (newValue.Schema == 1) {
             if (Nodes[index].Type && Nodes[index].Type != "switch")
                 Nodes[index].Type = newValue.Type;
@@ -429,7 +470,7 @@ module.exports = function (LocalOptions) {
                 linkd[i_3].dataRef = i_3;
                 linkd[i_3].ports = [];
                 conns[i_3] = [];
-                var _loop_3 = function (j) {
+                var _loop_4 = function (j) {
                     if (Nodes[j].Type == "switch" && Nodes[j].Ports.length > 0) {
                         //console.log("Testing ",j)
                         for (var l in Nodes[i_3].Ports) {
@@ -451,7 +492,7 @@ module.exports = function (LocalOptions) {
                     }
                 };
                 for (var j = 0; j < Nodes.length; j++) {
-                    _loop_3(j);
+                    _loop_4(j);
                 }
             }
         }
@@ -464,14 +505,14 @@ module.exports = function (LocalOptions) {
             if (JSON.stringify(cleared) == JSON.stringify(old_cleared))
                 break;
             old_cleared = JSON.parse(JSON.stringify(cleared));
-            var _loop_4 = function (i_4) {
+            var _loop_5 = function (i_4) {
                 if (!(cleared.some(function (k) { return k.dataRef == linkd[i_4].dataRef; }))) {
                     for (var p in linkd[i_4].ports) {
                         if (linkd[i_4].ports[p] != undefined && linkd[i_4].ports[p].length > 1) {
                             //console.log("Switch " , i , " port ", p)
                             var keep = null;
                             var ok = true;
-                            var _loop_7 = function (j) {
+                            var _loop_8 = function (j) {
                                 if (cleared.filter(function (q) { return q.dataRef == j; }).length == 1) {
                                     var test = cleared.filter(function (q) { return q.dataRef == j; })[0];
                                     for (var _i = 0, _a = test.ports; _i < _a.length; _i++) {
@@ -487,7 +528,7 @@ module.exports = function (LocalOptions) {
                             };
                             for (var _i = 0, _a = linkd[i_4].ports[p]; _i < _a.length; _i++) {
                                 var j = _a[_i];
-                                _loop_7(j);
+                                _loop_8(j);
                             }
                             if (ok && keep != null) {
                                 linkd[i_4].ports[p] = [keep];
@@ -500,14 +541,14 @@ module.exports = function (LocalOptions) {
             //console.log(JSON.stringify(linkd))
             // Continuing reduction
             for (var i_4 in linkd) {
-                _loop_4(i_4);
+                _loop_5(i_4);
             }
         }
-        var _loop_5 = function (i_5) {
+        var _loop_6 = function (i_5) {
             //if(Nodes[i].Mac) console.log(Nodes[i].Mac)
             if (Nodes[i_5].Type == "switch" && Nodes[i_5].Ports.length > 0) {
                 var connlist = linkd.filter(function (k) { return k.dataRef == i_5; })[0];
-                var _loop_8 = function (p) {
+                var _loop_9 = function (p) {
                     if (connlist.ports[p]) {
                         Nodes[i_5].Ports[p].Neighbour = Nodes[connlist.ports[p][0]].IP;
                     }
@@ -520,15 +561,15 @@ module.exports = function (LocalOptions) {
                     }
                 };
                 for (var p in Nodes[i_5].Ports) {
-                    _loop_8(p);
+                    _loop_9(p);
                 }
             }
         };
         // Building connection graph
         for (var i_5 in Nodes) {
-            _loop_5(i_5);
+            _loop_6(i_5);
         }
-        var _loop_6 = function (list) {
+        var _loop_7 = function (list) {
             if (list && list.dataRef) {
                 var friend_1 = linkd.filter(function (k) { return k.ports.some(function (l) { return l == list.dataRef; }); });
                 if (friend_1.length == 1 && friend_1[0]) {
@@ -588,7 +629,7 @@ module.exports = function (LocalOptions) {
         // Check vlan symmetry
         for (var _i = 0, _a = linkd.filter(function (k) { return k.ports.some(function (l) { return l.length == 1; }); }); _i < _a.length; _i++) {
             var list = _a[_i];
-            _loop_6(list);
+            _loop_7(list);
         }
         console.log(JSON.stringify(linkd.filter(function (k) { return k.ports.some(function (l) { return l.length == 1; }); })));
     }

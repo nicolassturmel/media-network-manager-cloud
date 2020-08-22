@@ -77,6 +77,8 @@ let params = {
     execTimeout: 10000
 }
 
+let ArpData = []
+
 let switchTelnet = new Telnet()
 
 enum ParseState {
@@ -337,18 +339,22 @@ function getArp() {
             setTimeout(function() {getPortConfig()}, SwitchPollTime*1000);
             return
         }
+        ArpData = []
         let Ports = {}
         for(let line of array) {
             let add = line.split(/\s+/)
             if(add.length >= 7) {
                 if(!Ports[add[2]]) Ports[add[2]] = []
                 Ports[add[2]].push(add[3])
+
+
+                ArpData.push({Ip: add[3], Mac: add[4]})
+                console.log(ArpData)    
             }
         }
-        Object.keys(Ports).forEach((p) => {
-            if(SwitchData[p] && SwitchData[p].ConnectedMacs.length == 1 && Ports[p].length == 1)
-                SwitchData[p].Neighbour = Ports[p][0]
-        })
+        
+
+        client.send(JSON.stringify({Type: "ARP", Data: ArpData}))
         setTimeout(getNextFct("getArp"), SwitchPollTime*1000);
     
     })

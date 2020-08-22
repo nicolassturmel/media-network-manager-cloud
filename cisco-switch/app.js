@@ -66,6 +66,7 @@ var params = {
     timeout: 0,
     execTimeout: 10000
 };
+var ArpData = [];
 var switchTelnet = new Telnet();
 var ParseState;
 (function (ParseState) {
@@ -309,6 +310,7 @@ function getArp() {
             setTimeout(function () { getPortConfig(); }, SwitchPollTime * 1000);
             return;
         }
+        ArpData = [];
         var Ports = {};
         for (var _i = 0, array_6 = array; _i < array_6.length; _i++) {
             var line = array_6[_i];
@@ -317,12 +319,11 @@ function getArp() {
                 if (!Ports[add[2]])
                     Ports[add[2]] = [];
                 Ports[add[2]].push(add[3]);
+                ArpData.push({ Ip: add[3], Mac: add[4] });
+                console.log(ArpData);
             }
         }
-        Object.keys(Ports).forEach(function (p) {
-            if (SwitchData[p] && SwitchData[p].ConnectedMacs.length == 1 && Ports[p].length == 1)
-                SwitchData[p].Neighbour = Ports[p][0];
-        });
+        client.send(JSON.stringify({ Type: "ARP", Data: ArpData }));
         setTimeout(getNextFct("getArp"), SwitchPollTime * 1000);
     });
 }
