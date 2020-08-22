@@ -13,9 +13,12 @@ let VlanColor = (v) => {
         if(e.length < 2) return "0" + e
         return e
     }
-    let r = (v%11)*22
-    let g = (v%3)*80
-    let b = (v%7)*35
+    let r = (v%11)*22 + 80
+    let g = (v%3)*80 + 60
+    let b = (v%7)*35 + 40
+    r = r>255 ? 255 : r;
+    g = g>255 ? 255 : g;
+    b = b>255 ? 255 : b;
     return "#" + corrlen(r.toString(16)) + corrlen(g.toString(16)) + corrlen(b.toString(16))
 }
 
@@ -453,8 +456,6 @@ var selectNew = (newSelected,node) => {
     if(elem) elem.classList.add("selected")
     lastSelected = newSelected;
 
-    console.log(elem)
-
     let prim = document.getElementById("prim-selection")
     let sec = document.getElementById("prim-selection-sec")
     prim.innerHTML = node.Name;
@@ -631,14 +632,12 @@ var makeDeviceInfo = (elem,update) => {
     if(!update) win.innerHTML = ""
     mselection.nodeIP = node.IP
 
-    console.log(node)
-
     buildGraph(_nodes)
     checkElem(win,"win-device-name","div","win-device-name",node.Name)
     buildRefreshTimer(node,win,"win-")
     let ips = checkElem(win,"win-device-ips","div","win-device-ips"," ")
     checkElem(ips,"","div","",node.IP)
-    for(let i of node.OtherIPs) {
+    if(node.OtherIPs) for(let i of node.OtherIPs) {
         checkElem(ips,"","div","",i)
     }
     let services = checkElem(win,"win-device-services","div","services"," ")
@@ -646,7 +645,7 @@ var makeDeviceInfo = (elem,update) => {
         buildSystemInfo(node,win,"left-")
     }
     else 
-        checkElem(win,"left-node-system-" + node.Name,"div","node-system-unit","")
+        checkElem(win,"left-node-system-" + node.Name,"div","node-system-unit empty","")
     if(node.Services) {
         Object.keys(node.Services).forEach((key) => {
             let name = key.split("._")[0]
@@ -1120,6 +1119,7 @@ var welcomeMessage = () => {
 }
 
 function buildGraph(nodes) {
+    var zoomFactor = network.getScale();
     let newNodes = [];
     let newEdges = [];
     let newvlans = []
@@ -1221,11 +1221,13 @@ function buildGraph(nodes) {
             }
         }
     }
+    let doFit = false
     if(!(_.isEqual(newNodes, oldNodes))) {
         oldNodes = JSON.parse(JSON.stringify(newNodes))
         let tmp = newNodes.slice()
         visnode.update(tmp)
         console.log("new nodes")
+        doFit = true
     }
     if(!(_.isEqual(newEdges, oldEdges))) {
         console.log(newEdges, oldEdges)
@@ -1234,9 +1236,11 @@ function buildGraph(nodes) {
         visedge.clear()
         visedge.update(tmp)
         console.log("new edges")
+        doFit = true
     }
     mvlans = newvlans
-    network.fit()
+    if(doFit)
+        network.fit()
 }
 
 

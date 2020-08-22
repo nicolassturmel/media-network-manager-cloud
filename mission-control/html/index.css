@@ -226,7 +226,7 @@ body {
 }
 
 .off {
-    color: grey;
+    color:gray;
 }
 
 .warn {
@@ -381,9 +381,8 @@ nav {
     color: red;
 }
 .port.off {
-    border: 1px solid #ff00ff;
     border-radius: 30%;
-    color: grey;
+    color: #ff00ff;
 }
 
 .services {
@@ -449,6 +448,10 @@ nav {
     margin-top: 10px;
     margin-left: 2%;
 }
+.node-system-unit.empty {
+    height: 0;
+}
+
 .node-system-cpu {
     position: absolute;
     left: 0;
@@ -566,6 +569,7 @@ nav {
 .switch_port_win {
     display: inline-block;
     margin: 5px;
+    text-align: center;
     border: none;
     box-sizing: border-box;
     min-width: 35px;
