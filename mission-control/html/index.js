@@ -13,10 +13,10 @@ let VlanColor = (v) => {
         if(e.length < 2) return "0" + e
         return e
     }
-    let r = (v%11)*22 + 80
-    let g = (v%3)*80 + 60
-    let b = (v%7)*35 + 40
-    r = r>255 ? 255 : r;
+    let r = (v%11)*22 
+    let g = (v%3)*80 + 80
+    let b = (v%7)*35 + 80
+    r = r>128 ? 128 : r;
     g = g>255 ? 255 : g;
     b = b>255 ? 255 : b;
     return "#" + corrlen(r.toString(16)) + corrlen(g.toString(16)) + corrlen(b.toString(16))
@@ -60,7 +60,7 @@ function run() {
             if(n.Name.includes(nodeSearch.value)
                 || n.Type.includes(nodeSearch.value)
                 || n.IP.includes(nodeSearch.value)
-                || n.OtherIPs.some(k => k.includes(nodeSearch.value))
+                || (n.OtherIPs && n.OtherIPs.some(k => k.includes(nodeSearch.value)))
             )
             {
                 el.classList.remove("hidden")

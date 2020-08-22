@@ -2,6 +2,9 @@ import { SSL_OP_TLS_ROLLBACK_BUG } from "constants";
 import { kMaxLength } from "buffer";
 
 import { MnMs_node, node_timers, MnMs_node_port } from "../types/types"
+import { readFileSync } from "fs";
+import { exit } from "process";
+import { inflateRawSync } from "zlib";
 
 var mdns_ = require('../multicast-dns')
 var mdnss = []
@@ -185,7 +188,15 @@ export = function(LocalOptions) {
                         calculateInterConnect()
                     }
                     else if (node.Type == "ARP") {
-                        node.Data.forEach(d => ArpCache[d.Mac] = d.Ip)
+                        node.Data.forEach(d => {
+                            let Ip = d.Ip
+                            let Mac = d.Mac
+                            ArpCache[Mac] = Ip
+                            let D = Nodes.filter(n => n.OtherIPs && n.Macs && n.Macs.includes(d.Mac) && !n.OtherIPs.includes(d.Ip))
+                            D.forEach(d => d.OtherIPs.push(Ip))
+                             D = Nodes.filter(n => n.OtherIPs && n.Macs && !n.Macs.includes(d.Mac) && n.OtherIPs.includes(d.Ip))
+                            D.forEach(d => d.Macs.push(Mac))
+                        })
                         console.log(ArpCache)
                     }
                     else {
@@ -438,7 +449,13 @@ export = function(LocalOptions) {
                 }
             }
             Nodes[index].OtherIPs = newValue.OtherIPs
-            Nodes[index].Macs = newValue.Macs  
+            if(!Nodes[index].Macs)
+                Nodes[index].Macs = newValue.Macs  
+            else
+                newValue.Macs.forEach(element => {
+                    if(!Nodes[index].Macs.includes(element))
+                        Nodes[index].Macs.push(element)
+                });
             Nodes[index].Neighbour = newValue.Neighbour
             Nodes[index].Mac = newValue.Mac
             Nodes[index].id = newValue.id
@@ -466,6 +483,7 @@ export = function(LocalOptions) {
         }
         if(newValue.System) Nodes[index].System = newValue.System
         if(!Nodes[index].seqnum) Nodes[index].seqnum = 0
+        if(!Nodes[index].OtherIPs) Nodes[index].OtherIPs = []
         Nodes[index].seqnum++
     }
 
@@ -895,5 +913,38 @@ export = function(LocalOptions) {
         MnmsData.OkSwitches = okswitches
     }
 
+    var loadStaticConfig = () => {
+        try {
+            let file = readFileSync("devices.json")
+            let Data = JSON.parse(file.toString())
+            for(let p of Data) {
+                if(p.Name) {
+                    if(p.Macs) for(let i = 0; i < p.Macs.length ; i++)
+                        p.Macs[i] = p.Macs[i].toLowerCase()
+                    let N : MnMs_node = {
+                        Name: "(S) " + p.Name,
+                        Type: "disconnected", 
+                        IP: (p.IPs && p.IPs.length > 0)? p.IPs[0] : "",
+                        Neighbour: null,
+                        Schema: 1,
+                        Multicast: "off",
+                        Mac: (p.Macs && p.Macs.length > 0)? p.Macs[0]: "00:00:00:00:00:00",
+                        id:  "(S) " + p.Neighbour
+                    }
+                    if(p.IPs) N.OtherIPs = p.IPs
+                    else N.OtherIPs = []
+                    if(p.Macs) N.Macs = p.Macs;
+                    Nodes.push(N)
+                }
+            }
+        }
+        catch(e) {
+            console.error(e)
+        }
+    }
+
+    loadStaticConfig()
+
     setInterval( watchDog, 2000 )
 }
+

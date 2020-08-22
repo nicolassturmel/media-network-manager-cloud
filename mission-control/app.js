@@ -1,4 +1,5 @@
 "use strict";
+var fs_1 = require("fs");
 var mdns_ = require('../multicast-dns');
 var mdnss = [];
 var os = require('os');
@@ -170,7 +171,15 @@ module.exports = function (LocalOptions) {
                         calculateInterConnect();
                     }
                     else if (node.Type == "ARP") {
-                        node.Data.forEach(function (d) { return ArpCache[d.Mac] = d.Ip; });
+                        node.Data.forEach(function (d) {
+                            var Ip = d.Ip;
+                            var Mac = d.Mac;
+                            ArpCache[Mac] = Ip;
+                            var D = Nodes.filter(function (n) { return n.OtherIPs && n.Macs && n.Macs.includes(d.Mac) && !n.OtherIPs.includes(d.Ip); });
+                            D.forEach(function (d) { return d.OtherIPs.push(Ip); });
+                            D = Nodes.filter(function (n) { return n.OtherIPs && n.Macs && !n.Macs.includes(d.Mac) && n.OtherIPs.includes(d.Ip); });
+                            D.forEach(function (d) { return d.Macs.push(Mac); });
+                        });
                         console.log(ArpCache);
                     }
                     else {
@@ -428,7 +437,13 @@ module.exports = function (LocalOptions) {
                 }
             }
             Nodes[index].OtherIPs = newValue.OtherIPs;
-            Nodes[index].Macs = newValue.Macs;
+            if (!Nodes[index].Macs)
+                Nodes[index].Macs = newValue.Macs;
+            else
+                newValue.Macs.forEach(function (element) {
+                    if (!Nodes[index].Macs.includes(element))
+                        Nodes[index].Macs.push(element);
+                });
             Nodes[index].Neighbour = newValue.Neighbour;
             Nodes[index].Mac = newValue.Mac;
             Nodes[index].id = newValue.id;
@@ -457,6 +472,8 @@ module.exports = function (LocalOptions) {
             Nodes[index].System = newValue.System;
         if (!Nodes[index].seqnum)
             Nodes[index].seqnum = 0;
+        if (!Nodes[index].OtherIPs)
+            Nodes[index].OtherIPs = [];
         Nodes[index].seqnum++;
     }
     function calculateInterConnect() {
@@ -884,5 +901,40 @@ module.exports = function (LocalOptions) {
         }
         MnmsData.OkSwitches = okswitches;
     };
+    var loadStaticConfig = function () {
+        try {
+            var file = fs_1.readFileSync("devices.json");
+            var Data = JSON.parse(file.toString());
+            for (var _i = 0, Data_1 = Data; _i < Data_1.length; _i++) {
+                var p = Data_1[_i];
+                if (p.Name) {
+                    if (p.Macs)
+                        for (var i_6 = 0; i_6 < p.Macs.length; i_6++)
+                            p.Macs[i_6] = p.Macs[i_6].toLowerCase();
+                    var N = {
+                        Name: "(S) " + p.Name,
+                        Type: "disconnected",
+                        IP: (p.IPs && p.IPs.length > 0) ? p.IPs[0] : "",
+                        Neighbour: null,
+                        Schema: 1,
+                        Multicast: "off",
+                        Mac: (p.Macs && p.Macs.length > 0) ? p.Macs[0] : "00:00:00:00:00:00",
+                        id: "(S) " + p.Neighbour
+                    };
+                    if (p.IPs)
+                        N.OtherIPs = p.IPs;
+                    else
+                        N.OtherIPs = [];
+                    if (p.Macs)
+                        N.Macs = p.Macs;
+                    Nodes.push(N);
+                }
+            }
+        }
+        catch (e) {
+            console.error(e);
+        }
+    };
+    loadStaticConfig();
     setInterval(watchDog, 2000);
 };
