@@ -1,10 +1,29 @@
 # Latest news
 
-14th Oct: Artel switch supported in desktop app, settings menu and daily app build !
+Summer 2020: Added VLAN monitoring and devices guessing using switches ARP table etc..
 
-25th Sept: Fixed a bug preventing connection to cisco switch.... if you tried and were unhappy, test latest version
+Spring 2020: Added UI to give system stat (memory, cpu, temp), ovrall better UX.
 
-30th June: New version with vlan support, SNMP switches, better UI
+Oct 2019: Artel switch supported in desktop app, settings menu and daily app build !
+
+Sept 2019: Fixed a bug preventing connection to cisco switch.... if you tried and were unhappy, test latest version
+
+# Detailed manuals
+
+UI manual
+
+Architecture
+
+Advanced use
+
+## Switch Support
+
+| Manufacturer | Range, protocol | MacAddress table, stats | Multicast groups | VLANs | System | Arp table |
+| - | - | - | - | - | - | - |
+| Cisco | SG3XX-SG5XX (via telnet) | y | y | y | y | y |
+| Artel | Quara (json-rpc) | y | y | to do | to do | no |
+| SNMP | ?? | y | no | y | to do | no (to do ?) |
+| Arista | EOS eAPI | to do | to do | to do | to do | to do |
 
 # media-network-manager-cloud
 
@@ -15,7 +34,8 @@ This is aimed a being a swarm of microservices all connected to a mission contro
 
 It is work in progress. At the moment it:
 * Shows the topology of the network
-* Gives information on switch ports: what is it connected to, bandwith, multicast group registration..
+* Shows the different VLANs using colors
+* Gives information on switch ports: what is it connected to, bandwith, VLAN, multicast group registration..
 * Shows the different MDNS services and, if there, shows SDP information and if it is AES67, ST-2022-7 
 * Traces the groups registration on the network (light the network path where the group has been registered)
 
@@ -69,7 +89,7 @@ Here it should be there
 
 ## Limitations
 
-The SG3XX switches MUST telnet access enabled, mDNS/Bonjour is always better.
+The SG3XX switches MUST have telnet access enabled, mDNS/Bonjour is always better.
 
 <img src="./media_assets/image003.png" width="400" alt="">
 <img src="./media_assets/image004.png" width="300" alt="">
@@ -80,15 +100,17 @@ The app will create a webserver running on port 8888, you can then access the UI
 
 Right now... this is only data mining and shaping
 
+### Installig from github
+
+Run the script "install.sh" to pull all the dependencies in every directory, then   ```node main``` in the mission-control sub dir.
+
 ## Components
+
+More info in the architecture page.
 
 ### Arhitecure
 
 The central point of the system is the "mission control", it manages other services based on what is discovered and configured.
-
-### Installig from github
-
-Run the script "install.sh" to pull all the dependencies in every directory
 
 ### mission control
 
