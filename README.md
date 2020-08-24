@@ -49,7 +49,7 @@ You can find an aggregated/app form of the tools here (nightly build):
 
 You would have to accept some security warnings to launch the app. Or you can take the whole repository and build-it yourself.
 
-![Snapshot of app](https://raw.githubusercontent.com/nicolassturmel/media-network-manager-cloud/master/media_assets/image001.png)
+![Snapshot of app](media_assets/MNMS-1.0.0-clean.png)
 
 ## Prerequisite
 

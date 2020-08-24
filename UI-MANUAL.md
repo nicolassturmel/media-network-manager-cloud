@@ -2,6 +2,39 @@
 
 ## MNMS interface
 
+![](./media_assets/MNMS-1.0.0.png)
+
+1. The selection bars indicates that we selected all VLAN, node Anubis_600039 and session 20Aout
+2. We see on the application view that this session multicast is routed to two nodes connected to Artel 39:c7:aa
+3. We see the session detail on the detail view
+4. We have switch node with no service, we see interface Gi7, 2.5G1 and 2.5G2 are not pluged in
+5. On this cisco switch we see system infos and services (telnet and http)
+6. This node is a regular node that has 2 http services and 3 rtsp services
+7. The status bar shows that we have MDNS active on one interface, and 4 switch services currently active
+8. This node has a different color lin, it is on a different VLAN. It name is prefixed by (G) because MNMS only discovered it through Mac address and Arp tables
+9. The serach window allows to search a specific node by name or IP
+
+## Special nodes
+
+Nodes prefixed by (G) are ghost nodes, MNMS detected they should be there but did not discover them. Reasons:
+- The node is offline
+- The node does not respond to MDNS
+- The node is in a different VLAN
+
+Nodes prefixed with (S) are static nodes that have not yet been merged, see [advanced use](ADVANCED.md) for more info.
+
+## Node interface color code
+
+A node interface is light blue when connected, gray when disconnected and light pink when turned off (inatice even when plugged)
+
+The border of the interface name is:
+- The VLAN color when this VLAN is selected or All Vlans is selected and this VLAN is untagged
+- light gray when a trunck port (all vlans selected)
+- dashed Vlan color when a this VLAN is selected and tagged on the interface
+- dashed Gray when unknown
+
+It will be full red (border and text) when bandwidth exceeds 50%
+
 ## The nodes view
 
 The top section of the MNMS view is for quick display of all node on the network. MNMS will give synthtic infos on the nodes: discovered MDNS services, switch interfaces, system status. Go to the detailed view section for more info.
