@@ -51,17 +51,9 @@ You would have to accept some security warnings to launch the app. Or you can ta
 
 ![Snapshot of app](media_assets/MNMS-1.0.0-clean.png)
 
-## Prerequisite
+## First run 
 
-At the moment, the software only works with SG3XX cisco switches or Artel Quarra switches. Be my guest (or contact me) if you want other switches support. You can have any number of switches on the network, the software should resolver inter-switch connection.
-
-## Cisco switch: First run (easy path)
-
-You have to tell the system to connect to the switches, click on the switch text in the bottom right and a list should appear if your switches have MDNS and TELNET activated.
-
-<img src="./media_assets/image002.png" width="300" alt="">
-
-Or you can launch the services by hand ! (still need telnet on cisco)
+A pop up will appear for the first run, inviting you to connect to a switchs. Cisco switch need telnet to be enabled (see [Limitations](#limitations))
 
 
 ## Launching switches by hand (Artel, Cisco, SNMP... custom user/pwd)
