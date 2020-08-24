@@ -10,11 +10,11 @@ Sept 2019: Fixed a bug preventing connection to cisco switch.... if you tried an
 
 # Detailed manuals
 
-UI manual
+[UI manual](UI-MANUAL.md)
 
-Architecture
+[Architecture](ARCHITECTURE.md)
 
-Advanced use
+[Advanced use](ADVANCED.md)
 
 ## Switch Support
 
