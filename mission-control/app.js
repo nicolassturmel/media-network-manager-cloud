@@ -144,30 +144,13 @@ module.exports = function (LocalOptions) {
                 //console.log("Got a message")
                 if (ws._data.ServiceClass == "Switches") {
                     if (node.Type == "switch") {
-                        var i_1 = Nodes.findIndex(function (k) { return k.IP == node.IP; });
                         var sw = MnmsData[ws._data.Info.ServiceClass].filter(function (k) { return k.UID == ws._data.Info.id; });
                         if (sw.length == 1) {
                             var t = new Date;
                             sw[0].Timer = t.getTime();
                             //console.log(node.id,MnmsData.Switches.filter(k => k.UID == node.id)[0].Timer)
                         }
-                        if (i_1 == -1) {
-                            Nodes.push({
-                                Type: "null",
-                                IP: node.IP,
-                                id: "0",
-                                Schema: 1,
-                                Ports: [],
-                                Services: {},
-                                Multicast: null,
-                                Neighbour: "",
-                                Mac: "",
-                                OtherIPs: []
-                            });
-                            i_1 = Nodes.findIndex(function (k) { return k.IP == node.IP; });
-                        }
-                        //console.log("Merge now...")
-                        mergeNodes(i_1, node, null);
+                        mergeNodes(null, node, null);
                         calculateInterConnect();
                     }
                     else if (node.Type == "ARP") {
@@ -237,21 +220,7 @@ module.exports = function (LocalOptions) {
     var mdnsBrowser_cb = function (node) {
         node.Name = node.Name.split(".")[0];
         if (node.Name != null) {
-            var i_2 = Nodes.findIndex(function (k) { return k.IP == node.IP; });
-            if (i_2 == -1) {
-                Nodes.push({ Name: node.Name,
-                    id: "0",
-                    Schema: 1,
-                    Ports: [],
-                    Services: {},
-                    Multicast: null,
-                    Neighbour: "",
-                    Mac: "",
-                    IP: node.IP,
-                    Type: "null" });
-                i_2 = Nodes.findIndex(function (k) { return k.Name == node.Name; });
-            }
-            mergeNodes(i_2, node, node.Name);
+            mergeNodes(null, node, null);
         }
     };
     var _loop_1 = function () {
@@ -450,7 +419,26 @@ module.exports = function (LocalOptions) {
             Nodes[index].Name = Name || newValue.Name;
         }
     };
+    var findCandidates = function (val) {
+        var r = 0;
+        r = Nodes.findIndex(function (n) { return n.Name == val.Name; });
+        if (r == -1)
+            r = Nodes.findIndex(function (n) { return n.Mac == val.Mac; });
+        if (r == -1)
+            r = Nodes.findIndex(function (n) { return (n.Macs && n.Macs.includes(val.Mac)) || (val.Macs && val.Macs.includes(n.Mac)); });
+        if (r == -1)
+            r = Nodes.findIndex(function (n) { return n.IP == val.IP; });
+        if (r == -1)
+            r = Nodes.findIndex(function (n) { return (n.OtherIPs && n.OtherIPs.includes(val.IP)) || (val.OtherIPs && val.OtherIPs.includes(n.IP)); });
+        return r;
+    };
     function mergeNodes(index, newValue, Name) {
+        index = findCandidates(newValue) || index;
+        if (!index || index < 0 || index > Nodes.length) {
+            console.error("Could not find a node");
+            Nodes.push(newValue);
+            return;
+        }
         mergeNodesUIParams(index);
         mergeNodesTimer(index, newValue, Name);
         switch (newValue.Type) {
@@ -480,30 +468,30 @@ module.exports = function (LocalOptions) {
         var linkd = [];
         var conns = [];
         // Detecting interconnect
-        for (var i_3 in Nodes) {
-            if (Nodes[i_3].Type == "switch" && Nodes[i_3].Ports.length > 0) {
-                if (!linkd[i_3])
-                    linkd[i_3] = {};
-                linkd[i_3].dataRef = i_3;
-                linkd[i_3].ports = [];
-                conns[i_3] = [];
+        for (var i_1 in Nodes) {
+            if (Nodes[i_1].Type == "switch" && Nodes[i_1].Ports.length > 0) {
+                if (!linkd[i_1])
+                    linkd[i_1] = {};
+                linkd[i_1].dataRef = i_1;
+                linkd[i_1].ports = [];
+                conns[i_1] = [];
                 var _loop_4 = function (j) {
                     if (Nodes[j].Type == "switch" && Nodes[j].Ports.length > 0) {
                         //console.log("Testing ",j)
-                        for (var l in Nodes[i_3].Ports) {
+                        for (var l in Nodes[i_1].Ports) {
                             //console.log("Testing ",i," port ",l)
                             //console.log(Nodes[j].Macs,Nodes[j].Mac,Nodes[i].Ports[l].ConnectedMacs)
-                            if (Nodes[j].Macs && Nodes[i_3].Ports[l].ConnectedMacs.some(function (k) { return Nodes[j].Macs.some(function (l) { return l === k; }); })) {
-                                if (!linkd[i_3].ports[l])
-                                    linkd[i_3].ports[l] = [];
-                                if (!linkd[i_3].ports[l].some(function (k) { return k == j; }))
-                                    linkd[i_3].ports[l].push(j);
+                            if (Nodes[j].Macs && Nodes[i_1].Ports[l].ConnectedMacs.some(function (k) { return Nodes[j].Macs.some(function (l) { return l === k; }); })) {
+                                if (!linkd[i_1].ports[l])
+                                    linkd[i_1].ports[l] = [];
+                                if (!linkd[i_1].ports[l].some(function (k) { return k == j; }))
+                                    linkd[i_1].ports[l].push(j);
                             }
-                            if (Nodes[j].Mac && Nodes[i_3].Ports[l].ConnectedMacs.includes(Nodes[j].Mac)) {
-                                if (!linkd[i_3].ports[l])
-                                    linkd[i_3].ports[l] = [];
-                                if (!linkd[i_3].ports[l].some(function (k) { return k == j; }))
-                                    linkd[i_3].ports[l].push(j);
+                            if (Nodes[j].Mac && Nodes[i_1].Ports[l].ConnectedMacs.includes(Nodes[j].Mac)) {
+                                if (!linkd[i_1].ports[l])
+                                    linkd[i_1].ports[l] = [];
+                                if (!linkd[i_1].ports[l].some(function (k) { return k == j; }))
+                                    linkd[i_1].ports[l].push(j);
                             }
                         }
                     }
@@ -522,10 +510,10 @@ module.exports = function (LocalOptions) {
             if (JSON.stringify(cleared) == JSON.stringify(old_cleared))
                 break;
             old_cleared = JSON.parse(JSON.stringify(cleared));
-            var _loop_5 = function (i_4) {
-                if (!(cleared.some(function (k) { return k.dataRef == linkd[i_4].dataRef; }))) {
-                    for (var p in linkd[i_4].ports) {
-                        if (linkd[i_4].ports[p] != undefined && linkd[i_4].ports[p].length > 1) {
+            var _loop_5 = function (i_2) {
+                if (!(cleared.some(function (k) { return k.dataRef == linkd[i_2].dataRef; }))) {
+                    for (var p in linkd[i_2].ports) {
+                        if (linkd[i_2].ports[p] != undefined && linkd[i_2].ports[p].length > 1) {
                             //console.log("Switch " , i , " port ", p)
                             var keep = null;
                             var ok = true;
@@ -534,7 +522,7 @@ module.exports = function (LocalOptions) {
                                     var test = cleared.filter(function (q) { return q.dataRef == j; })[0];
                                     for (var _i = 0, _a = test.ports; _i < _a.length; _i++) {
                                         var pk = _a[_i];
-                                        if (pk && pk.length == 1 && pk[0] == i_4) {
+                                        if (pk && pk.length == 1 && pk[0] == i_2) {
                                             if (keep == null)
                                                 keep = j;
                                             else
@@ -543,12 +531,12 @@ module.exports = function (LocalOptions) {
                                     }
                                 }
                             };
-                            for (var _i = 0, _a = linkd[i_4].ports[p]; _i < _a.length; _i++) {
+                            for (var _i = 0, _a = linkd[i_2].ports[p]; _i < _a.length; _i++) {
                                 var j = _a[_i];
                                 _loop_8(j);
                             }
                             if (ok && keep != null) {
-                                linkd[i_4].ports[p] = [keep];
+                                linkd[i_2].ports[p] = [keep];
                             }
                         }
                     }
@@ -557,34 +545,34 @@ module.exports = function (LocalOptions) {
             //console.log(JSON.stringify(cleared))
             //console.log(JSON.stringify(linkd))
             // Continuing reduction
-            for (var i_4 in linkd) {
-                _loop_5(i_4);
+            for (var i_2 in linkd) {
+                _loop_5(i_2);
             }
         }
-        var _loop_6 = function (i_5) {
+        var _loop_6 = function (i_3) {
             //if(Nodes[i].Mac) console.log(Nodes[i].Mac)
-            if (Nodes[i_5].Type == "switch" && Nodes[i_5].Ports.length > 0) {
-                var connlist = linkd.filter(function (k) { return k.dataRef == i_5; })[0];
+            if (Nodes[i_3].Type == "switch" && Nodes[i_3].Ports.length > 0) {
+                var connlist = linkd.filter(function (k) { return k.dataRef == i_3; })[0];
                 var _loop_9 = function (p) {
                     if (connlist.ports[p]) {
-                        Nodes[i_5].Ports[p].Neighbour = Nodes[connlist.ports[p][0]].IP;
+                        Nodes[i_3].Ports[p].Neighbour = Nodes[connlist.ports[p][0]].IP;
                     }
-                    else if (Nodes[i_5].Ports[p].ConnectedMacs.length >= 1) {
-                        var d = Nodes.filter(function (k) { return k.Macs && k.Macs.some(function (l) { return Nodes[i_5].Ports[p].ConnectedMacs.includes(l); }); });
+                    else if (Nodes[i_3].Ports[p].ConnectedMacs.length >= 1) {
+                        var d = Nodes.filter(function (k) { return k.Macs && k.Macs.some(function (l) { return Nodes[i_3].Ports[p].ConnectedMacs.includes(l); }); });
                         //       console.log("size 1 : " + Nodes[i].Ports[p].ConnectedMacs[0] + " : d size " + d.length + " N->" + Nodes[i].Ports[p].Neighbour)
                         if (d.length >= 1) {
-                            Nodes[i_5].Ports[p].Neighbour = d[0].IP;
+                            Nodes[i_3].Ports[p].Neighbour = d[0].IP;
                         }
                     }
                 };
-                for (var p in Nodes[i_5].Ports) {
+                for (var p in Nodes[i_3].Ports) {
                     _loop_9(p);
                 }
             }
         };
         // Building connection graph
-        for (var i_5 in Nodes) {
-            _loop_6(i_5);
+        for (var i_3 in Nodes) {
+            _loop_6(i_3);
         }
         var _loop_7 = function (list) {
             if (list && list.dataRef) {
@@ -909,8 +897,8 @@ module.exports = function (LocalOptions) {
                 var p = Data_1[_i];
                 if (p.Name) {
                     if (p.Macs)
-                        for (var i_6 = 0; i_6 < p.Macs.length; i_6++)
-                            p.Macs[i_6] = p.Macs[i_6].toLowerCase();
+                        for (var i_4 = 0; i_4 < p.Macs.length; i_4++)
+                            p.Macs[i_4] = p.Macs[i_4].toLowerCase();
                     var N = {
                         Name: "(S) " + p.Name,
                         Type: "disconnected",

@@ -159,32 +159,13 @@ export = function(LocalOptions) {
                 if(ws._data.ServiceClass == "Switches")
                 {
                     if(node.Type == "switch") {
-                        let i = Nodes.findIndex(k => k.IP == node.IP);
                         let sw = MnmsData[ws._data.Info.ServiceClass].filter(k => k.UID == ws._data.Info.id)
                             if(sw.length == 1) {
                                 let t = new Date
                                 sw[0].Timer = t.getTime()
                                 //console.log(node.id,MnmsData.Switches.filter(k => k.UID == node.id)[0].Timer)
                             }
-                        if(i == -1) {
-                            Nodes.push(
-                                {
-                                    Type: "null",
-                                    IP: node.IP,
-                                    id: "0",
-                                    Schema: 1,
-                                    Ports: [],
-                                    Services: {},
-                                    Multicast: null,
-                                    Neighbour: "",
-                                    Mac: "",
-                                    OtherIPs: []
-                                }
-                            )
-                            i = Nodes.findIndex(k => k.IP == node.IP);
-                        }
-                        //console.log("Merge now...")
-                        mergeNodes(i,node,null)
+                        mergeNodes(null,node,null)
                         calculateInterConnect()
                     }
                     else if (node.Type == "ARP") {
@@ -263,23 +244,7 @@ export = function(LocalOptions) {
     var mdnsBrowser_cb = (node) => {
         node.Name = node.Name.split(".")[0]
         if(node.Name != null) {
-            let i = Nodes.findIndex(k => k.IP == node.IP);
-            if(i == -1) {
-                Nodes.push(
-                    {Name: node.Name,
-                    id: "0",
-                    Schema: 1,
-                    Ports: [],
-                    Services: {},
-                    Multicast: null,
-                    Neighbour: "",
-                    Mac: "",
-                    IP: node.IP,
-                    Type: "null"}
-                )
-                i = Nodes.findIndex(k => k.Name == node.Name);
-            }
-            mergeNodes(i,node,node.Name)
+            mergeNodes(null,node,null)
         }
     }
 
@@ -462,8 +427,25 @@ export = function(LocalOptions) {
             Nodes[index].Name = Name || newValue.Name
         }
     }
+    var findCandidates = (val : MnMs_node) => {
+        let r : number = 0
+        r = Nodes.findIndex(n => n.Name == val.Name)
+        if(r == -1) r = Nodes.findIndex(n => n.Mac == val.Mac)
+        if(r == -1) r = Nodes.findIndex(n => (n.Macs && n.Macs.includes(val.Mac)) || (val.Macs && val.Macs.includes(n.Mac)))
+        if(r == -1) r = Nodes.findIndex(n => n.IP == val.IP)
+        if(r == -1) r = Nodes.findIndex(n => (n.OtherIPs && n.OtherIPs.includes(val.IP)) || (val.OtherIPs && val.OtherIPs.includes(n.IP)))
+        return r
+    }
+
     function mergeNodes(index: number,newValue : MnMs_node,Name: string)
     {
+        index = findCandidates(newValue) || index
+        if(!index || index < 0 || index > Nodes.length) {
+            console.error("Could not find a node")
+            Nodes.push(newValue)
+            return
+        }
+
         mergeNodesUIParams(index)
         mergeNodesTimer(index,newValue,Name)
         switch(newValue.Type) {

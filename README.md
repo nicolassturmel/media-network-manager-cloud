@@ -20,10 +20,12 @@ Sept 2019: Fixed a bug preventing connection to cisco switch.... if you tried an
 
 | Manufacturer | Range, protocol | MacAddress table, stats | Multicast groups | VLANs | System | Arp table |
 | - | - | - | - | - | - | - |
-| Cisco | SG3XX-SG5XX (via telnet) | y | y | y | y | y |
+| Cisco<sup>1</sup> | SG3XX-SG5XX (via telnet) | y | y | y | y | y |
 | Artel | Quara (json-rpc) | y | y | to do | to do | no |
 | SNMP | ?? | y | no | y | to do | no (to do ?) |
 | Arista | EOS eAPI | to do | to do | to do | to do | to do |
+
+1. On Cisco, do not put a single ```#```in the login or welcome banner
 
 # media-network-manager-cloud
 
@@ -80,6 +82,8 @@ Here it should be there
 
 
 ## Limitations
+
+Avoid any ```#``` in the welcome or login banner
 
 The SG3XX switches MUST have telnet access enabled, mDNS/Bonjour is always better.
 
