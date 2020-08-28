@@ -69,6 +69,7 @@ Object.keys(ifaces).forEach(function (ifname) {
 
 var missionControl = require(("media-network-manager-cloud/mission-control"))({
   interfaces: interfaces,
+  database: path.join((electron.app || electron.remote.app).getPath('userData'), "data.db"),
   launch_services: (options) => {
     console.log(options)
     let type = options.Name.split(":")[0]
