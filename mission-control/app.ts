@@ -46,7 +46,7 @@ function makeid(length) {
 //--------------------------------
 
 var Options = {
-    database: "data.db",
+    database: path.join(__dirname, "data.db"),
     services_port: 16060,
     clients_port: 8888,
     launch_services: null,
@@ -780,7 +780,7 @@ export = function(LocalOptions) {
     }
 
     var Datastore = require('nedb')
-    , db = new Datastore({ filename: path.join(__dirname, Options.database), autoload: true });
+    , db = new Datastore({ filename: Options.database, autoload: true });
     db.find({ Type: "MnmsData", Schema: MnmsData.Schema}, (err, docs) => {
         console.log(docs)
         if(docs.length==1) {

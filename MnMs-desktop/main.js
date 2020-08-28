@@ -3,7 +3,7 @@ const {app, BrowserWindow} = require('electron')
 const path = require('path')
 
 const {ipcMain} = require('electron')
-
+const electron = require("electron")
 const { fork } = require('child_process');
 
 // Keep a global reference of the window object, if you don't, the window will
@@ -66,6 +66,8 @@ Object.keys(ifaces).forEach(function (ifname) {
     ++alias;
   });
 });
+
+console.log(path.join((electron.app || electron.remote.app).getPath('userData'), "data.db"))
 
 var missionControl = require(("media-network-manager-cloud/mission-control"))({
   interfaces: interfaces,
