@@ -50,6 +50,9 @@ function run() {
         makeSettingsMenu()
     }
 
+    document.getElementById("snapshot-select").onchange = d => console.log( document.getElementById("snapshot-select").value)
+    document.getElementById("snapshot-add").onclick = () => onscreenPopup("snapshot",{"Name":"Snap-" + Date.now()})
+
 
     let nodeSearch = document.getElementById("nodeSearchInput")
     nodeSearch.oninput = () => {

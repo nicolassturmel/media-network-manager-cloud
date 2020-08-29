@@ -27,6 +27,19 @@ body {
     color: white;
 }
 
+select {
+	font-size: 16px;
+	color: white;
+	box-sizing: border-box;
+	margin: 0;
+	border: 1px solid #aaa;
+    box-shadow: 0 0 0 0 rgba(0,0,0,.04);
+    background-color: var(--sec-color-dim);
+	border-radius: .5em;
+	-moz-appearance: none;
+    -webkit-appearance: none;
+}
+
 #disconnectMessage {
     position: absolute;
     color: white;
