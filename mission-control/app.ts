@@ -1,10 +1,12 @@
-import { SSL_OP_TLS_ROLLBACK_BUG } from "constants";
+import { SSL_OP_TLS_ROLLBACK_BUG, WSATYPE_NOT_FOUND } from "constants";
 import { kMaxLength } from "buffer";
 
 import { MnMs_node, node_timers, MnMs_node_port } from "../types/types"
 import { readFileSync } from "fs";
 import { exit } from "process";
 import { inflateRawSync } from "zlib";
+import { stringify } from "querystring";
+import { notDeepEqual } from "assert";
 
 var mdns_ = require('../multicast-dns')
 var mdnss = []
@@ -72,15 +74,20 @@ export = function(LocalOptions) {
 
     var pc_name = os.hostname()
     var prename = pc_name.split('.')[0];
-    var Nodes : MnMs_node[] = [{ Type: "null",
-    IP: "",
-    id: "0",
-    Schema: 1,
-    Ports: [],
-    Services: {},
-    Multicast: null,
-    Neighbour: "",
-    Mac: ""}]
+    var Nodes : MnMs_node[] = 
+        [{ 
+            Type: "null",
+            IP: "",
+            id: "0",
+            Schema: 1,
+            Ports: [],
+            Services: {},
+            Multicast: null,
+            Neighbour: "",
+            Mac: ""
+        }]  
+    var Snapshot : MnMs_node[] = null
+    var SelectedSnapId = 0
     var ArpCache = {};
 
     var privateKey = fs.readFileSync(path.join(__dirname, 'server.key'), 'utf8');
@@ -621,7 +628,7 @@ export = function(LocalOptions) {
                 }
             }
         }    
-
+        if(SelectedSnapId != 0) compareToSnapshot()
         console.log(JSON.stringify(linkd.filter(k => k.ports.some(l => l.length == 1))))
     }
 
@@ -660,6 +667,12 @@ export = function(LocalOptions) {
     });
 
     const user_wss = new sock.Server({ server: server });
+    user_wss.broadcast = function broadcast(msg) {
+        console.log(msg);
+        user_wss.clients.forEach(function each(client) {
+            client.send(msg);
+         });
+     };
 
     user_wss.on('connection', (ws) => {
 
@@ -675,7 +688,7 @@ export = function(LocalOptions) {
             else {
                 try {
                     let D = JSON.parse(message)
-                    console.log("D" ,D)
+                    console.log(D)
                     if(D.Type && (D.Type == "ciscoSG" || D.Type == "artelQ")) {
                         if(!MnmsData.Switches.some(k => k.IP == D.IP)) {
                             MnmsData.Switches.push({
@@ -730,6 +743,19 @@ export = function(LocalOptions) {
                             if(found) db.update({Type: "MnmsData"},blankMnmsData(MnmsData), {upsert: true},(err, newDoc) => { })
                         }
                     }
+                    else if(D.Type == "Snapshot::select") {
+                        getSnapshot(D.id)
+                        .then((v) => {
+                            user_wss.broadcast(JSON.stringify(v))
+                        })
+                    }
+                    else if(D.Type == "Snapshot::create") {
+                        createSnapshot(D.Name)
+                        .then((v) => {
+                            listSnapshots()
+                            .then((v) => user_wss.broadcast(JSON.stringify(v)))
+                        })
+                    }
                     else {
                         console.log("No",D)
                     }
@@ -742,6 +768,10 @@ export = function(LocalOptions) {
         //send immediatly a feedback to the incoming connection    
         ws.send(JSON.stringify(MnmsData))
         ws.send(JSON.stringify(Nodes))
+        listSnapshots().then(v => {
+            ws.send(JSON.stringify(v))
+            if(SelectedSnapId != 0) compareToSnapshot()
+        })
     });
 
 
@@ -928,5 +958,181 @@ export = function(LocalOptions) {
     loadStaticConfig()
 
     setInterval( watchDog, 2000 )
+
+    // Snapshot
+
+    var getSnapshot = (id) => {
+        return new Promise((resolve, error) => {
+            if(id == 0) {
+                Snapshot = null
+                SelectedSnapId = 0
+                resolve({
+                    Type: "MnmsSnapshot",
+                    List: null,
+                    Options: null,
+                    Selected: id,
+                    Errors: []
+                })
+            }
+            db.find({ Type: "MnmsSnapshot", id: id}, (err, docs) => {
+                console.log(docs)
+                if(docs.length==1) {
+                    Snapshot = JSON.parse(docs[0].Data)
+                    SelectedSnapId = id
+                    resolve({
+                        Type: "MnmsSnapshot",
+                        List: null,
+                        Options: null,
+                        Selected: id,
+                        Errors: null
+                    })
+                }
+            })
+        })
+    }
+
+    var listSnapshots = () => {
+        return new Promise((resolve, error) => {
+            db.find({ Type: "MnmsSnapshot"}, (err, docs) => {
+                console.log(docs)
+                let L = [{Name: "no snapshot", id : 0}]
+                docs.forEach(element => {
+                    L.push({Name: element.Name, id: element.id})
+                });
+                resolve({
+                    Type: "MnmsSnapshot",
+                    List: L,
+                    Options: null,
+                    Selected: SelectedSnapId,
+                    Errors: null
+                })
+            })
+        })
+    }
+
+    var createSnapshot = (Name) => {
+        console.log("Creating snapshots")
+        let Snap = {
+            Type: "MnmsSnapshot",
+            Data: JSON.stringify(Nodes),
+            Name: Name,
+            id: "snap-" + Date.now()
+        }
+        return new Promise((resolve, error) => {
+            db.update({Type: "MnmsSnapshot", id: Snap.id},Snap, {upsert: true},(err, newDoc) => { 
+                if(err)
+                    console.log(err)
+                resolve()
+            })
+        })
+    }
+
+    var compareToSnapshot = () => {
+        let Errors = []
+        Nodes.forEach(node => {
+            let snode = Snapshot.filter(k => k.Name == node.Name)
+            if(snode.length == 0) 
+            {
+                // Device is new
+                Errors.push({
+                    Type: "new",
+                    Name: node.Name
+                })
+            }
+            else 
+            {
+                let snap = snode[0]
+                let mods = []
+                let targetHasIP = (IP,target : MnMs_node) => {
+                    let found = false
+                    if(target.IP == IP) found = true
+                    if(target.OtherIPs && target.OtherIPs.includes(IP)) found = true
+                    return found
+                }
+                let checkAllIPs = (source : MnMs_node,target : MnMs_node) => {
+                    let missingIPs = []
+                    if(!targetHasIP(source.IP,target))
+                        missingIPs.push(source.IP)
+                    if(source.OtherIPs)
+                        source.OtherIPs.forEach(i => {
+                            if(!targetHasIP(i,target))
+                                missingIPs.push(i)
+                        })
+                    return missingIPs
+                }
+                // Checking IPs
+                let missingIPs = checkAllIPs(snap,node)
+                if(missingIPs.length > 0)
+                    mods.push({type: "missing IPs",data:missingIPs})
+                let newIPs = checkAllIPs(node,snap)
+                if(newIPs.length > 0)
+                    mods.push({type: "new IPs",data:newIPs})
+    
+                // Checking Macs
+                // TO DO
+
+                // Checking services
+                // TO DO
+
+                // Checking bandwidth on ports
+                Nodes.forEach(n => {
+                    if(n.Type == "switch") {
+                        let interfaces = n.Ports.filter(p => p.Neighbour && ( node.IP == p.Neighbour || (node.OtherIPs && node.OtherIPs.includes(p.Neighbour))))
+                        interfaces.forEach(int => {
+                            let SnapSw = Snapshot.filter(sn => sn.Name == n.Name && sn.Type == "switch") 
+                            if(SnapSw.length == 0) {
+                                mods.push({type: "Switch changed",data:null})
+                            }
+                            else {
+                                let snint = SnapSw[0].Ports.filter(pp => pp.Name == int.Name)
+                                if(snint.length == 0) {
+                                    mods.push({type: "Switch port changed",data:null})
+                                }
+                                else {
+                                    if(int.In > snint[0].In*1.2 || int.In < snint[0].In*0.8)
+                                        mods.push({type: "Input bandwith changed",data:null})
+                                    if(int.Out > snint[0].Out*1.2 || int.Out < snint[0].Out*0.8)
+                                        mods.push({type: "Output bandwith changed",data:null})
+                                }
+                            }
+                        })
+                    }
+                })
+
+                // Finalizing
+                if(mods.length> 0)
+                    Errors.push({
+                        Type: "modified",
+                        Name: node.Name,
+                        Data: mods
+                    })
+            }
+        })
+        Snapshot.forEach(node => {
+            let snode = Nodes.filter(k => k.Name == node.Name)
+            if(snode.length == 0) 
+            {
+                // Device is new
+                Errors.push({
+                    Type: "missing",
+                    Name: node.Name
+                })
+                node.IP = ""
+                node.OtherIPs = []
+                node.Macs = []
+                node.Mac = ""
+                node.Type = "disconnected"
+                mergeNodes(null,node,null)
+            }
+        })
+        if(Errors.length > 0)
+            user_wss.broadcast(JSON.stringify({
+                    Type: "MnmsSnapshot",
+                    List: null,
+                    Options: null,
+                    Selected: SelectedSnapId,
+                    Errors: Errors
+            }))
+    }
 }
 

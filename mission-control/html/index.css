@@ -191,6 +191,20 @@ select {
     display: none;
 }
 
+.snap-error {
+    width: 90%;
+    text-align: center;
+    border-radius: 10px;
+    background-color: var(--sec-color-dim);
+    margin: 5%;
+    box-sizing: border-box;
+}
+
+.snap-error.warn {
+    background-color: var(--tri-color-light);
+    color: inherit;
+}
+
 .prim-on {
     display: inline;
     color: black;

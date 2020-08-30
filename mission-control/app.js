@@ -65,7 +65,8 @@ module.exports = function (LocalOptions) {
     //---------------------------------
     var pc_name = os.hostname();
     var prename = pc_name.split('.')[0];
-    var Nodes = [{ Type: "null",
+    var Nodes = [{
+            Type: "null",
             IP: "",
             id: "0",
             Schema: 1,
@@ -73,7 +74,10 @@ module.exports = function (LocalOptions) {
             Services: {},
             Multicast: null,
             Neighbour: "",
-            Mac: "" }];
+            Mac: ""
+        }];
+    var Snapshot = null;
+    var SelectedSnapId = 0;
     var ArpCache = {};
     var privateKey = fs.readFileSync(path.join(__dirname, 'server.key'), 'utf8');
     var certificate = fs.readFileSync(path.join(__dirname, 'server.cert'), 'utf8');
@@ -636,6 +640,8 @@ module.exports = function (LocalOptions) {
             var list = _a[_i];
             _loop_7(list);
         }
+        if (SelectedSnapId != 0)
+            compareToSnapshot();
         console.log(JSON.stringify(linkd.filter(function (k) { return k.ports.some(function (l) { return l.length == 1; }); })));
     }
     // User and GUI side
@@ -665,6 +671,12 @@ module.exports = function (LocalOptions) {
         console.log("Server started on port " + Options.clients_port + " :)");
     });
     var user_wss = new sock.Server({ server: server });
+    user_wss.broadcast = function broadcast(msg) {
+        console.log(msg);
+        user_wss.clients.forEach(function each(client) {
+            client.send(msg);
+        });
+    };
     user_wss.on('connection', function (ws) {
         ws.on('message', function (message) {
             if (message == "nodes") {
@@ -678,7 +690,7 @@ module.exports = function (LocalOptions) {
             else {
                 try {
                     var D_1 = JSON.parse(message);
-                    console.log("D", D_1);
+                    console.log(D_1);
                     if (D_1.Type && (D_1.Type == "ciscoSG" || D_1.Type == "artelQ")) {
                         if (!MnmsData.Switches.some(function (k) { return k.IP == D_1.IP; })) {
                             MnmsData.Switches.push({
@@ -732,6 +744,19 @@ module.exports = function (LocalOptions) {
                                 db.update({ Type: "MnmsData" }, blankMnmsData(MnmsData), { upsert: true }, function (err, newDoc) { });
                         }
                     }
+                    else if (D_1.Type == "Snapshot::select") {
+                        getSnapshot(D_1.id)
+                            .then(function (v) {
+                            user_wss.broadcast(JSON.stringify(v));
+                        });
+                    }
+                    else if (D_1.Type == "Snapshot::create") {
+                        createSnapshot(D_1.Name)
+                            .then(function (v) {
+                            listSnapshots()
+                                .then(function (v) { return user_wss.broadcast(JSON.stringify(v)); });
+                        });
+                    }
                     else {
                         console.log("No", D_1);
                     }
@@ -744,6 +769,11 @@ module.exports = function (LocalOptions) {
         //send immediatly a feedback to the incoming connection    
         ws.send(JSON.stringify(MnmsData));
         ws.send(JSON.stringify(Nodes));
+        listSnapshots().then(function (v) {
+            ws.send(JSON.stringify(v));
+            if (SelectedSnapId != 0)
+                compareToSnapshot();
+        });
     });
     // db and other services start
     //------------------
@@ -925,4 +955,170 @@ module.exports = function (LocalOptions) {
     };
     loadStaticConfig();
     setInterval(watchDog, 2000);
+    // Snapshot
+    var getSnapshot = function (id) {
+        return new Promise(function (resolve, error) {
+            if (id == 0) {
+                Snapshot = null;
+                SelectedSnapId = 0;
+                resolve({
+                    Type: "MnmsSnapshot",
+                    List: null,
+                    Options: null,
+                    Selected: id,
+                    Errors: []
+                });
+            }
+            db.find({ Type: "MnmsSnapshot", id: id }, function (err, docs) {
+                console.log(docs);
+                if (docs.length == 1) {
+                    Snapshot = JSON.parse(docs[0].Data);
+                    SelectedSnapId = id;
+                    resolve({
+                        Type: "MnmsSnapshot",
+                        List: null,
+                        Options: null,
+                        Selected: id,
+                        Errors: null
+                    });
+                }
+            });
+        });
+    };
+    var listSnapshots = function () {
+        return new Promise(function (resolve, error) {
+            db.find({ Type: "MnmsSnapshot" }, function (err, docs) {
+                console.log(docs);
+                var L = [{ Name: "no snapshot", id: 0 }];
+                docs.forEach(function (element) {
+                    L.push({ Name: element.Name, id: element.id });
+                });
+                resolve({
+                    Type: "MnmsSnapshot",
+                    List: L,
+                    Options: null,
+                    Selected: SelectedSnapId,
+                    Errors: null
+                });
+            });
+        });
+    };
+    var createSnapshot = function (Name) {
+        console.log("Creating snapshots");
+        var Snap = {
+            Type: "MnmsSnapshot",
+            Data: JSON.stringify(Nodes),
+            Name: Name,
+            id: "snap-" + Date.now()
+        };
+        return new Promise(function (resolve, error) {
+            db.update({ Type: "MnmsSnapshot", id: Snap.id }, Snap, { upsert: true }, function (err, newDoc) {
+                if (err)
+                    console.log(err);
+                resolve();
+            });
+        });
+    };
+    var compareToSnapshot = function () {
+        var Errors = [];
+        Nodes.forEach(function (node) {
+            var snode = Snapshot.filter(function (k) { return k.Name == node.Name; });
+            if (snode.length == 0) {
+                // Device is new
+                Errors.push({
+                    Type: "new",
+                    Name: node.Name
+                });
+            }
+            else {
+                var snap = snode[0];
+                var mods_1 = [];
+                var targetHasIP_1 = function (IP, target) {
+                    var found = false;
+                    if (target.IP == IP)
+                        found = true;
+                    if (target.OtherIPs && target.OtherIPs.includes(IP))
+                        found = true;
+                    return found;
+                };
+                var checkAllIPs = function (source, target) {
+                    var missingIPs = [];
+                    if (!targetHasIP_1(source.IP, target))
+                        missingIPs.push(source.IP);
+                    if (source.OtherIPs)
+                        source.OtherIPs.forEach(function (i) {
+                            if (!targetHasIP_1(i, target))
+                                missingIPs.push(i);
+                        });
+                    return missingIPs;
+                };
+                // Checking IPs
+                var missingIPs = checkAllIPs(snap, node);
+                if (missingIPs.length > 0)
+                    mods_1.push({ type: "missing IPs", data: missingIPs });
+                var newIPs = checkAllIPs(node, snap);
+                if (newIPs.length > 0)
+                    mods_1.push({ type: "new IPs", data: newIPs });
+                // Checking Macs
+                // TO DO
+                // Checking services
+                // TO DO
+                // Checking bandwidth on ports
+                Nodes.forEach(function (n) {
+                    if (n.Type == "switch") {
+                        var interfaces = n.Ports.filter(function (p) { return p.Neighbour && (node.IP == p.Neighbour || (node.OtherIPs && node.OtherIPs.includes(p.Neighbour))); });
+                        interfaces.forEach(function (int) {
+                            var SnapSw = Snapshot.filter(function (sn) { return sn.Name == n.Name && sn.Type == "switch"; });
+                            if (SnapSw.length == 0) {
+                                mods_1.push({ type: "Switch changed", data: null });
+                            }
+                            else {
+                                var snint = SnapSw[0].Ports.filter(function (pp) { return pp.Name == int.Name; });
+                                if (snint.length == 0) {
+                                    mods_1.push({ type: "Switch port changed", data: null });
+                                }
+                                else {
+                                    if (int.In > snint[0].In * 1.2 || int.In < snint[0].In * 0.8)
+                                        mods_1.push({ type: "Input bandwith changed", data: null });
+                                    if (int.Out > snint[0].Out * 1.2 || int.Out < snint[0].Out * 0.8)
+                                        mods_1.push({ type: "Output bandwith changed", data: null });
+                                }
+                            }
+                        });
+                    }
+                });
+                // Finalizing
+                if (mods_1.length > 0)
+                    Errors.push({
+                        Type: "modified",
+                        Name: node.Name,
+                        Data: mods_1
+                    });
+            }
+        });
+        Snapshot.forEach(function (node) {
+            var snode = Nodes.filter(function (k) { return k.Name == node.Name; });
+            if (snode.length == 0) {
+                // Device is new
+                Errors.push({
+                    Type: "missing",
+                    Name: node.Name
+                });
+                node.IP = "";
+                node.OtherIPs = [];
+                node.Macs = [];
+                node.Mac = "";
+                node.Type = "disconnected";
+                mergeNodes(null, node, null);
+            }
+        });
+        if (Errors.length > 0)
+            user_wss.broadcast(JSON.stringify({
+                Type: "MnmsSnapshot",
+                List: null,
+                Options: null,
+                Selected: SelectedSnapId,
+                Errors: Errors
+            }));
+    };
 };

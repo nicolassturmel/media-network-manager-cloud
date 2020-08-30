@@ -30,6 +30,7 @@ let visnode = new vis.DataSet([])
 let visedge = new vis.DataSet([])
 var network
 var missionControlWS
+var snapErrors = []
 
 /* init function */
 function run() {
@@ -50,8 +51,8 @@ function run() {
         makeSettingsMenu()
     }
 
-    document.getElementById("snapshot-select").onchange = d => console.log( document.getElementById("snapshot-select").value)
-    document.getElementById("snapshot-add").onclick = () => onscreenPopup("snapshot",{"Name":"Snap-" + Date.now()})
+    document.getElementById("snapshot-select").onchange = d => missionControlWS.send(JSON.stringify({Type :"Snapshot::select", id: document.getElementById("snapshot-select").value}))
+    document.getElementById("snapshot-add").onclick = () => onscreenPopup({Type: "Snapshot::create"},{Type: "Snapshot::create", "Name":"Snap-" + Date.now()})
 
 
     let nodeSearch = document.getElementById("nodeSearchInput")
@@ -215,6 +216,24 @@ function run() {
                     makePtpMenu()
             }
             setTimeout(() => {missionControlWS.send("data")},4000)
+        }
+        else if(data.Type && data.Type == "MnmsSnapshot") {
+            console.log("MnmsSnapshot", data)
+            if(data.List) {
+                let dom = document.getElementById("snapshot-select")
+                dom.innerHTML = ""
+                data.List.forEach(e => {
+                    console.log(e)
+                    let o = document.createElement("option")
+                    o.value = e.id
+                    o.innerHTML = e.Name
+                    dom.appendChild(o)
+                })
+            }
+            if(data.Selected) document.getElementById("snapshot-select").value = data.Selected
+            if(data.Errors) {
+                snapErrors = data.Errors
+            }
         }
         else {
             // copy UI params
@@ -643,6 +662,26 @@ var makeDeviceInfo = (elem,update) => {
     if(node.OtherIPs) for(let i of node.OtherIPs) {
         checkElem(ips,"","div","",i)
     }
+    let err = snapErrors.filter(s => s.Name == node.Name)
+    if(err.length > 0) {
+        let snapCont = checkElem(win,"snap-cont-left","div","","")
+        let snap = checkElem(snapCont,"snapError-winleft","div","snap-error",err[0].Type)
+        if(err[0].Type == "new") {
+            snap.classList.remove("warn")
+        }
+        else {
+            snap.classList.add("warn")
+        }
+        if(err[0].Type == "modified") {
+            err[0].Data.forEach(d => {
+                console.log(d)
+                checkElem(snapCont,"snap-err-" + d.type,"div","",d.type + (d.data ? "<br>" + JSON.stringify(d.data) : ""))
+            })
+        }
+    }
+    else {
+        checkElem(win,"snap-cont-left","div",""," ")
+    }
     let services = checkElem(win,"win-device-services","div","services"," ")
     if(node.System) {
         buildSystemInfo(node,win,"left-")
@@ -897,7 +936,7 @@ var buildRefreshTimer = (node,elem,pre) => {
 }
 var buildNodeNav = (node,elem) => {
     let flex_id = 1000000;
-    if(elem._data.node && _.isEqual(elem._data.node,node))
+    if(elem._data.node && _.isEqual(elem._data.node,node) && !snapErrors.some(s => s.Name == node.Name))
         return
 
     elem._data.node = node
@@ -910,6 +949,18 @@ var buildNodeNav = (node,elem) => {
     buildRefreshTimer(node,elem)
     checkElem(unit,"node-name-" + node.Name,"div",node.Type,name)
     checkElem(unit,"node-IP-" + node.Name,"div",node.Type,node.IP)
+    let err = snapErrors.filter(s => s.Name == node.Name)
+    if(err.length > 0) {
+        let snap = checkElem(elem,"snapError-" + node.Name,"div","snap-error",err[0].Type)
+        if(err[0].Type == "new") {
+            snap.classList.remove("warn")
+        }
+        else {
+            snap.classList.add("warn")
+        }
+    }
+    else
+        checkElem(elem,"snapError-" + node.Name,"div","snap-error"," ")
     if(node.System) {
         buildSystemInfo(node,elem,"node-")
     }
