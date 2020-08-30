@@ -2,7 +2,7 @@
 
 When you really like or use MNMS, those features might help you get further.
 
-## Snapshots
+## Snapshots (beta)
 
 You can snapshot your network to have MNMS check for differences. It will check:
 - IPs
@@ -11,7 +11,7 @@ You can snapshot your network to have MNMS check for differences. It will check:
 
 To make a snapshot, just click the ```+``` button in the top right, then select the snapshot in the selection box.
 
-If a node is ```missing```, ```new```, or has been ```modified``` when compared to the snapshot, it will go first in the node list with a significant tag.
+If a node is ```missing```, ```new```, or has been ```modified``` when compared to the snapshot, it will go first in the node list with a significant tag. In the modified state, further information about the modification is given in the detailview.
 
 ### limitations
 
