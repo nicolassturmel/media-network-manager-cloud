@@ -2,6 +2,23 @@
 
 When you really like or use MNMS, those features might help you get further.
 
+## Snapshots
+
+You can snapshot your network to have MNMS check for differences. It will check:
+- IPs
+- Switch connection interface
+- Interface bandwidth in use, alerting if variation in greater than 20%
+
+To make a snapshot, just click the ```+``` button in the top right, then select the snapshot in the selection box.
+
+If a node is ```missing```, ```new```, or has been ```modified``` when compared to the snapshot, it will go first in the node list with a significant tag.
+
+### limitations
+
+User can not delete a snapshot (yet)
+App does not check for services, MAC address or VLANs.
+When creating a new snapshot, return to the ```no snapshot``` selection to avoid bringing missing devices to your new snapshot, unless you want to.
+
 ## Static devices (declaring devices)
 
 in the ```mission-control``` subdir you can create pseudo devices that will help MNMS get back on its feet. For that, create ```devices.json``` which  contains an array of objects. Those object have three fields:
