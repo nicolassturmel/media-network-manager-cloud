@@ -3,7 +3,7 @@ import { kMaxLength } from "buffer";
 
 import { MnMs_node, node_timers, MnMs_node_port } from "../types/types"
 import { readFileSync } from "fs";
-import { exit } from "process";
+import { exit, off } from "process";
 import { inflateRawSync } from "zlib";
 import { stringify } from "querystring";
 import { notDeepEqual } from "assert";
@@ -420,7 +420,13 @@ export = function(LocalOptions) {
                     })
                 }
             }
-            Nodes[index].OtherIPs = newValue.OtherIPs
+            if(!Nodes[index].OtherIPs)
+                Nodes[index].OtherIPs = newValue.OtherIPs
+            else
+                newValue.OtherIPs.forEach(element => {
+                    if(!Nodes[index].OtherIPs.includes(element))
+                        Nodes[index].OtherIPs.push(element)
+                });
             if(!Nodes[index].Macs)
                 Nodes[index].Macs = newValue.Macs  
             else
@@ -449,8 +455,17 @@ export = function(LocalOptions) {
         index = findCandidates(newValue) || index
         if(!index || index < 0 || index > Nodes.length) {
             console.error("Could not find a node")
-            Nodes.push(newValue)
-            return
+            let holder : MnMs_node = {
+                Name: newValue.Name,
+                Type: "disconnected",
+                IP: "",
+                Mac: "",
+                Schema: 1,
+                Multicast: "off",
+                Neighbour: "",
+                id: "zzz"
+            }
+            index = Nodes.push(holder)-1
         }
 
         mergeNodesUIParams(index)
@@ -461,6 +476,7 @@ export = function(LocalOptions) {
                 break
             case "MdnsNode":
             case "ManualNode":
+            case "missing":
                 mergeNodesMdnsManual(index,newValue,Name)
                 break
             case "disconnected":
@@ -963,6 +979,11 @@ export = function(LocalOptions) {
 
     var getSnapshot = (id) => {
         return new Promise((resolve, error) => {
+
+            while(Nodes.some(n => n.Type == "missing")) {
+                let id = Nodes.findIndex(n => n.Type == "missing")
+                Nodes.splice(id,1)
+            }
             if(id == 0) {
                 Snapshot = null
                 SelectedSnapId = 0
@@ -986,6 +1007,7 @@ export = function(LocalOptions) {
                         Selected: id,
                         Errors: null
                     })
+                    compareToSnapshot()
                 }
             })
         })
@@ -1025,6 +1047,10 @@ export = function(LocalOptions) {
                 resolve()
             })
         })
+    }
+
+    var removeSnapshot = (id) => {
+        db.remove({Type: "MnmsSnapshot", id: id})
     }
 
     var compareToSnapshot = () => {
@@ -1109,7 +1135,7 @@ export = function(LocalOptions) {
             }
         })
         Snapshot.forEach(node => {
-            let snode = Nodes.filter(k => k.Name == node.Name)
+            let snode = Nodes.filter(k => k.Name == node.Name && node.Type != "missing")
             if(snode.length == 0) 
             {
                 // Device is new
@@ -1121,7 +1147,7 @@ export = function(LocalOptions) {
                 node.OtherIPs = []
                 node.Macs = []
                 node.Mac = ""
-                node.Type = "disconnected"
+                node.Type = "missing"
                 mergeNodes(null,node,null)
             }
         })

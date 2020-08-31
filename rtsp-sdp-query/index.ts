@@ -5,7 +5,7 @@ const net = require('net'),
 
 export = (url, cb) => {
     const { hostname, port } = parse(url);
-    url;
+    console.error(url)
 
     let id = 1;
     let string = `DESCRIBE ${url} RTSP/1.0\r\nCSeq: ${id}\r\n`;

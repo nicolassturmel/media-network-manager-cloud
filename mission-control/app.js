@@ -409,7 +409,13 @@ module.exports = function (LocalOptions) {
                     });
                 }
             }
-            Nodes[index].OtherIPs = newValue.OtherIPs;
+            if (!Nodes[index].OtherIPs)
+                Nodes[index].OtherIPs = newValue.OtherIPs;
+            else
+                newValue.OtherIPs.forEach(function (element) {
+                    if (!Nodes[index].OtherIPs.includes(element))
+                        Nodes[index].OtherIPs.push(element);
+                });
             if (!Nodes[index].Macs)
                 Nodes[index].Macs = newValue.Macs;
             else
@@ -440,8 +446,17 @@ module.exports = function (LocalOptions) {
         index = findCandidates(newValue) || index;
         if (!index || index < 0 || index > Nodes.length) {
             console.error("Could not find a node");
-            Nodes.push(newValue);
-            return;
+            var holder = {
+                Name: newValue.Name,
+                Type: "disconnected",
+                IP: "",
+                Mac: "",
+                Schema: 1,
+                Multicast: "off",
+                Neighbour: "",
+                id: "zzz"
+            };
+            index = Nodes.push(holder) - 1;
         }
         mergeNodesUIParams(index);
         mergeNodesTimer(index, newValue, Name);
@@ -451,6 +466,7 @@ module.exports = function (LocalOptions) {
                 break;
             case "MdnsNode":
             case "ManualNode":
+            case "missing":
                 mergeNodesMdnsManual(index, newValue, Name);
                 break;
             case "disconnected":
@@ -958,6 +974,10 @@ module.exports = function (LocalOptions) {
     // Snapshot
     var getSnapshot = function (id) {
         return new Promise(function (resolve, error) {
+            while (Nodes.some(function (n) { return n.Type == "missing"; })) {
+                var id_1 = Nodes.findIndex(function (n) { return n.Type == "missing"; });
+                Nodes.splice(id_1, 1);
+            }
             if (id == 0) {
                 Snapshot = null;
                 SelectedSnapId = 0;
@@ -981,6 +1001,7 @@ module.exports = function (LocalOptions) {
                         Selected: id,
                         Errors: null
                     });
+                    compareToSnapshot();
                 }
             });
         });
@@ -1018,6 +1039,9 @@ module.exports = function (LocalOptions) {
                 resolve();
             });
         });
+    };
+    var removeSnapshot = function (id) {
+        db.remove({ Type: "MnmsSnapshot", id: id });
     };
     var compareToSnapshot = function () {
         var Errors = [];
@@ -1097,7 +1121,7 @@ module.exports = function (LocalOptions) {
             }
         });
         Snapshot.forEach(function (node) {
-            var snode = Nodes.filter(function (k) { return k.Name == node.Name; });
+            var snode = Nodes.filter(function (k) { return k.Name == node.Name && node.Type != "missing"; });
             if (snode.length == 0) {
                 // Device is new
                 Errors.push({
@@ -1108,7 +1132,7 @@ module.exports = function (LocalOptions) {
                 node.OtherIPs = [];
                 node.Macs = [];
                 node.Mac = "";
-                node.Type = "disconnected";
+                node.Type = "missing";
                 mergeNodes(null, node, null);
             }
         });

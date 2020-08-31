@@ -2,7 +2,7 @@
 var net = require('net'), parse = require('url').parse, transform = require('sdp-transform');
 module.exports = function (url, cb) {
     var _a = parse(url), hostname = _a.hostname, port = _a.port;
-    url;
+    console.error(url);
     var id = 1;
     var string = "DESCRIBE " + url + " RTSP/1.0\r\nCSeq: " + id + "\r\n";
     var headers = {

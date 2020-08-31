@@ -45,7 +45,7 @@ export interface node_timers {
 }
 
 export interface MnMs_node {
-    Type: "switch" | "MdnsNode" | "ManualNode" | "disconnected" | "null"; 
+    Type: "switch" | "MdnsNode" | "ManualNode" | "disconnected" | "missing" | "null"; 
     IP: string;
     OtherIPs?: string[];
     Name?: string;

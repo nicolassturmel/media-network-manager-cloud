@@ -252,6 +252,7 @@ function run() {
                         elem = document.createElement("li")
                         elem._data = {}
                         elem.id = "node-" + Name
+                        elem.className = "node-navigation"
                         container.appendChild(elem)
                         elem.onclick = () => { makeDeviceInfo(elem) }
                     }
@@ -259,8 +260,13 @@ function run() {
                     buildNodeNav(node,elem)
                 }
             }
+            document.querySelectorAll("li.node-navigation").forEach(e => {
+                if(!_nodes.some(n => n.Name == e.id.split("node-")[1])) {
+                    e.outerHTML = ""
+                }
+            })
 
-            setTimeout(() => {missionControlWS.send("nodes")},1500)
+            setTimeout(() => {missionControlWS.send("nodes")},2500)
             buildGraph(_nodes)
             if(mselection.Type != "stream") {
                if(lastNode) makeDeviceInfo(document.getElementById("node-" + lastNode.Name),true)
@@ -936,8 +942,10 @@ var buildRefreshTimer = (node,elem,pre) => {
 }
 var buildNodeNav = (node,elem) => {
     let flex_id = 1000000;
-    if(elem._data.node && _.isEqual(elem._data.node,node) && !snapErrors.some(s => s.Name == node.Name))
-        return
+    if(0 && elem._data.node && _.isEqual(elem._data.node,node) && !snapErrors.some(s => s.Name == node.Name)) {
+        checkElem(elem,"snapError-" + node.Name,"div","snap-error"," ")
+        return 
+    }
 
     elem._data.node = node
     let name = node.Name.split(".")[0]
@@ -954,9 +962,11 @@ var buildNodeNav = (node,elem) => {
         let snap = checkElem(elem,"snapError-" + node.Name,"div","snap-error",err[0].Type)
         if(err[0].Type == "new") {
             snap.classList.remove("warn")
+            flex_id -= 4000;
         }
         else {
             snap.classList.add("warn")
+            flex_id -= 5000;
         }
     }
     else
