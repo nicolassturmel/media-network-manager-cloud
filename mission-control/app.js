@@ -322,6 +322,7 @@ module.exports = function (LocalOptions) {
             if (newValue.Name)
                 Nodes[index].Name = newValue.Name;
             Nodes[index].Mac = newValue.Mac;
+            Nodes[index].IP = newValue.IP;
             if (newValue.Macs)
                 Nodes[index].Macs = newValue.Macs;
             if (Nodes[index].Ports && Nodes[index].Ports.length != newValue.Ports.length)

@@ -204,7 +204,6 @@ var getVlans = (body) => {
                 break;
         }
         Switch.Ports[Switch.Ports.findIndex(k => k.Name == gr.key.split(" 1/").join(""))].Vlan = VLANs
-        console.log(VLANs)
     })
 }
 
@@ -234,7 +233,7 @@ var nextCmd = (path) => {
         case "vlan.config.interface.get":
             Switch._Timers[0].time = client.getSendInterval()
             client.send(JSON.stringify(Switch))
-            //console.log(Switch.Ports)
+            console.log(Switch)
             waitNext()
             break;
         default:

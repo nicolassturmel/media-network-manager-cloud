@@ -185,7 +185,6 @@ var getVlans = function (body) {
                 break;
         }
         Switch.Ports[Switch.Ports.findIndex(function (k) { return k.Name == gr.key.split(" 1/").join(""); })].Vlan = VLANs;
-        console.log(VLANs);
     });
 };
 var nextCmd = function (path) {
@@ -214,7 +213,7 @@ var nextCmd = function (path) {
         case "vlan.config.interface.get":
             Switch._Timers[0].time = client.getSendInterval();
             client.send(JSON.stringify(Switch));
-            //console.log(Switch.Ports)
+            console.log(Switch);
             waitNext();
             break;
         default:

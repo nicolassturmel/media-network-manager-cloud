@@ -344,6 +344,7 @@ export = function(LocalOptions) {
         if(newValue.Schema == 1) {
             if(newValue.Name) Nodes[index].Name = newValue.Name
             Nodes[index].Mac = newValue.Mac
+            Nodes[index].IP = newValue.IP
             if(newValue.Macs) Nodes[index].Macs = newValue.Macs
             if(Nodes[index].Ports && Nodes[index].Ports.length != newValue.Ports.length) Nodes[index].Ports = []
             Nodes[index].Ports = mergePorts(Nodes[index].Ports, newValue.Ports)
