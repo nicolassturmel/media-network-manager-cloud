@@ -434,6 +434,10 @@ export = function(LocalOptions) {
                     if(!Nodes[index].Macs.includes(element))
                         Nodes[index].Macs.push(element)
                 });
+            if(!Nodes[index].IP) 
+                Nodes[index].IP = newValue.IP
+            else if(!Nodes[index].OtherIPs.includes(newValue.IP))
+                Nodes[index].OtherIPs.push(newValue.IP)
             Nodes[index].Neighbour = newValue.Neighbour
             Nodes[index].Mac = newValue.Mac
             Nodes[index].id = newValue.id
@@ -458,7 +462,7 @@ export = function(LocalOptions) {
             let holder : MnMs_node = {
                 Name: newValue.Name,
                 Type: "disconnected",
-                IP: "",
+                IP: null,
                 Mac: "",
                 Schema: 1,
                 Multicast: "off",
