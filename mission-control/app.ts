@@ -1119,9 +1119,9 @@ export = function(LocalOptions) {
                                     mods.push({type: "Switch port changed",data:null})
                                 }
                                 else {
-                                    if(int.In > snint[0].In*1.2 || int.In < snint[0].In*0.8)
+                                    if(int.In > 1 && int.In > snint[0].In*1.2 || int.In < snint[0].In*0.8)
                                         mods.push({type: "Input bandwith changed",data:null})
-                                    if(int.Out > snint[0].Out*1.2 || int.Out < snint[0].Out*0.8)
+                                    if(int.Out > 1 && int.Out > snint[0].Out*1.2 || int.Out < snint[0].Out*0.8)
                                         mods.push({type: "Output bandwith changed",data:null})
                                 }
                             }
