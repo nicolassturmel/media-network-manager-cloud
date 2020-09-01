@@ -688,7 +688,6 @@ export = function(LocalOptions) {
 
     const user_wss = new sock.Server({ server: server });
     user_wss.broadcast = function broadcast(msg) {
-        console.log(msg);
         user_wss.clients.forEach(function each(client) {
             client.send(msg);
          });
