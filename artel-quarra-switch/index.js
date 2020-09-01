@@ -5,7 +5,7 @@ var SwitchPollTime = 5;
 var commandLineArgs = require('command-line-args');
 // Command line arguments
 var optionDefinitions = [
-    { name: 'ip', alias: 'i', type: String, defaultValue: '192.168.1.143' },
+    { name: 'ip', alias: 'i', type: String, defaultValue: '192.168.1.131' },
     { name: 'user', alias: 'u', type: String, defaultValue: 'admin' },
     { name: 'password', alias: 'p', type: String, defaultValue: '' },
     { name: 'key', alias: 'k', type: String, defaultValue: 'nokey' },
@@ -156,6 +156,38 @@ var getRouterPorts = function (body) {
         Switch.Ports[Switch.Ports.findIndex(function (k) { return k.Name == gr.key.split(" 1/").join(""); })].IGMP.ForwardAll = (gr.val.Status == "none") ? "off" : "on";
     });
 };
+var getVlans = function (body) {
+    body.result.forEach(function (gr) {
+        var VLANs = {
+            Tagged: [],
+            Untagged: []
+        };
+        switch (gr.val.Mode) {
+            case "access":
+                VLANs.Untagged.push(gr.val.AccessVlan);
+                break;
+            case "hybrid":
+                VLANs.Untagged.push(gr.val.HybridNativeVlan);
+                gr.val.HybridVlans.forEach(function (element) {
+                    if (!VLANs.Untagged.includes(element))
+                        VLANs.Tagged.push(element);
+                });
+                break;
+            case "trunk":
+                if (gr.val.TrunkTagNativeVlan)
+                    VLANs.Tagged.push(gr.val.TrunkNativeVlan);
+                else
+                    VLANs.Untagged.push(gr.val.TrunkNativeVlan);
+                gr.val.TrunkVlans.forEach(function (element) {
+                    if (!VLANs.Untagged.includes(element))
+                        VLANs.Tagged.push(element);
+                });
+                break;
+        }
+        Switch.Ports[Switch.Ports.findIndex(function (k) { return k.Name == gr.key.split(" 1/").join(""); })].Vlan = VLANs;
+        console.log(VLANs);
+    });
+};
 var nextCmd = function (path) {
     switch (path) {
         case "port.statistics.rmon.get":
@@ -177,9 +209,7 @@ var nextCmd = function (path) {
             postReq("ipmc-snooping.status.igmp.router-port.get", getRouterPorts);
             break;
         case "ipmc-snooping.status.igmp.router-port.get":
-            postReq("vlan.config.interface.get", function (e) { return e.result.forEach(function (element) {
-                console.log("--", element.val);
-            }); });
+            postReq("vlan.config.interface.get", getVlans);
             break;
         case "vlan.config.interface.get":
             Switch._Timers[0].time = client.getSendInterval();

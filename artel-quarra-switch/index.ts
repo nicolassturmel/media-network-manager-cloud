@@ -8,7 +8,7 @@ import { MnMs_node, boolString, MnMs_node_port } from "../types/types"
 
 // Command line arguments
 const optionDefinitions = [
-    { name: 'ip', alias: 'i', type: String, defaultValue: '192.168.1.143' },
+    { name: 'ip', alias: 'i', type: String, defaultValue: '192.168.1.131' },
     { name: 'user', alias: 'u', type: String, defaultValue: 'admin' },
     { name: 'password', alias: 'p', type: String, defaultValue: '' },
     { name: 'key', alias: 'k', type: String, defaultValue: 'nokey' },
@@ -175,6 +175,39 @@ var getRouterPorts = (body) => {
     })
 }
 
+var getVlans = (body) => {
+    body.result.forEach(gr => {
+        let VLANs = {
+            Tagged: [],
+            Untagged: []
+        }
+        switch(gr.val.Mode) {
+            case "access":
+                VLANs.Untagged.push(gr.val.AccessVlan)
+                break;
+            case "hybrid":
+                VLANs.Untagged.push(gr.val.HybridNativeVlan)
+                gr.val.HybridVlans.forEach(element => {
+                    if(!VLANs.Untagged.includes(element))
+                        VLANs.Tagged.push(element)
+                });
+                break;
+            case "trunk":
+                if(gr.val.TrunkTagNativeVlan)
+                    VLANs.Tagged.push(gr.val.TrunkNativeVlan)
+                else
+                    VLANs.Untagged.push(gr.val.TrunkNativeVlan)
+                gr.val.TrunkVlans.forEach(element => {
+                    if(!VLANs.Untagged.includes(element))
+                        VLANs.Tagged.push(element)
+                });
+                break;
+        }
+        Switch.Ports[Switch.Ports.findIndex(k => k.Name == gr.key.split(" 1/").join(""))].Vlan = VLANs
+        console.log(VLANs)
+    })
+}
+
 var nextCmd = (path) => {
     switch(path) {
         case "port.statistics.rmon.get":
@@ -196,9 +229,7 @@ var nextCmd = (path) => {
             postReq("ipmc-snooping.status.igmp.router-port.get",getRouterPorts)
             break
         case "ipmc-snooping.status.igmp.router-port.get":
-            postReq("vlan.config.interface.get",e => e.result.forEach(element => {
-                console.log("--",element.val)
-            }))
+            postReq("vlan.config.interface.get",getVlans)
             break
         case "vlan.config.interface.get":
             Switch._Timers[0].time = client.getSendInterval()
