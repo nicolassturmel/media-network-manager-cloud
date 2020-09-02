@@ -199,9 +199,8 @@ function run() {
         data = JSON.parse(event.data)
         if(data.Type && data.Type == "MnmsData") {
             _data = data
-            if(!title) {
+            if(document.getElementById("workspacename-bar").innerHTML  != _data.Workspace) {
                 document.getElementById("workspacename-bar").innerHTML = _data.Workspace;
-                title = true
             }
             let swInfoTxt = checkElem(switchInfo,"switchInfoText","span","switch-info-span",
                 "<i class=\"fas fa-network-wired\"></i> Switches (" + _data.OkSwitches + "/" + _data.Switches.length + ")");
@@ -303,7 +302,7 @@ var onscreenPopup = (type,params) => {
 
     if(type.Name) {
         let a = checkElem(win,"","div","","")
-        checkElem(a,"","h2","","Launch " + type.Name.replace("_"," "))
+        checkElem(a,"","h2","",type.Name.replace("_"," "))
     }
 
     let fiedls = {};
@@ -404,6 +403,13 @@ var makeSettingsMenu = () => {
                 console.log("Closing ??")
                 close.onclick()
             }
+        }
+        else if(field == "Workspace") {
+            let toggle = checkElem(elem,"","span","settingsToggle",field)
+            elem.classList.add("expanded")
+            toggle.onclick = () => clickElem(elem)
+            let d = checkElem(elem,"","div","settingsValue",val[field] + "")
+            d.onclick = () => onscreenPopup({Type: "Workspace", Name: val[field]},{Type: "Workspace", Name: val[field]})
         }
         else if(field === "Child") {
             if(val[field])

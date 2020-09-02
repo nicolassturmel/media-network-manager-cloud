@@ -777,6 +777,9 @@ module.exports = function (LocalOptions) {
                                 .then(function (v) { return user_wss.broadcast(JSON.stringify(v)); });
                         });
                     }
+                    else if (D_1.Type == "Workspace") {
+                        MnmsData.Workspace = D_1.Name;
+                    }
                     else {
                         console.log("No", D_1);
                     }

@@ -776,6 +776,9 @@ export = function(LocalOptions) {
                             .then((v) => user_wss.broadcast(JSON.stringify(v)))
                         })
                     }
+                    else if(D.Type == "Workspace") {
+                        MnmsData.Workspace = D.Name
+                    }
                     else {
                         console.log("No",D)
                     }
