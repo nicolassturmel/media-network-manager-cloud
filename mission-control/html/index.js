@@ -919,7 +919,8 @@ var buildSystemInfo = (node,elem,pref) => {
 var progressBar = (refreshbar,time,start) => {
     if(!refreshbar) return
     if(time <= 0) {
-        refreshbar.style.width = "100%"
+        console.log("Time passed")
+        refreshbar.style = {}
         refreshbar.className = "node-refresh-end"
         return
     }
@@ -932,7 +933,6 @@ var progressBar = (refreshbar,time,start) => {
 
 var buildRefreshTimer = (node,elem,pre) => {
     let refreshcont = checkElem(elem,pre + "node-refresh-cont-" + node.Name,"div","node-refresh-container","")
-    let refreshbar = checkElem(refreshcont,pre + "node-refresh-" + node.Name,"div","node-refresh-unknown","")
     if(node._Timers) {
         let rootTimer = node._Timers.filter(k => k.path == "$")
         if(rootTimer.length > 0) {
@@ -942,9 +942,10 @@ var buildRefreshTimer = (node,elem,pre) => {
                 refreshbar._data.seqnum = node.seqnum
                 progressBar(refreshbar,rootTimer[0].time+1,true)
             }
+            return
         }
     }
-    
+    checkElem(refreshcont,pre + "node-refresh-" + node.Name,"div","node-refresh-unknown","")
 }
 var buildNodeNav = (node,elem) => {
     let flex_id = 1000000;
@@ -960,9 +961,9 @@ var buildNodeNav = (node,elem) => {
     }
     elem.oncontextmenu = (e) => nodeContextMenu(node,e)
     let unit = checkElem(elem,"node-unit-" + node.Name,"div","node-unit","")
-    buildRefreshTimer(node,elem)
     checkElem(unit,"node-name-" + node.Name,"div",node.Type,name)
     checkElem(unit,"node-IP-" + node.Name,"div",node.Type,node.IP)
+    buildRefreshTimer(node,unit)
     let err = snapErrors.filter(s => s.Name == node.Name)
     if(err.length > 0) {
         let snap = checkElem(elem,"snapError-" + node.Name,"div","snap-error",err[0].Type)
