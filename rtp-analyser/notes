@@ -1,0 +1,2 @@
+gstreamer aes67 to hls
+gst-launch-1.0 udpsrc address=239.2.1.134 port=5006 multicast-iface=eno1 ! application/x-rtp, clock-rate=48000, channels=2 ! rtpjitterbuffer latency=48 ! rtpL24depay !    audio/x-raw, format=S24BE, channels=2, rate=48000  ! audioconvert ! voaacenc bitrate=128000 ! aacparse ! audio/mpeg  ! hlssink2 max-files=3  playlist-root=http://192.168.1.162:8000 target-duration=1
