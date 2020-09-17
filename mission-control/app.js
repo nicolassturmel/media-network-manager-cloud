@@ -627,6 +627,10 @@ module.exports = function (LocalOptions) {
                         && listNode.Ports[friendPort_1]
                         && friendNode.Ports[listPort_1].Vlan
                         && listNode.Ports[friendPort_1].Vlan
+                        && listNode.Ports[friendPort_1].Vlan.Tagged
+                        && listNode.Ports[friendPort_1].Vlan.Tagged.sort
+                        && listNode.Ports[friendPort_1].Vlan.Untagged
+                        && listNode.Ports[friendPort_1].Vlan.Untagged.sort
                         && (!_.isEqual(listNode.Ports[friendPort_1].Vlan.Tagged.sort(), friendNode.Ports[listPort_1].Vlan.Tagged.sort())
                             || !_.isEqual(listNode.Ports[friendPort_1].Vlan.Untagged.sort(), friendNode.Ports[listPort_1].Vlan.Untagged.sort()))) {
                         if (!listNode.Errors)

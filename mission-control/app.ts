@@ -617,6 +617,10 @@ export = function(LocalOptions) {
                         && listNode.Ports[friendPort]
                         && friendNode.Ports[listPort].Vlan 
                         && listNode.Ports[friendPort].Vlan
+                        && listNode.Ports[friendPort].Vlan.Tagged
+                        && listNode.Ports[friendPort].Vlan.Tagged.sort
+                        && listNode.Ports[friendPort].Vlan.Untagged
+                        && listNode.Ports[friendPort].Vlan.Untagged.sort
                         && (
                             !_.isEqual(listNode.Ports[friendPort].Vlan.Tagged.sort(),friendNode.Ports[listPort].Vlan.Tagged.sort())
                             || !_.isEqual(listNode.Ports[friendPort].Vlan.Untagged.sort(),friendNode.Ports[listPort].Vlan.Untagged.sort())
