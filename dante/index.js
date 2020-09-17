@@ -11,7 +11,13 @@ const danteAskStreamers = (dstIp) => {
             //console.log('Received %d bytes from %s:%d\n',msg.length, info.address, info.port);
             let p = 0
             do {
-                p = parsePacketSendingStreams(msg,p,streams)
+                try {
+                    p = parsePacketSendingStreams(msg,p,streams)
+                }
+                catch(e) {
+                    p = -1
+                    console.log(e)
+                }
             } while(p > 0);
             if(msg.length > 1000) {
                 data1[13] = streams.length
