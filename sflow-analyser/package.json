@@ -1,0 +1,17 @@
+{
+  "name": "sflow-analyser",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "ethernet": "^1.0.1",
+    "ip-header": "^0.1.2",
+    "node-sflow": "^0.0.4",
+    "pcap": "^3.1.0"
+  }
+}
