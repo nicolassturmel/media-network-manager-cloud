@@ -30,14 +30,22 @@
             "${workspaceFolder}/**/*.js"
         ]
     },
-        {
-            "type": "node",
-            "request": "launch",
-            "name": "Rtp-Sdp",
-            "program": "${workspaceFolder}/rtsp-sdp-query/test.js",
-            "outFiles": [
-                "${workspaceFolder}/**/*.js"
-            ]
-        }
+    {
+        "type": "node",
+        "request": "launch",
+        "name": "Rtp-Sdp",
+        "program": "${workspaceFolder}/rtsp-sdp-query/test.js",
+        "outFiles": [
+            "${workspaceFolder}/**/*.js"
+        ]
+    } ,{
+        "type": "node",
+        "request": "launch",
+        "name": "cisco",
+        "program": "${workspaceFolder}/cisco-switch/app.js",
+        "outFiles": [
+            "${workspaceFolder}/**/*.js"
+        ]
+    }
     ]
 }

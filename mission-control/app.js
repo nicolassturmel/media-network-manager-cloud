@@ -139,6 +139,7 @@ module.exports = function (LocalOptions) {
                     ws._data.UID = node.Info.id;
                     ws._data.Info = node.Info;
                     ws._data.ServiceClass = node.Info.ServiceClass;
+                    ws._data.ids = [];
                 }
                 else {
                     console.log(node.Challemge, MnmsData.Challenge);
@@ -154,6 +155,8 @@ module.exports = function (LocalOptions) {
                             sw[0].Timer = t.getTime();
                             //console.log(node.id,MnmsData.Switches.filter(k => k.UID == node.id)[0].Timer)
                         }
+                        if (!ws._data.ids.includes(node.id))
+                            ws._data.ids.push(node.id);
                         mergeNodes(null, node, null);
                         calculateInterConnect();
                     }
@@ -167,7 +170,7 @@ module.exports = function (LocalOptions) {
                             D = Nodes.filter(function (n) { return n.OtherIPs && n.Macs && !n.Macs.includes(d.Mac) && n.OtherIPs.includes(d.Ip); });
                             D.forEach(function (d) { return d.Macs.push(Mac); });
                         });
-                        console.log(ArpCache);
+                        //console.log(ArpCache)
                     }
                     else {
                         console.error("Unknown type " + node.Type);
@@ -481,6 +484,8 @@ module.exports = function (LocalOptions) {
                 console.log("Node type : " + newValue.Type + " not handled");
                 break;
         }
+        if (newValue.Actions)
+            Nodes[index].Actions = newValue.Actions;
         if (newValue.System)
             Nodes[index].System = newValue.System;
         if (!Nodes[index].seqnum)
@@ -545,8 +550,8 @@ module.exports = function (LocalOptions) {
                             var _loop_8 = function (j) {
                                 if (cleared.filter(function (q) { return q.dataRef == j; }).length == 1) {
                                     var test = cleared.filter(function (q) { return q.dataRef == j; })[0];
-                                    for (var _i = 0, _a = test.ports; _i < _a.length; _i++) {
-                                        var pk = _a[_i];
+                                    for (var _d = 0, _e = test.ports; _d < _e.length; _d++) {
+                                        var pk = _e[_d];
                                         if (pk && pk.length == 1 && pk[0] == i_2) {
                                             if (keep == null)
                                                 keep = j;
@@ -556,8 +561,8 @@ module.exports = function (LocalOptions) {
                                     }
                                 }
                             };
-                            for (var _i = 0, _a = linkd[i_2].ports[p]; _i < _a.length; _i++) {
-                                var j = _a[_i];
+                            for (var _b = 0, _c = linkd[i_2].ports[p]; _b < _c.length; _b++) {
+                                var j = _c[_b];
                                 _loop_8(j);
                             }
                             if (ok && keep != null) {
@@ -781,6 +786,16 @@ module.exports = function (LocalOptions) {
                                 .then(function (v) { return user_wss.broadcast(JSON.stringify(v)); });
                         });
                     }
+                    else if (D_1.Type == "Node::action") {
+                        wss.clients.forEach(function (element) {
+                            if (element._data && element._data.ids) {
+                                console.log(element._data.ids);
+                                if (element._data.ids.includes(D_1.nodeId)) {
+                                    element.send(JSON.stringify(D_1));
+                                }
+                            }
+                        });
+                    }
                     else if (D_1.Type == "Workspace") {
                         MnmsData.Workspace = D_1.Name;
                     }
@@ -789,7 +804,7 @@ module.exports = function (LocalOptions) {
                     }
                 }
                 catch (error) {
-                    console.log("Error when parsing json on message reception");
+                    console.log("Error when parsing json on message reception", message, error);
                 }
             }
         });
@@ -1047,7 +1062,7 @@ module.exports = function (LocalOptions) {
             db.update({ Type: "MnmsSnapshot", id: Snap.id }, Snap, { upsert: true }, function (err, newDoc) {
                 if (err)
                     console.log(err);
-                resolve();
+                resolve("");
             });
         });
     };

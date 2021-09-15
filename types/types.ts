@@ -44,6 +44,20 @@ export interface node_timers {
     time: number;
 }
 
+export interface action_parameter {
+    name: string;
+    type: string;
+    defaultValue: any;
+}
+export interface MnMs_action {
+    name: string;
+    description: string;
+    parameters: action_parameter[];
+    type: 'simple';
+}
+
+
+
 export interface MnMs_node {
     Type: "switch" | "MdnsNode" | "ManualNode" | "disconnected" | "missing" | "null"; 
     IP: string;
@@ -63,4 +77,5 @@ export interface MnMs_node {
     _Timers?: node_timers[];
     seqnum?: number;
     Errors?: any;
+    Actions?: MnMs_action[];
 }

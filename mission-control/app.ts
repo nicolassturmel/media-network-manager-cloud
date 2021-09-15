@@ -156,6 +156,7 @@ export = function(LocalOptions) {
                     ws._data.UID = node.Info.id
                     ws._data.Info = node.Info
                     ws._data.ServiceClass = node.Info.ServiceClass
+                    ws._data.ids = []
                 }
                 else {
                     console.log(node.Challemge,MnmsData.Challenge)
@@ -172,6 +173,7 @@ export = function(LocalOptions) {
                                 sw[0].Timer = t.getTime()
                                 //console.log(node.id,MnmsData.Switches.filter(k => k.UID == node.id)[0].Timer)
                             }
+                        if(!ws._data.ids.includes(node.id)) ws._data.ids.push(node.id)
                         mergeNodes(null,node,null)
                         calculateInterConnect()
                     }
@@ -185,7 +187,7 @@ export = function(LocalOptions) {
                              D = Nodes.filter(n => n.OtherIPs && n.Macs && !n.Macs.includes(d.Mac) && n.OtherIPs.includes(d.Ip))
                             D.forEach(d => d.Macs.push(Mac))
                         })
-                        console.log(ArpCache)
+                        //console.log(ArpCache)
                     }
                     else {
                         console.error("Unknown type " + node.Type)
@@ -445,6 +447,7 @@ export = function(LocalOptions) {
             Nodes[index].Name = Name || newValue.Name
         }
     }
+
     var findCandidates = (val : MnMs_node) => {
         let r : number = 0
         r = Nodes.findIndex(n => n.Name == val.Name)
@@ -457,6 +460,7 @@ export = function(LocalOptions) {
 
     function mergeNodes(index: number,newValue : MnMs_node,Name: string)
     {
+        
         index = findCandidates(newValue) || index
         if(!index || index < 0 || index > Nodes.length) {
             console.error("Could not find a node")
@@ -491,6 +495,7 @@ export = function(LocalOptions) {
                 console.log("Node type : " + newValue.Type + " not handled")
                 break
         }
+        if(newValue.Actions) Nodes[index].Actions = newValue.Actions
         if(newValue.System) Nodes[index].System = newValue.System
         if(!Nodes[index].seqnum) Nodes[index].seqnum = 0
         if(!Nodes[index].OtherIPs) Nodes[index].OtherIPs = []
@@ -780,6 +785,17 @@ export = function(LocalOptions) {
                             .then((v) => user_wss.broadcast(JSON.stringify(v)))
                         })
                     }
+                    else if(D.Type == "Node::action") {
+                        wss.clients.forEach(element => {
+                            if(element._data && element._data.ids) {
+                                console.log(element._data.ids)
+                                if(element._data.ids.includes(D.nodeId)) {
+                                    element.send(JSON.stringify(D))
+                                }
+                            }
+                        });
+                        
+                    }
                     else if(D.Type == "Workspace") {
                         MnmsData.Workspace = D.Name
                     }
@@ -787,7 +803,7 @@ export = function(LocalOptions) {
                         console.log("No",D)
                     }
                 } catch (error) {
-                    console.log("Error when parsing json on message reception")
+                    console.log("Error when parsing json on message reception",message,error)
                 }
             }
         });
@@ -1055,7 +1071,7 @@ export = function(LocalOptions) {
             db.update({Type: "MnmsSnapshot", id: Snap.id},Snap, {upsert: true},(err, newDoc) => { 
                 if(err)
                     console.log(err)
-                resolve()
+                resolve("")
             })
         })
     }

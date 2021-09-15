@@ -1,6 +1,6 @@
 
 
-const SwitchPollTime = 1.2
+const SwitchPollTime = 600
 
 const Telnet = require('telnet-client')
 const commandLineArgs = require('command-line-args')
@@ -9,12 +9,13 @@ import { MnMs_node } from "../types/types"
 
 // Command line arguments
 const optionDefinitions = [
-    { name: 'ip', alias: 'i', type: String, defaultValue: '192.168.1.201' },
+    { name: 'ip', alias: 'i', type: String, defaultValue: '192.168.1.3' },
     { name: 'user', alias: 'u', type: String, defaultValue: 'cisco' },
     { name: 'password', alias: 'p', type: String, defaultValue: 'cisco' },
-    { name: 'key', alias: 'k', type: String, defaultValue: 'nokey' },
-    { name: 'id', alias: 'y', type: String, defaultValue: undefined },
-    { name: "missioncontrol", alias: "m", type: String}
+    { name: 'key', alias: 'k', type: String, defaultValue: '5kQs7H1FGtdqY1sj50Zf' },
+    { name: 'id', alias: 'y', type: String, defaultValue: 'fghjkldfghjk' },
+    { name: "missioncontrol", alias: "m", type: String},
+    { name: "allowcontrol", alias: "c", type: Boolean}
   ]
 
 const options = commandLineArgs(optionDefinitions)
@@ -22,8 +23,35 @@ console.log(options)
 
 var client = require('../mnms-client-ws-interface')
 
+// Commands
+
+var SwitchCommands = []
+var SwitchBlink = false;
+var SwitchBlinkTimer
+
+
 client.challenge(options.key)
-client.setCallback((data) => {console.log(data)})
+client.setCallback((sdata) => {
+    let data = JSON.parse(sdata)
+    if(data.action) {
+        if(data.action.name == "identify") {
+            console.log("Processing identify")
+            SwitchBlink = !SwitchBlink
+            if(SwitchBlink) {
+                SwitchCommands.push('blink off')
+                SwitchBlinkTimer = setTimeout(() => { SwitchBlink = !SwitchBlink },data.action.parameters[0].defaultValue * 1000)
+            }
+            else {
+                clearTimeout(SwitchBlinkTimer)
+            }
+        }
+        else {
+            console.log("Not known")
+        }
+    } else {
+        console.log("no action in Data")
+    }
+})
 client.run(options.missioncontrol)
 client.info({
     Info: "Cisco  switch client",
@@ -32,7 +60,6 @@ client.info({
 })
 
 // Connecting to switch
-
 var SwitchData: object = {};
 var OldValue: object = {}
 var Switch : MnMs_node = { 
@@ -57,9 +84,20 @@ var Switch : MnMs_node = {
             path: "$",
             time: 10
         }
+    ],
+    Actions: [
+        {
+            name: 'identify',
+            description: 'switch leds will blink for X seconds',
+            parameters: [{
+                name: 'length',
+                type: 'integer',
+                defaultValue: 20
+            }],
+            type: "simple"
+        }
     ]
 };    
-var ActionCount = 0;
 var ClearTime = 0;
 var CountTime = 0;
 var NewData
@@ -123,7 +161,7 @@ function get_count() {
         } catch (error) {
             console.log("Response error : can not split in array")
             console.log(response)
-            setTimeout(function() {get_count()}, SwitchPollTime*1000);
+            activeSleep(get_count, SwitchPollTime);
             return
         }
         CountTime = now.getTime() - ClearTime
@@ -140,7 +178,7 @@ function get_count() {
                 if (previousExtractedNumbers[0] < CurrentPortNumber) {
                     CurrentPortNumber = 1
                     if (State == ParseState.Out) {
-                        setTimeout(getNextFct("get_count"), SwitchPollTime*1000);
+                        activeSleep(getNextFct("get_count"), SwitchPollTime);
                         return;
                     }
                     State = ParseState.Out
@@ -165,6 +203,7 @@ function get_count() {
             }
 
         }
+        activeSleep(get_count, SwitchPollTime);
     })
     
 }
@@ -178,10 +217,10 @@ function clear_count() {
             {
                 let now = new Date
                 ClearTime = now.getTime()
-                setTimeout(getNextFct("clear_count"), SwitchPollTime*1000);
+                activeSleep(getNextFct("clear_count"), SwitchPollTime);
             }
             else
-                setTimeout(function() {clear_count()}, 500);
+                activeSleep(function() {clear_count()}, 500);
         })
 }
 
@@ -235,7 +274,7 @@ function getPortStatus() {
         } catch (error) {
             console.log("Response error : can not split in array")
             console.log(response)
-            setTimeout(function() {getPortStatus()}, SwitchPollTime*1000);
+            activeSleep(function() {getPortStatus()}, SwitchPollTime);
             return
         }
         for(let line of array) {
@@ -244,7 +283,7 @@ function getPortStatus() {
                 SwitchData[port[0]].Speed = parseInt(port[3])
             }
         }
-        setTimeout(getNextFct("getPortStatus"), SwitchPollTime*1000);
+        activeSleep(getNextFct("getPortStatus"), SwitchPollTime);
     
     })
 }
@@ -257,7 +296,7 @@ function getPortConfig() {
         } catch (error) {
             console.log("Response error : can not split in array")
             console.log(response)
-            setTimeout(function() {getPortConfig()}, SwitchPollTime*1000);
+            activeSleep(function() {getPortConfig()}, SwitchPollTime);
             return
         }
         for(let line of array) {
@@ -266,7 +305,7 @@ function getPortConfig() {
                 SwitchData[port[0]].AdminState = (port[6])
             }
         }
-        setTimeout(getNextFct("getPortConfig"), SwitchPollTime*1000);
+        activeSleep(getNextFct("getPortConfig"), SwitchPollTime);
     
     })
 }
@@ -279,7 +318,7 @@ function getBridgeIgmpStatus() {
         } catch (error) {
             console.log("Response error : can not split in array")
             console.log(response)
-            setTimeout(function() {getPortConfig()}, SwitchPollTime*1000);
+            activeSleep(function() {getPortConfig()}, SwitchPollTime);
             return
         }
         for(let line of array) {
@@ -290,7 +329,7 @@ function getBridgeIgmpStatus() {
                 SwitchData[port[0]].ForwardAll = (port[1] == "Forward")? "on" : "off"
             }
         }
-        setTimeout(getNextFct("getBridgeIgmpStatus"), SwitchPollTime*1000);
+        activeSleep(getNextFct("getBridgeIgmpStatus"), SwitchPollTime);
     
     })
 }
@@ -303,7 +342,7 @@ function getMacAddressTable() {
         } catch (error) {
             console.log("Response error : can not split in array")
             console.log(response)
-            setTimeout(function() {getPortConfig()}, SwitchPollTime*1000);
+            setTimeout(function() {getPortConfig()}, SwitchPollTime);
             return
         }
         Object.keys(SwitchData).forEach(function(key) {
@@ -323,7 +362,7 @@ function getMacAddressTable() {
                 }
             }
         }
-        setTimeout(getNextFct("getMacAddressTable"), SwitchPollTime*1000);
+        activeSleep(getNextFct("getMacAddressTable"), SwitchPollTime);
     
     })
 }
@@ -336,7 +375,7 @@ function getArp() {
         } catch (error) {
             console.log("Response error : can not split in array")
             console.log(response)
-            setTimeout(function() {getPortConfig()}, SwitchPollTime*1000);
+            activeSleep(function() {getPortConfig()}, SwitchPollTime);
             return
         }
         ArpData = []
@@ -355,7 +394,7 @@ function getArp() {
         
 
         client.send(JSON.stringify({Type: "ARP", Data: ArpData}))
-        setTimeout(getNextFct("getArp"), SwitchPollTime*1000);
+        activeSleep(getNextFct("getArp"), SwitchPollTime);
     
     })
 }
@@ -437,11 +476,11 @@ function getMulticastSources() {
                             break;
                 }
             }
-            setTimeout(getNextFct("getMulticastSources"), SwitchPollTime*1000);
+            activeSleep(getNextFct("getMulticastSources"), SwitchPollTime);
         } 
         else {
             console.log("Oupsy, error !",err,response)
-            setTimeout(getNextFct("getMulticastSources"), SwitchPollTime*1000);
+            activeSleep(getNextFct("getMulticastSources"), SwitchPollTime);
         }
     })
 }
@@ -454,7 +493,7 @@ function getLLDP() {
         } catch (error) {
             console.log("Response error : can not split in array")
             console.log(response)
-            setTimeout(function() {getPortConfig()}, SwitchPollTime*1000);
+            setTimeout(function() {getPortConfig()}, SwitchPollTime);
             return
         }
         for(let line of array) {
@@ -472,7 +511,7 @@ function getLLDP() {
             }
         }
 
-        setTimeout(getNextFct("getLLDP"), SwitchPollTime*1000);
+        activeSleep(getNextFct("getLLDP"), SwitchPollTime);
     })
 }
 
@@ -481,13 +520,14 @@ function systemInfo() {
         let array 
         try {
             array = response.split("\n")
+            if(array[3].includes("System Name")) Switch.Name = array[3].split(/\s+/)[2]
         } catch (error) {
             console.log("Response error : can not split in array")
             console.log(response)
-            setTimeout(function() {getPortConfig()}, SwitchPollTime*1000);
+            setTimeout(getNextFct("systemInfo"), SwitchPollTime);
             return
         }
-        if(array[3].includes("System Name")) Switch.Name = array[3].split(/\s+/)[2]
+        
         let llineNumber : any
         for( llineNumber in array) {
             llineNumber = parseInt(llineNumber)
@@ -502,7 +542,7 @@ function systemInfo() {
             } catch (error) {
                 console.log("Response error : can not split in array")
                 console.log(response)
-                setTimeout(function() {getPortConfig()}, SwitchPollTime*1000);
+                activeSleep(getNextFct("systemInfo"), SwitchPollTime);
                 return
             }
             Switch.System.MemBusy = parseInt(array[0].split(" ")[1])
@@ -513,7 +553,7 @@ function systemInfo() {
                 } catch (error) {
                     console.log("Response error : can not split in array")
                     console.log(response)
-                    setTimeout(function() {getPortConfig()}, SwitchPollTime*1000);
+                    activeSleep(getNextFct("systemInfo"), SwitchPollTime);
                     return
                 }
 
@@ -523,7 +563,7 @@ function systemInfo() {
                     Switch.System.CPU1min  = parseInt(p[5])
                     Switch.System.CPU5min  = parseInt(p[8])
                 }
-                setTimeout(getNextFct("systemInfo"), SwitchPollTime*1000);
+                activeSleep(getNextFct("systemInfo"), SwitchPollTime);
             }),300)
         }),300)
     })
@@ -556,26 +596,66 @@ function getVlans() {
             array = response.split("\n")
         } catch (error) {
         }
-        let grid = array[3]
-        let items = grid.split(" ");
-        for(let l = 4; l < array.length - 2; l++) {
-            let vlan = parseInt(array[l].substr(0,items[0].length))
-            let nextstop = items[0].length+1
-            nextstop += items[1].length+1
-            let taged = array[l].substr(nextstop,items[2].length)
-            nextstop += items[2].length+1
-            let untaged = array[l].substr(nextstop,items[3].length)
-            for(let p of portList(taged)) {
-                if(!SwitchData[p].Vlan) SwitchData[p].Vlan = { Tagged: [], Untagged: []}
-                SwitchData[p].Vlan.Tagged.push(vlan)
-            }
-            for(let p of portList(untaged)) {
-                if(!SwitchData[p].Vlan) SwitchData[p].Vlan = { Tagged: [], Untagged: []}
-                SwitchData[p].Vlan.Untagged.push(vlan)
+        if(!array || array.length < 3) {}
+        else {
+            let grid = array[3]
+            let items = grid.split(" ");
+            if (items.length > 3)  for(let l = 4; l < array.length - 2; l++) {
+                let vlan = parseInt(array[l].substr(0,items[0].length))
+                let nextstop = items[0].length+1
+                nextstop += items[1].length+1
+                let taged = array[l].substr(nextstop,items[2].length)
+                nextstop += items[2].length+1
+                let untaged = array[l].substr(nextstop,items[3].length)
+                for(let p of portList(taged)) {
+                    if(!SwitchData[p].Vlan) SwitchData[p].Vlan = { Tagged: [], Untagged: []}
+                    SwitchData[p].Vlan.Tagged.push(vlan)
+                }
+                for(let p of portList(untaged)) {
+                    if(!SwitchData[p].Vlan) SwitchData[p].Vlan = { Tagged: [], Untagged: []}
+                    SwitchData[p].Vlan.Untagged.push(vlan)
+                }
             }
         }
-        setTimeout(getNextFct("getVlans"), SwitchPollTime*1000);
+        activeSleep(getNextFct("getVlans"), SwitchPollTime);
     })
+}
+
+async function blink(str = "") {
+    await new Promise( (resolve, reject) => {
+        switchTelnet.exec("config", (err, respond) => {
+            console.log(err,respond)
+            console.log('trying disable poirt led:' + str + '  -->  ' +str+"disable port led")
+            switchTelnet.exec(str+"disable port led", (err, respond) => {
+                console.log(err,respond)
+                switchTelnet.exec("exit", (err, respond) => {
+                    console.log(err,respond)
+                    setTimeout(resolve, 300)
+                })
+            })
+        })
+    })
+    
+}
+
+function activeSleep(nextStep,time) {
+    while(SwitchCommands.length > 0) {
+        switch(SwitchCommands[0]) {
+            case 'blink on':
+                blink()
+                setTimeout(() => SwitchCommands.push('blink off'),1500)
+                break;
+            case 'blink off':
+                blink("no ")
+                if(SwitchBlink) setTimeout(() => SwitchCommands.push('blink on'),1500)
+                break;
+            default:
+                break;
+        }
+        SwitchCommands.splice(0,1)
+    }
+    if(time <= 0) return nextStep()
+    else setTimeout(() => activeSleep(nextStep,time-100),100)
 }
 
 let cycle = 100
@@ -626,6 +706,8 @@ function StartSwitchDatamine() {
         })
     })
 }
+
+
 
 console.log("start")
 

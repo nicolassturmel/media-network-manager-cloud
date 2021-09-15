@@ -11,7 +11,7 @@ let countersList = []
 setInterval(() => {
     console.log('------')
     masterList.forEach(e => console.log(e.source + ':' + e.sid + '   ' + e.sip + ':' + e.sport + "-"+ e.proto+"->" + e.dip + ':' + e.dport + '     ' + e.seen))
-   // Object.keys(countersList).forEach(e => console.log(countersList[e]))
+    Object.keys(countersList).forEach(e => console.log(countersList[e]))
 }, 2000);
 
 var processCounters = (flow,n) => {
@@ -48,6 +48,7 @@ var processCounters = (flow,n) => {
 }
 
 var processPkt = (flow,pkt) => {
+    console.log(flow,pkt)
     if(flow && flow.flow && flow.rinfo 
     && pkt && pkt.payload && pkt.payload.payload) {
         let source = flow.rinfo.address

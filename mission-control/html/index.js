@@ -699,7 +699,13 @@ var makeDeviceInfo = (elem,update) => {
         buildSystemInfo(node,win,"left-")
     }
     else 
-        checkElem(win,"left-node-system-" + node.Name,"div","node-system-unit empty","")
+        checkElem(win,"left-node-actions-" + node.Name,"div","node-system-unit empty","")
+    if(node.Actions) {
+        buildActions(node,win,"left-")
+    }
+    else 
+        checkElem(win,"left-node-actions-" + node.Name,"div","node-system-unit empty","")
+    if(node)
     if(node.Services) {
         Object.keys(node.Services).forEach((key) => {
             let name = key.split("._")[0]
@@ -914,6 +920,13 @@ var buildSystemInfo = (node,elem,pref) => {
     else if(document.getElementById(pref + "node-system-overlay-" + node.Name)) {
         document.getElementById(pref + "node-system-overlay-" + node.Name).outerHTML = ""
     } 
+}
+
+var buildActions = (node,elem,pref) => {
+    let sys = checkElem(elem,pref + "node-actions-" + node.Name,"div","node-actions-unit","")
+    /*for(let A of node.Actions) {
+        checkElem(sys,pref+A.name,'div','',A.name)
+    }*/
 }
 
 var progressBar = (refreshbar,time,start) => {
@@ -1158,11 +1171,19 @@ function initGraph() {
     var container = document.getElementById('mynetwork');
    network = new vis.Network(container, data, options);
    network.on('click',(e) => {
-       if(e.nodes && e.nodes.length > 0 && document.getElementById("node-" + _nodes[e.nodes[0]].Name)) {
+        if(e.nodes && e.nodes.length > 0 && document.getElementById("node-" + _nodes[e.nodes[0]].Name)) {
             makeDeviceInfo(document.getElementById("node-" + _nodes[e.nodes[0]].Name))
             let Node = document.getElementById("node-" + _nodes[e.nodes[0]].Name)
             let Container = document.getElementById("node_container")
-       }
+        }
+    })
+    network.on('oncontext',(e) => {
+        console.log('context',e,network.getNodeAt(e.pointer.DOM),network.getEdgeAt(e.pointer.DOM))
+        let node = network.getNodeAt(e.pointer.DOM)
+        let netElem = document.getElementById("mynetwork").getBoundingClientRect();
+        if(node) {
+            nodeContextMenu(_nodes[node],{x: e.pointer.DOM.x + netElem.left, y:e.pointer.DOM.y+ netElem.top})
+        }
     })
 }
 
@@ -1421,10 +1442,11 @@ var nodeContextMenu = (node,pos) => {
         id: 2
     }]*/
     let dom_items = []
-    if(node._Actions) {
+    if(node.Actions) {
         let contextMenu = checkElem( document.getElementById("popupSpace"),"context-menu","div","context-menu",node.Name + "<br>---")
         contextMenu.style.top = pos.y
         contextMenu.style.left = pos.x
+        contextMenu.style["z-index"] = 4000000
 
         // Handling appear disappear
         let vanish = () => {
@@ -1434,13 +1456,9 @@ var nodeContextMenu = (node,pos) => {
         contextMenu.onmouseover = () => clearTimeout(vanish_t)
         contextMenu.onmouseout = () => vanish_t = setTimeout(vanish,200)
 
-        for(let A of node._Actions) {
-            dom_items[A.id] = checkElem(contextMenu,"action-" + A.id,"div","context-menu-item",A.Name)
-            if(A.Style) {
-                Object.keys(A.Style).forEach(style_key => {
-                    dom_items[A.id].style[style_key] = A.Style[style_key]
-                })
-            }
+        for(let A of node.Actions) {
+            console.log(A)
+            dom_items[A.name] = checkElem(contextMenu,"action-" + A.name,"div","context-menu-item",A.name)
             switch(A.type) {
                 case "subactions":
                     dom_items[A.id].onmouseover = () =>{
@@ -1489,8 +1507,8 @@ var nodeContextMenu = (node,pos) => {
                     }
                     break
                 case "simple":
-                    dom_items[A.id].onclick = () => {
-                        A.action()
+                    dom_items[A.name].onclick = () => {
+                        sendAction(node.id,A,null)
                     }
                     break;
                 case "missionControlAction":
@@ -1503,8 +1521,10 @@ var nodeContextMenu = (node,pos) => {
             }
         }
     }
-    pos.preventDefault()
+    if(pos.preventDefault) pos.preventDefault()
 }
 
-var sendAction = (processId,action,params) => {
+var sendAction = (nodeId,action,params) => {
+    console.log('sending',action,"to",nodeId)
+    missionControlWS.send(JSON.stringify({Type :"Node::action", nodeId: nodeId, action: action, params: params}))
 }
