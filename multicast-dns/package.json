@@ -39,7 +39,7 @@
     12.5492251
   ],
   "dependencies": {
-    "dns-packet": "^4.0.0",
+    "dns-packet": "^5.2.2",
     "thunky": "^1.0.2"
   },
   "deprecated": false,
