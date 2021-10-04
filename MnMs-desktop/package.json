@@ -21,6 +21,7 @@
     "lodash": "^4.17.21",
     "multicast-dns": "^7.2.0",
     "nedb": "^1.8.0",
+    "net-snmp": "^2.6.0",
     "node-arp": "^1.0.6",
     "os": "^0.1.1",
     "sdp-transform": "^2.13.0",
@@ -28,8 +29,7 @@
     "uniqid": "^5.0.3",
     "util": "^0.12.1",
     "ws": "^7.1.2",
-    "yellowstone": "^3.0.1",
-    "net-snmp": "^2.6.0"
+    "yellowstone": "^3.0.1"
   },
   "keywords": [
     "MnMs",
