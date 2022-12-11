@@ -15,7 +15,7 @@
   "dependencies": {
     "command-line-args": "^5.1.1",
     "dns-txt": "^2.0.2",
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "fs": "0.0.1-security",
     "https": "^1.0.0",
     "lodash": "^4.17.21",
