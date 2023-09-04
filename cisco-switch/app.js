@@ -394,7 +394,7 @@ function getArp() {
                     Ports[add[2]] = [];
                 Ports[add[2]].push(add[3]);
                 ArpData.push({ Ip: add[3], Mac: add[4] });
-                console.log(ArpData);
+               // console.log(ArpData);
             }
         }
         client.send(JSON.stringify({ Type: "ARP", Data: ArpData }));

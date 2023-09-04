@@ -100,13 +100,13 @@ async function getAccessToken(username: string, password: string) {
       }
       Switch.Name=response.data.deviceInfo.model + ' ' + response.data.serialNumber
       Switch.Mac = response.data.deviceInfo.macAddr
-      let cpu = response.data.deviceInfo.cpuUsage
+      let cpu = parseFloat(response.data.deviceInfo.cpuUsage)
       Switch.System = {
-        CPUTemps: response.data.deviceInfo.temperatureSensors.sensorTemp,
+        CPUTemps: response.data.deviceInfo.temperatureSensors[0].sensorTemp,
         CPU5s: cpu,
         CPU1min: cpu,
         CPU5min: cpu,
-        MemBusy: response.data.deviceInfo.memoryUsage
+        MemBusy: parseFloat(response.data.deviceInfo.memoryUsage)
       }
       Switch.IP = options.ip
     } catch (error) {
@@ -122,15 +122,41 @@ async function getAccessToken(username: string, password: string) {
       };
       let port = 1;
       let rstatus = false
+      
+      Switch.Ports = []
       do {
         let response = await axios.get(`https://${apiPath}/sw_portstats?portid=${port}`, { headers, httpsAgent });
 
         port++
         rstatus = (response.data.resp && (response.data.resp.status == "success"))
-        console.log(rstatus)
+       
         if(rstatus) {
+            let pdata = response.data.switchStatsPort
             
+            let port : MnMs_node_port = {
+                Name: pdata.portId,
+                ConnectedMacs: [],
+                IGMP: {
+                    ForwardAll: "off",
+                    Groups: {}
+                },
+                AdminState: pdata.status == 0? "up" : "down",
+                Speed: pdata.speed ,
+                In: 0,
+                Out: 0,
+                Vlan: {
+                    Untagged: pdata.vlans[0],
+                    Tagged: []
+                }
+            }
+
+            if(pdata.neighborInfo.chassisId.split(":").length == 6) {
+                port.ConnectedMacs = [pdata.neighborInfo.chassisId]
+                //console.log("lldpd",pdata.neighborInfo.chassisId)
+            }
             // console.log(response.data.switchStatsPort)
+
+            Switch.Ports.push(port)
         }
       }
       while(rstatus)
@@ -147,7 +173,19 @@ async function getAccessToken(username: string, password: string) {
       };
       console.log("fdbs")
       let response = await axios.get(`https://${apiPath}/fdbs`, { headers, httpsAgent });
-      console.log("got",response)
+      
+      if(response.data.resp && response.data.resp.status == "success") {
+        let fdb = response.data.fdb_entries
+        for(let i in Switch.Ports) {
+            console.log(Switch.Ports[i].ConnectedMacs,Switch.Ports[i].ConnectedMacs.length)
+            if(Switch.Ports[i].ConnectedMacs.length < 1) {
+                for(let dst of fdb.filter(e => { return e.interface == Switch.Ports[i].Name } )) {
+                    Switch.Ports[i].ConnectedMacs.push(dst.mac)
+                }
+            }
+            console.log(Switch.Ports[i].ConnectedMacs,Switch.Ports[i].ConnectedMacs.length)
+        }
+      }
     } catch (error) {
       console.error('Erreur lors de la récupération de la table lldp',error);
     }
@@ -166,13 +204,23 @@ async function getAccessToken(username: string, password: string) {
     }
   }
 
-getAccessToken(options.user, options.password).then(async token => {
-    if (token) {
-      console.log('Jeton d\'accès obtenu:', token);
-      // Vous pouvez maintenant utiliser ce jeton pour les requêtes suivantes
-      
-        await getDeviceInfo(token);
-        await getPorts(token)
-        await lldp(token)
+  var doing = false
+setInterval(async () => {
+    if(!doing) {
+        doing = true
+        await getAccessToken(options.user, options.password).then(async token => {
+            if (token) {
+            console.log('Jeton d\'accès obtenu:', token);
+            // Vous pouvez maintenant utiliser ce jeton pour les requêtes suivantes
+            
+                await getDeviceInfo(token);
+                await getPorts(token)
+                await lldp(token)
+                console.log(Switch)
+            }
+        });
+
+        doing = false
     }
-  });
+  }, 1000)
+  

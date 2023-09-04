@@ -140,13 +140,13 @@ function getDeviceInfo(token) {
                     }
                     Switch.Name = response.data.deviceInfo.model + ' ' + response.data.serialNumber;
                     Switch.Mac = response.data.deviceInfo.macAddr;
-                    cpu = response.data.deviceInfo.cpuUsage;
+                    cpu = parseFloat(response.data.deviceInfo.cpuUsage);
                     Switch.System = {
-                        CPUTemps: response.data.deviceInfo.temperatureSensors.sensorTemp,
+                        CPUTemps: response.data.deviceInfo.temperatureSensors[0].sensorTemp,
                         CPU5s: cpu,
                         CPU1min: cpu,
                         CPU5min: cpu,
-                        MemBusy: response.data.deviceInfo.memoryUsage
+                        MemBusy: parseFloat(response.data.deviceInfo.memoryUsage)
                     };
                     Switch.IP = options.ip;
                     return [3 /*break*/, 3];
@@ -161,7 +161,7 @@ function getDeviceInfo(token) {
 }
 function getPorts(token) {
     return __awaiter(this, void 0, void 0, function () {
-        var headers, port, rstatus, response, error_3;
+        var headers, port, rstatus, response, pdata, port_1, error_3;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -172,15 +172,37 @@ function getPorts(token) {
                     };
                     port = 1;
                     rstatus = false;
+                    Switch.Ports = [];
                     _a.label = 1;
                 case 1: return [4 /*yield*/, axios_1["default"].get("https://".concat(apiPath, "/sw_portstats?portid=").concat(port), { headers: headers, httpsAgent: httpsAgent })];
                 case 2:
                     response = _a.sent();
                     port++;
                     rstatus = (response.data.resp && (response.data.resp.status == "success"));
-                    console.log(rstatus);
                     if (rstatus) {
+                        pdata = response.data.switchStatsPort;
+                        port_1 = {
+                            Name: pdata.portId,
+                            ConnectedMacs: [],
+                            IGMP: {
+                                ForwardAll: "off",
+                                Groups: {}
+                            },
+                            AdminState: pdata.status == 0 ? "up" : "down",
+                            Speed: pdata.speed,
+                            In: 0,
+                            Out: 0,
+                            Vlan: {
+                                Untagged: pdata.vlans[0],
+                                Tagged: []
+                            }
+                        };
+                        if (pdata.neighborInfo.chassisId.split(":").length == 6) {
+                            port_1.ConnectedMacs = [pdata.neighborInfo.chassisId];
+                            //console.log("lldpd",pdata.neighborInfo.chassisId)
+                        }
                         // console.log(response.data.switchStatsPort)
+                        Switch.Ports.push(port_1);
                     }
                     _a.label = 3;
                 case 3:
@@ -198,7 +220,7 @@ function getPorts(token) {
 }
 function lldp(token) {
     return __awaiter(this, void 0, void 0, function () {
-        var headers, response, error_4;
+        var headers, response, fdb, _loop_1, i, error_4;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -211,7 +233,22 @@ function lldp(token) {
                     return [4 /*yield*/, axios_1["default"].get("https://".concat(apiPath, "/fdbs"), { headers: headers, httpsAgent: httpsAgent })];
                 case 1:
                     response = _a.sent();
-                    console.log("got", response);
+                    if (response.data.resp && response.data.resp.status == "success") {
+                        fdb = response.data.fdb_entries;
+                        _loop_1 = function (i) {
+                            console.log(Switch.Ports[i].ConnectedMacs, Switch.Ports[i].ConnectedMacs.length);
+                            if (Switch.Ports[i].ConnectedMacs.length < 1) {
+                                for (var _i = 0, _b = fdb.filter(function (e) { return e.interface == Switch.Ports[i].Name; }); _i < _b.length; _i++) {
+                                    var dst = _b[_i];
+                                    Switch.Ports[i].ConnectedMacs.push(dst.mac);
+                                }
+                            }
+                            console.log(Switch.Ports[i].ConnectedMacs, Switch.Ports[i].ConnectedMacs.length);
+                        };
+                        for (i in Switch.Ports) {
+                            _loop_1(i);
+                        }
+                    }
                     return [3 /*break*/, 3];
                 case 2:
                     error_4 = _a.sent();
@@ -247,25 +284,41 @@ function template(token) {
         });
     });
 }
-getAccessToken(options.user, options.password).then(function (token) { return __awaiter(void 0, void 0, void 0, function () {
+var doing = false;
+setInterval(function () { return __awaiter(void 0, void 0, void 0, function () {
     return __generator(this, function (_a) {
         switch (_a.label) {
             case 0:
-                if (!token) return [3 /*break*/, 4];
-                console.log('Jeton d\'accès obtenu:', token);
-                // Vous pouvez maintenant utiliser ce jeton pour les requêtes suivantes
-                return [4 /*yield*/, getDeviceInfo(token)];
+                if (!!doing) return [3 /*break*/, 2];
+                doing = true;
+                return [4 /*yield*/, getAccessToken(options.user, options.password).then(function (token) { return __awaiter(void 0, void 0, void 0, function () {
+                        return __generator(this, function (_a) {
+                            switch (_a.label) {
+                                case 0:
+                                    if (!token) return [3 /*break*/, 4];
+                                    console.log('Jeton d\'accès obtenu:', token);
+                                    // Vous pouvez maintenant utiliser ce jeton pour les requêtes suivantes
+                                    return [4 /*yield*/, getDeviceInfo(token)];
+                                case 1:
+                                    // Vous pouvez maintenant utiliser ce jeton pour les requêtes suivantes
+                                    _a.sent();
+                                    return [4 /*yield*/, getPorts(token)];
+                                case 2:
+                                    _a.sent();
+                                    return [4 /*yield*/, lldp(token)];
+                                case 3:
+                                    _a.sent();
+                                    console.log(Switch);
+                                    _a.label = 4;
+                                case 4: return [2 /*return*/];
+                            }
+                        });
+                    }); })];
             case 1:
-                // Vous pouvez maintenant utiliser ce jeton pour les requêtes suivantes
                 _a.sent();
-                return [4 /*yield*/, getPorts(token)];
-            case 2:
-                _a.sent();
-                return [4 /*yield*/, lldp(token)];
-            case 3:
-                _a.sent();
-                _a.label = 4;
-            case 4: return [2 /*return*/];
+                doing = false;
+                _a.label = 2;
+            case 2: return [2 /*return*/];
         }
     });
-}); });
+}); }, 1000);

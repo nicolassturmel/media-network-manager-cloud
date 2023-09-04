@@ -879,7 +879,7 @@ export = function(LocalOptions) {
             let action = ServiceOptions.Name.split(":")[1]
             if(type == "cisco_switch") {
                 if(action == "start") {
-                    child_info = spawn("node",[ServicesDirectory[type],"-p",ServiceOptions.Params.Password,"-u",ServiceOptions.Params.User,"-i",ServiceOptions.Params.IP,"-k",MnmsData.Challenge,"-y",ServiceOptions.UID ])
+                    child_info = spawn("node",[ServicesDirectory[type],"-p",ServiceOptions.Params.Password,"-u",ServiceOptions.Params.User,"-i",ServiceOptions.Params.IP,"-k",MnmsData.Challenge,"-y",ServiceOptions.UID,"-m","127.0.0.1" ])
                     child_info.on("error",() => {
                         child_info.kill()
                     })
@@ -891,11 +891,11 @@ export = function(LocalOptions) {
             }
             else if(type == "artel_switch") {
                 if(action == "start") {
-                    console.log([ServicesDirectory[type],"-p",ServiceOptions.Params.Password || "\"\"","-u",ServiceOptions.Params.User,"-i",ServiceOptions.Params.IP,"-k",MnmsData.Challenge,"-y",ServiceOptions.UID ])
+                    console.log([ServicesDirectory[type],"-p",ServiceOptions.Params.Password || "\"\"","-u",ServiceOptions.Params.User,"-i",ServiceOptions.Params.IP,"-k",MnmsData.Challenge,"-y",ServiceOptions.UID,"-m","127.0.0.1" ])
                     if(ServiceOptions.Params.Password == "")
-                        child_info = spawn("node",[ServicesDirectory[type],"-u",ServiceOptions.Params.User,"-i",ServiceOptions.Params.IP,"-k",MnmsData.Challenge,"-y",ServiceOptions.UID ])
+                        child_info = spawn("node",[ServicesDirectory[type],"-u",ServiceOptions.Params.User,"-i",ServiceOptions.Params.IP,"-k",MnmsData.Challenge,"-y",ServiceOptions.UID,"-m","127.0.0.1" ])
                     else
-                        child_info = spawn("node",[ServicesDirectory[type],"-p",ServiceOptions.Params.Password,"-u",ServiceOptions.Params.User,"-i",ServiceOptions.Params.IP,"-k",MnmsData.Challenge,"-y",ServiceOptions.UID ])
+                        child_info = spawn("node",[ServicesDirectory[type],"-p",ServiceOptions.Params.Password,"-u",ServiceOptions.Params.User,"-i",ServiceOptions.Params.IP,"-k",MnmsData.Challenge,"-y",ServiceOptions.UID,"-m","127.0.0.1" ])
                     
                     child_info.on("error",() => {
                         child_info.kill()
@@ -908,9 +908,9 @@ export = function(LocalOptions) {
             }
             else if(type == "snmp_switch") {
                 if(action == "start") {
-                    console.log([ServicesDirectory[type],"-c",ServiceOptions.Params.Community,"-i",ServiceOptions.Params.IP,"-k",MnmsData.Challenge,"-y",ServiceOptions.UID ])
+                    console.log([ServicesDirectory[type],"-c",ServiceOptions.Params.Community,"-i",ServiceOptions.Params.IP,"-k",MnmsData.Challenge,"-y",ServiceOptions.UID,"-m","127.0.0.1" ])
                     
-                    child_info = spawn("node",[ServicesDirectory[type],"-c",ServiceOptions.Params.Community,"-i",ServiceOptions.Params.IP,"-k",MnmsData.Challenge,"-y",ServiceOptions.UID ])
+                    child_info = spawn("node",[ServicesDirectory[type],"-c",ServiceOptions.Params.Community,"-i",ServiceOptions.Params.IP,"-k",MnmsData.Challenge,"-y",ServiceOptions.UID,"-m","127.0.0.1" ])
                     
                     child_info.on("error",() => {
                         child_info.kill()
