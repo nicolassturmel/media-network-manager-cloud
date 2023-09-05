@@ -174,6 +174,7 @@ export = function(LocalOptions) {
                                 //console.log(node.id,MnmsData.Switches.filter(k => k.UID == node.id)[0].Timer)
                             }
                         if(!ws._data.ids.includes(node.id)) ws._data.ids.push(node.id)
+                        console.log("Got switch data, merging...",node)
                         mergeNodes(null,node,null)
                         calculateInterConnect()
                     }
@@ -343,6 +344,7 @@ export = function(LocalOptions) {
         return newPs
     }
     var mergeNodesSwitch = (index: number,newValue : MnMs_node,Name: string) => {
+        console.log("Merging switches",index)
         if(newValue.Schema == 1) {
             if(newValue.Name) Nodes[index].Name = newValue.Name
             Nodes[index].Mac = newValue.Mac
@@ -718,7 +720,7 @@ export = function(LocalOptions) {
                 try {
                     let D = JSON.parse(message)
                     console.log(D)
-                    if(D.Type && (D.Type == "ciscoSG" || D.Type == "artelQ")) {
+                    if(D.Type && (D.Type == "ciscoSG" || D.Type == "artelQ" || D.Type == "NetgearM4")) {
                         if(!MnmsData.Switches.some(k => k.IP == D.IP)) {
                             MnmsData.Switches.push({
                                 Type: D.Type,
@@ -844,6 +846,12 @@ export = function(LocalOptions) {
                 Password: "",
                 IP: ""
             },
+            netgear_M4: {
+                Type: "NetgearM4",
+                User: "",
+                Password: "",
+                IP: ""
+            },
             snmp_switch: {
                 Type: "snmpB",
                 Community: "",
@@ -866,10 +874,12 @@ export = function(LocalOptions) {
     var ServicesDirectory = {
         cisco_switch: "../cisco-switch/app.js",
         artel_switch: "../artel-quarra-switch/index.js",
-        snmp_switch: "../snmp-bridge/index.js"
+        snmp_switch: "../snmp-bridge/index.js",
+        netgear_M4:"../netgear-av/index.js"
     }
 
     var serviceLauncher = (ServiceOptions) => {
+        console.log("launching",ServiceOptions)
         let child_info
         if(Options.launch_services) {
             child_info = Options.launch_services(ServiceOptions)
@@ -889,7 +899,7 @@ export = function(LocalOptions) {
                     child_info = null;
                 }
             }
-            else if(type == "artel_switch") {
+            else if(type == "artel_switch" || type == "netgear_M4") {
                 if(action == "start") {
                     console.log([ServicesDirectory[type],"-p",ServiceOptions.Params.Password || "\"\"","-u",ServiceOptions.Params.User,"-i",ServiceOptions.Params.IP,"-k",MnmsData.Challenge,"-y",ServiceOptions.UID,"-m","127.0.0.1" ])
                     if(ServiceOptions.Params.Password == "")
@@ -928,7 +938,8 @@ export = function(LocalOptions) {
     let switchShort = {
         "ciscoSG":"cisco_switch",
         "artelQ":"artel_switch",
-        "snmpB":"snmp_switch"
+        "snmpB":"snmp_switch",
+        "NetgearM4":"netgear_M4"
     }
 
     var watchDog = () => {

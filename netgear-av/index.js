@@ -138,11 +138,11 @@ function getDeviceInfo(token) {
                         console.log("error when getting device info");
                         return [2 /*return*/];
                     }
-                    Switch.Name = response.data.deviceInfo.model + ' ' + response.data.serialNumber;
+                    Switch.Name = response.data.deviceInfo.model + ' ' + response.data.deviceInfo.serialNumber;
                     Switch.Mac = response.data.deviceInfo.macAddr;
                     cpu = parseFloat(response.data.deviceInfo.cpuUsage);
                     Switch.System = {
-                        CPUTemps: response.data.deviceInfo.temperatureSensors[0].sensorTemp,
+                        CPUTemps: [response.data.deviceInfo.temperatureSensors[0].sensorTemp],
                         CPU5s: cpu,
                         CPU1min: cpu,
                         CPU5min: cpu,
@@ -188,12 +188,12 @@ function getPorts(token) {
                                 ForwardAll: "off",
                                 Groups: {}
                             },
-                            AdminState: pdata.status == 0 ? "up" : "down",
+                            AdminState: pdata.status == 0 ? "Up" : "Down",
                             Speed: pdata.speed,
                             In: 0,
                             Out: 0,
                             Vlan: {
-                                Untagged: pdata.vlans[0],
+                                Untagged: [pdata.vlans[0]],
                                 Tagged: []
                             }
                         };
@@ -292,6 +292,7 @@ setInterval(function () { return __awaiter(void 0, void 0, void 0, function () {
                 if (!!doing) return [3 /*break*/, 2];
                 doing = true;
                 return [4 /*yield*/, getAccessToken(options.user, options.password).then(function (token) { return __awaiter(void 0, void 0, void 0, function () {
+                        var i;
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0:
@@ -308,7 +309,11 @@ setInterval(function () { return __awaiter(void 0, void 0, void 0, function () {
                                     return [4 /*yield*/, lldp(token)];
                                 case 3:
                                     _a.sent();
+                                    for (i in Switch.Ports) {
+                                        Switch.Ports[i].Name = "0/" + Switch.Ports[i].Name;
+                                    }
                                     console.log(Switch);
+                                    client.send(JSON.stringify(Switch));
                                     _a.label = 4;
                                 case 4: return [2 /*return*/];
                             }

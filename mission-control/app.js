@@ -157,6 +157,7 @@ module.exports = function (LocalOptions) {
                         }
                         if (!ws._data.ids.includes(node.id))
                             ws._data.ids.push(node.id);
+                        console.log("Got switch data, merging...", node);
                         mergeNodes(null, node, null);
                         calculateInterConnect();
                     }
@@ -321,6 +322,7 @@ module.exports = function (LocalOptions) {
         return newPs;
     };
     var mergeNodesSwitch = function (index, newValue, Name) {
+        console.log("Merging switches", index);
         if (newValue.Schema == 1) {
             if (newValue.Name)
                 Nodes[index].Name = newValue.Name;
@@ -720,7 +722,7 @@ module.exports = function (LocalOptions) {
                 try {
                     var D_1 = JSON.parse(message);
                     console.log(D_1);
-                    if (D_1.Type && (D_1.Type == "ciscoSG" || D_1.Type == "artelQ")) {
+                    if (D_1.Type && (D_1.Type == "ciscoSG" || D_1.Type == "artelQ" || D_1.Type == "NetgearM4")) {
                         if (!MnmsData.Switches.some(function (k) { return k.IP == D_1.IP; })) {
                             MnmsData.Switches.push({
                                 Type: D_1.Type,
@@ -843,6 +845,12 @@ module.exports = function (LocalOptions) {
                 Password: "",
                 IP: ""
             },
+            netgear_M4: {
+                Type: "NetgearM4",
+                User: "",
+                Password: "",
+                IP: ""
+            },
             snmp_switch: {
                 Type: "snmpB",
                 Community: "",
@@ -863,9 +871,11 @@ module.exports = function (LocalOptions) {
     var ServicesDirectory = {
         cisco_switch: "../cisco-switch/app.js",
         artel_switch: "../artel-quarra-switch/index.js",
-        snmp_switch: "../snmp-bridge/index.js"
+        snmp_switch: "../snmp-bridge/index.js",
+        netgear_M4: "../netgear-av/index.js"
     };
     var serviceLauncher = function (ServiceOptions) {
+        console.log("launching", ServiceOptions);
         var child_info;
         if (Options.launch_services) {
             child_info = Options.launch_services(ServiceOptions);
@@ -886,7 +896,7 @@ module.exports = function (LocalOptions) {
                     child_info = null;
                 }
             }
-            else if (type == "artel_switch") {
+            else if (type == "artel_switch" || type == "netgear_M4") {
                 if (action == "start") {
                     console.log([ServicesDirectory[type], "-p", ServiceOptions.Params.Password || "\"\"", "-u", ServiceOptions.Params.User, "-i", ServiceOptions.Params.IP, "-k", MnmsData.Challenge, "-y", ServiceOptions.UID, "-m", "127.0.0.1"]);
                     if (ServiceOptions.Params.Password == "")
@@ -923,7 +933,8 @@ module.exports = function (LocalOptions) {
     var switchShort = {
         "ciscoSG": "cisco_switch",
         "artelQ": "artel_switch",
-        "snmpB": "snmp_switch"
+        "snmpB": "snmp_switch",
+        "NetgearM4": "netgear_M4"
     };
     var watchDog = function () {
         console.log("Waf waf");
@@ -1116,8 +1127,8 @@ module.exports = function (LocalOptions) {
                 // Checking bandwidth on ports
                 Nodes.forEach(function (n) {
                     if (n.Type == "switch") {
-                        var interfaces = n.Ports.filter(function (p) { return p.Neighbour && (node.IP == p.Neighbour || (node.OtherIPs && node.OtherIPs.includes(p.Neighbour))); });
-                        interfaces.forEach(function (int) {
+                        var interfaces_1 = n.Ports.filter(function (p) { return p.Neighbour && (node.IP == p.Neighbour || (node.OtherIPs && node.OtherIPs.includes(p.Neighbour))); });
+                        interfaces_1.forEach(function (int) {
                             var SnapSw = Snapshot.filter(function (sn) { return sn.Name == n.Name && sn.Type == "switch"; });
                             if (SnapSw.length == 0) {
                                 mods_1.push({ type: "Switch changed", data: null });

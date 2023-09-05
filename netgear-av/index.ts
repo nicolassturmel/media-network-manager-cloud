@@ -98,11 +98,11 @@ async function getAccessToken(username: string, password: string) {
         console.log("error when getting device info")
         return
       }
-      Switch.Name=response.data.deviceInfo.model + ' ' + response.data.serialNumber
+      Switch.Name=response.data.deviceInfo.model + ' ' + response.data.deviceInfo.serialNumber
       Switch.Mac = response.data.deviceInfo.macAddr
       let cpu = parseFloat(response.data.deviceInfo.cpuUsage)
       Switch.System = {
-        CPUTemps: response.data.deviceInfo.temperatureSensors[0].sensorTemp,
+        CPUTemps: [response.data.deviceInfo.temperatureSensors[0].sensorTemp],
         CPU5s: cpu,
         CPU1min: cpu,
         CPU5min: cpu,
@@ -140,12 +140,12 @@ async function getAccessToken(username: string, password: string) {
                     ForwardAll: "off",
                     Groups: {}
                 },
-                AdminState: pdata.status == 0? "up" : "down",
+                AdminState: pdata.status == 0? "Up" : "Down",
                 Speed: pdata.speed ,
                 In: 0,
                 Out: 0,
                 Vlan: {
-                    Untagged: pdata.vlans[0],
+                    Untagged: [pdata.vlans[0]],
                     Tagged: []
                 }
             }
@@ -216,7 +216,11 @@ setInterval(async () => {
                 await getDeviceInfo(token);
                 await getPorts(token)
                 await lldp(token)
+                for(let i in Switch.Ports) {
+                  Switch.Ports[i].Name = "0/" + Switch.Ports[i].Name
+                }
                 console.log(Switch)
+                client.send(JSON.stringify(Switch))
             }
         });
 

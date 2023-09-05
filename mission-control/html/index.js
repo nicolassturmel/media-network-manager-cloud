@@ -914,7 +914,8 @@ var buildSystemInfo = (node,elem,pref) => {
     let canva = cpuInfo(sys,node.System,pref)
     let mem = checkElem(sys,pref + "node-system-mem-" + node.Name,"div","node-system-mem","mem " + Math.floor(node.System.MemBusy) + "%")
     let temp = checkElem(sys,pref + "node-system-temp-" + node.Name,"div","node-system-temp","temp " + node.System.CPUTemps[0] + "°C")
-    let disk = checkElem(sys,pref + "node-system-disk-" + node.Name,"div","node-system-disk","Disk<br>" + node.System.DiskBuzy + "%")
+    if(node.System.DiskBuzy)
+        checkElem(sys,pref + "node-system-disk-" + node.Name,"div","node-system-disk","Disk<br>" + node.System.DiskBuzy + "%")
     if(node.System.offline) 
         checkElem(sys,pref + "node-system-overlay-" + node.Name,"div","node-system-overlay","Offline")
     else if(document.getElementById(pref + "node-system-overlay-" + node.Name)) {
@@ -1371,7 +1372,7 @@ var cpuInfo = (parent,data,pref) => {
     drawCpu(data.CPU1min,19,2)
     drawCpu(data.CPU5min,16,2)
     ctx.font = "15px Arial";
-    if(data.CPUSpeeds[0]) ctx.fillText(Math.floor(data.CPUSpeeds[0]*10)/10, 14, 30);
+    if(data.CPUSpeeds && data.CPUSpeeds[0]) ctx.fillText(Math.floor(data.CPUSpeeds[0]*10)/10, 14, 30);
 }
 
 var vlanMenu = (e) => {
