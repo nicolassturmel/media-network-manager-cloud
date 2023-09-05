@@ -197,8 +197,8 @@ function getPorts(token) {
                                 Tagged: []
                             }
                         };
-                        if (pdata.neighborInfo.chassisId.split(":").length == 6) {
-                            port_1.ConnectedMacs = [pdata.neighborInfo.chassisId];
+                        if (pdata.neighborInfo.portIdSubType == 3 && pdata.neighborInfo.portId.split(":").length == 6) {
+                            port_1.ConnectedMacs = [pdata.neighborInfo.chassisId.toLowerCase()];
                             //console.log("lldpd",pdata.neighborInfo.chassisId)
                         }
                         // console.log(response.data.switchStatsPort)
@@ -240,10 +240,9 @@ function lldp(token) {
                             if (Switch.Ports[i].ConnectedMacs.length < 1) {
                                 for (var _i = 0, _b = fdb.filter(function (e) { return e.interface == Switch.Ports[i].Name; }); _i < _b.length; _i++) {
                                     var dst = _b[_i];
-                                    Switch.Ports[i].ConnectedMacs.push(dst.mac);
+                                    Switch.Ports[i].ConnectedMacs.push(dst.mac.toLowerCase());
                                 }
                             }
-                            console.log(Switch.Ports[i].ConnectedMacs, Switch.Ports[i].ConnectedMacs.length);
                         };
                         for (i in Switch.Ports) {
                             _loop_1(i);
@@ -259,9 +258,56 @@ function lldp(token) {
         });
     });
 }
+function hostTable(token) {
+    return __awaiter(this, void 0, void 0, function () {
+        var headers, response, arp, _i, _a, a, elem, _loop_2, i, error_5;
+        return __generator(this, function (_b) {
+            switch (_b.label) {
+                case 0:
+                    _b.trys.push([0, 2, , 3]);
+                    headers = {
+                        'Authorization': "Bearer ".concat(token),
+                        'Content-Type': 'application/json'
+                    };
+                    return [4 /*yield*/, axios_1["default"].get("https://".concat(apiPath, "/host_table"), { headers: headers, httpsAgent: httpsAgent })];
+                case 1:
+                    response = _b.sent();
+                    if (response.data.resp && response.data.resp.status == "success") {
+                        arp = {
+                            Type: "ARP",
+                            Data: []
+                        };
+                        for (_i = 0, _a = response.data.hostTable; _i < _a.length; _i++) {
+                            a = _a[_i];
+                            elem = { Ip: a.ipAddr, Mac: a.macAddr };
+                            arp.Data.push(elem);
+                        }
+                        client.send(JSON.stringify(arp));
+                        console.log(arp);
+                        _loop_2 = function (i) {
+                            if (Switch.Ports[i].ConnectedMacs.length == 1) {
+                                var id = response.data.hostTable.find(function (e) { return e.macAddr == Switch.Ports[i].ConnectedMacs[0]; });
+                                if (id && id.length == 1)
+                                    Switch.Ports[i].Neighbour = id[0].ipAddr;
+                            }
+                        };
+                        for (i in Switch.Ports) {
+                            _loop_2(i);
+                        }
+                    }
+                    return [3 /*break*/, 3];
+                case 2:
+                    error_5 = _b.sent();
+                    console.error('Erreur lors de la récupération de la table des adresses MAC:', error_5);
+                    return [3 /*break*/, 3];
+                case 3: return [2 /*return*/];
+            }
+        });
+    });
+}
 function template(token) {
     return __awaiter(this, void 0, void 0, function () {
-        var headers, response, error_5;
+        var headers, response, error_6;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -276,8 +322,8 @@ function template(token) {
                     console.log(response);
                     return [3 /*break*/, 3];
                 case 2:
-                    error_5 = _a.sent();
-                    console.error('Erreur lors de la récupération de la table des adresses MAC:', error_5);
+                    error_6 = _a.sent();
+                    console.error('Erreur lors de la récupération de la table des adresses MAC:', error_6);
                     return [3 /*break*/, 3];
                 case 3: return [2 /*return*/];
             }
@@ -296,7 +342,7 @@ setInterval(function () { return __awaiter(void 0, void 0, void 0, function () {
                         return __generator(this, function (_a) {
                             switch (_a.label) {
                                 case 0:
-                                    if (!token) return [3 /*break*/, 4];
+                                    if (!token) return [3 /*break*/, 5];
                                     console.log('Jeton d\'accès obtenu:', token);
                                     // Vous pouvez maintenant utiliser ce jeton pour les requêtes suivantes
                                     return [4 /*yield*/, getDeviceInfo(token)];
@@ -309,13 +355,16 @@ setInterval(function () { return __awaiter(void 0, void 0, void 0, function () {
                                     return [4 /*yield*/, lldp(token)];
                                 case 3:
                                     _a.sent();
+                                    return [4 /*yield*/, hostTable(token)];
+                                case 4:
+                                    _a.sent();
                                     for (i in Switch.Ports) {
                                         Switch.Ports[i].Name = "0/" + Switch.Ports[i].Name;
                                     }
-                                    console.log(Switch);
+                                    //console.log(Switch)
                                     client.send(JSON.stringify(Switch));
-                                    _a.label = 4;
-                                case 4: return [2 /*return*/];
+                                    _a.label = 5;
+                                case 5: return [2 /*return*/];
                             }
                         });
                     }); })];

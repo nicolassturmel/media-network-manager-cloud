@@ -150,8 +150,8 @@ async function getAccessToken(username: string, password: string) {
                 }
             }
 
-            if(pdata.neighborInfo.chassisId.split(":").length == 6) {
-                port.ConnectedMacs = [pdata.neighborInfo.chassisId]
+            if(pdata.neighborInfo.portIdSubType == 3 && pdata.neighborInfo.portId.split(":").length == 6) {
+                port.ConnectedMacs = [pdata.neighborInfo.chassisId.toLowerCase()]
                 //console.log("lldpd",pdata.neighborInfo.chassisId)
             }
             // console.log(response.data.switchStatsPort)
@@ -180,14 +180,48 @@ async function getAccessToken(username: string, password: string) {
             console.log(Switch.Ports[i].ConnectedMacs,Switch.Ports[i].ConnectedMacs.length)
             if(Switch.Ports[i].ConnectedMacs.length < 1) {
                 for(let dst of fdb.filter(e => { return e.interface == Switch.Ports[i].Name } )) {
-                    Switch.Ports[i].ConnectedMacs.push(dst.mac)
+                    Switch.Ports[i].ConnectedMacs.push(dst.mac.toLowerCase())
                 }
             }
-            console.log(Switch.Ports[i].ConnectedMacs,Switch.Ports[i].ConnectedMacs.length)
+            //console.log(Switch.Ports[i].ConnectedMacs,Switch.Ports[i].ConnectedMacs.length)
         }
       }
     } catch (error) {
       console.error('Erreur lors de la récupération de la table lldp',error);
+    }
+  }
+
+  async function hostTable(token: string) {
+    try {
+      let headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      };
+      let response = await axios.get(`https://${apiPath}/host_table`, { headers, httpsAgent });
+      
+      if(response.data.resp && response.data.resp.status == "success") {
+        let arp = {
+          Type:"ARP",
+          Data:[]
+        }
+        for(let a of response.data.hostTable) {
+          let elem = { Ip: a.ipAddr, Mac: a.macAddr}
+          arp.Data.push(elem)
+        }
+
+
+        client.send(JSON.stringify(arp))
+        console.log(arp)
+        for(let i in Switch.Ports) {
+          if(Switch.Ports[i].ConnectedMacs.length == 1) {
+            let id = response.data.hostTable.find(e => e.macAddr == Switch.Ports[i].ConnectedMacs[0])
+            if(id && id.length == 1)
+              Switch.Ports[i].Neighbour = id[0].ipAddr
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération de la table des adresses MAC:',error);
     }
   }
 
@@ -216,10 +250,12 @@ setInterval(async () => {
                 await getDeviceInfo(token);
                 await getPorts(token)
                 await lldp(token)
+                await hostTable(token)
                 for(let i in Switch.Ports) {
                   Switch.Ports[i].Name = "0/" + Switch.Ports[i].Name
                 }
-                console.log(Switch)
+
+                //console.log(Switch)
                 client.send(JSON.stringify(Switch))
             }
         });

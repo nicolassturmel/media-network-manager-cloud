@@ -181,14 +181,14 @@ export = function(LocalOptions) {
                     else if (node.Type == "ARP") {
                         node.Data.forEach(d => {
                             let Ip = d.Ip
-                            let Mac = d.Mac
+                            let Mac = d.Mac.toLowerCase()
                             ArpCache[Mac] = Ip
                             let D = Nodes.filter(n => n.OtherIPs && n.Macs && n.Macs.includes(d.Mac) && !n.OtherIPs.includes(d.Ip))
                             D.forEach(d => d.OtherIPs.push(Ip))
                              D = Nodes.filter(n => n.OtherIPs && n.Macs && !n.Macs.includes(d.Mac) && n.OtherIPs.includes(d.Ip))
                             D.forEach(d => d.Macs.push(Mac))
                         })
-                        //console.log(ArpCache)
+                        console.log(ArpCache)
                     }
                     else {
                         console.error("Unknown type " + node.Type)

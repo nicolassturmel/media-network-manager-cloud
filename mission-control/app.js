@@ -164,14 +164,14 @@ module.exports = function (LocalOptions) {
                     else if (node.Type == "ARP") {
                         node.Data.forEach(function (d) {
                             var Ip = d.Ip;
-                            var Mac = d.Mac;
+                            var Mac = d.Mac.toLowerCase();
                             ArpCache[Mac] = Ip;
                             var D = Nodes.filter(function (n) { return n.OtherIPs && n.Macs && n.Macs.includes(d.Mac) && !n.OtherIPs.includes(d.Ip); });
                             D.forEach(function (d) { return d.OtherIPs.push(Ip); });
                             D = Nodes.filter(function (n) { return n.OtherIPs && n.Macs && !n.Macs.includes(d.Mac) && n.OtherIPs.includes(d.Ip); });
                             D.forEach(function (d) { return d.Macs.push(Mac); });
                         });
-                        //console.log(ArpCache)
+                        console.log(ArpCache);
                     }
                     else {
                         console.error("Unknown type " + node.Type);
