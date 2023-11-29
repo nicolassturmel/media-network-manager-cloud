@@ -10,7 +10,7 @@
   "license": "MIT",
   "dependencies": {
     "fs": "0.0.1-security",
-    "multicast-dns": "^7.2.0",
+    "multicast-dns": "^7.2.5",
     "ooid": "^1.1.19",
     "uuid": "^3.3.3",
     "ws": "^7.1.2"
